@@ -13,16 +13,16 @@ from zyte_api.aio.client import (
     create_session,
     AsyncClient
 )
-from zyte_api.constants import ENV_VARIABLE
+from zyte_api.constants import ENV_VARIABLE, API_URL
 
 
 logger = logging.getLogger('zyte_api')
 
 
-async def run(queries, out, n_conn, stop_on_errors,
+async def run(queries, out, n_conn, stop_on_errors, api_url,
               api_key=None):
 
-    client = AsyncClient(n_conn=n_conn, api_key=api_key)
+    client = AsyncClient(n_conn=n_conn, api_key=api_key, api_url=api_url)
     async with create_session(connection_pool_size=n_conn) as session:
         result_iter = client.request_parallel_as_completed(
             queries=queries,
@@ -97,11 +97,12 @@ if __name__ == '__main__':
                    help="Zyte Data API key. "
                         "You can also set %s environment variable instead "
                         "of using this option." % ENV_VARIABLE)
-    p.add_argument("--api-endpoint",
-                   help="Zyte Data API endpoint.")
+    p.add_argument("--api-url",
+                   help="Zyte Data API endpoint (default: %(default)s)",
+                   default=API_URL)
     p.add_argument("--loglevel", "-L", default="INFO",
                    choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-                   help="log level")
+                   help="log level (default: %(default)s)")
     p.add_argument("--shuffle", help="Shuffle input URLs", action="store_true")
     args = p.parse_args()
     logging.basicConfig(
@@ -123,6 +124,7 @@ if __name__ == '__main__':
                out=args.output,
                n_conn=args.n_conn,
                stop_on_errors=False,
+               api_url=args.api_url,
                api_key=args.api_key)
     loop.run_until_complete(coro)
     loop.close()
