@@ -17,7 +17,7 @@ from zyte_api.constants import ENV_VARIABLE
 
 
 logger = logging.getLogger('zyte_api')
-
+log_file = open("logs", "w")
 
 async def run(queries, out, n_conn, stop_on_errors,
               api_key=None):
@@ -43,6 +43,7 @@ async def run(queries, out, n_conn, stop_on_errors,
                     if stop_on_errors:
                         raise
                     logger.error(str(e))
+                    log_file.write(str(e) + "\n")
                 finally:
                     pbar.set_postfix_str(str(client.agg_stats))
         finally:

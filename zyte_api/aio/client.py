@@ -49,7 +49,7 @@ class AsyncClient:
         self.agg_stats = AggStats()
 
     async def request_raw(self, query: dict, *,
-                          endpoint: str = 'extract',
+                          endpoint: str = '',
                           session=None,
                           handle_retries=True,
                           retrying: Optional[AsyncRetrying] = None,
@@ -128,7 +128,7 @@ class AsyncClient:
     def request_parallel_as_completed(self,
                                       queries: List[dict],
                                       *,
-                                      endpoint: str = 'extract',
+                                      endpoint: str = '',
                                       session: Optional[aiohttp.ClientSession] = None,
                                       ) -> Iterator[asyncio.Future]:
         """ Send multiple requests to Zyte Data API in parallel.
