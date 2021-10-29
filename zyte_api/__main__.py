@@ -54,16 +54,20 @@ async def run(queries, out, n_conn, stop_on_errors, api_url,
 
 
 def read_input(input_fp, intype):
-    assert intype in {"txt", "jl", ""}
+    assert intype in {"txt", "jl"}
     if intype == "txt":
         urls = [u.strip() for u in input_fp.readlines() if u.strip()]
-        return [{"url": url, "browserHtml": True} for url in urls]
-    elif intype == "jl":
+        records = [{"url": url, "browserHtml": True} for url in urls]
+    else:
         records = [
             json.loads(line.strip())
             for line in input_fp.readlines() if line.strip()
         ]
-        return records
+    # Automatically replicating the url in echoData to being able to
+    # to match URLs with content in the responses
+    for record in records:
+        record.setdefault("echoData", record.get("url"))
+    return records
 
 
 if __name__ == '__main__':
