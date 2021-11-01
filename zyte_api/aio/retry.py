@@ -3,6 +3,7 @@
 Zyte Data Extraction retrying logic.
 
 TODO: add sync support; only aio is supported at the moment.
+TODO: Implement retry logic for temparary errors (520) using the proposed retry-after header.
 """
 import asyncio
 import logging
