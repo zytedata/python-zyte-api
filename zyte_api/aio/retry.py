@@ -40,7 +40,7 @@ _NETWORK_ERRORS = (
 )
 
 
-def _is_network_error(exc: Exception) -> bool:
+def _is_network_error(exc: BaseException) -> bool:
     if isinstance(exc, RequestError):
         # RequestError is ClientResponseError, which is in the
         # _NETWORK_ERRORS list, but it should be handled
@@ -49,7 +49,7 @@ def _is_network_error(exc: Exception) -> bool:
     return isinstance(exc, _NETWORK_ERRORS)
 
 
-def _is_throttling_error(exc: Exception) -> bool:
+def _is_throttling_error(exc: BaseException) -> bool:
     return isinstance(exc, RequestError) and exc.status in (429, 503)
 
 
@@ -90,7 +90,9 @@ class RetryFactory:
     # temporary_download_error_stop = stop_after_delay(15 * 60)
 
     def wait(self, retry_state: RetryCallState) -> float:
+        assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
+        assert exc, "Unexpected empty exception"
         if _is_throttling_error(exc):
             return self.throttling_wait(retry_state=retry_state)
         elif _is_network_error(exc):
@@ -101,7 +103,9 @@ class RetryFactory:
             raise RuntimeError("Invalid retry state exception: %s" % exc)
 
     def stop(self, retry_state: RetryCallState) -> bool:
+        assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
+        assert exc, "Unexpected empty exception"
         if _is_throttling_error(exc):
             return self.throttling_stop(retry_state)
         elif _is_network_error(exc):
