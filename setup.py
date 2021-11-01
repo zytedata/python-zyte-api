@@ -17,9 +17,9 @@ setup(
     description='Python interface to Zyte Data API',
     long_description=open('README.rst').read() + "\n\n" + open('CHANGES.rst').read(),
     long_description_content_type='text/x-rst',
-    author='Zyte Ltd.',
+    author='Zyte Group Ltd',
     author_email='kmike84@gmail.com',
-    url='https://github.com/zytedata/zyte-autoextract',
+    url='https://github.com/zytedata/python-zyte-api',
     packages=find_packages(exclude=['tests', 'examples']),
     install_requires=[
         'requests',
