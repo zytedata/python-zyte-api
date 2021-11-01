@@ -1,3 +1,7 @@
+"""
+Asyncio client for Zyte Data API
+"""
+
 import asyncio
 import time
 from functools import partial

@@ -21,3 +21,6 @@ htmlcov/
 notebooks/
 coverage.xml
 _generated
+
+docs/_build/
+docs/_autosummary/
