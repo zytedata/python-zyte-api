@@ -193,7 +193,7 @@ intersphinx_mapping = {
 }
 
 autodoc_default_options = {
-    'special-members': '__init__,__call__',
+    # 'special-members': '__init__,__call__',
     # 'undoc-members': True,
     'exclude-members': '__weakref__'
 }
