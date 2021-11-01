@@ -10,8 +10,8 @@ python-zyte-api
    :target: https://pypi.python.org/pypi/zyte-api
    :alt: Supported Python Versions
 
-.. image:: https://github.com/zytedata/zyte-api/workflows/tox/badge.svg
-   :target: https://github.com/zytedata/python-zyte-api/actions
+.. image:: https://github.com/zytedata/python-zyte-api/actions/workflows/test.yml/badge.svg
+   :target: https://github.com/zytedata/python-zyte-api/actions/workflows/test.yml
    :alt: Build Status
 
 .. image:: https://codecov.io/github/zytedata/zyte-api/coverage.svg?branch=master
@@ -20,7 +20,7 @@ python-zyte-api
 
 Python client libraries for `Zyte Data API`_.
 
-Command-line utility and asyncio-based library are provided by this package.
+Command-line utility and [![tox](https://github.com/zytedata/python-zyte-api/actions/workflows/test.yml/badge.svg)](https://github.com/zytedata/python-zyte-api/actions/workflows/test.yml)asyncio-based library are provided by this package.
 
 Read the `documentation <http://python-zyte-api.readthedocs.io>`_  for more information.
 
