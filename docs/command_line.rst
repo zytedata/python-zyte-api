@@ -31,9 +31,9 @@ a JsonLines file with queries: a JSON object per line. You can pass any
 
 .. code-block:: json
 
-    {"url": "http://example.com", "geolocation": "GB", "echoData": "homepage"}
-    {"url": "http://example.com/foo", "javascript": "off"}
-    {"url": "http://example.com/bar", "geolocation": "US"}
+    {"url": "http://example.com", "browserHtml": true, "geolocation": "GB", "echoData": "homepage"}
+    {"url": "http://example.com/foo", "browserHtml": true, "javascript": false}
+    {"url": "http://example.com/bar", "browserHtml": true, "geolocation": "US"}
 
 See `API docs`_ for a description of all supported parameters.
 
