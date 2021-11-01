@@ -11,7 +11,7 @@ python-zyte-api
    :alt: Supported Python Versions
 
 .. image:: https://github.com/zytedata/zyte-api/workflows/tox/badge.svg
-   :target: https://github.com/zytedata/zyte-api/actions
+   :target: https://github.com/zytedata/python-zyte-api/actions
    :alt: Build Status
 
 .. image:: https://codecov.io/github/zytedata/zyte-api/coverage.svg?branch=master
