@@ -118,13 +118,6 @@ class AsyncClient:
             raise
         finally:
             self.agg_stats.n_input_queries += 1
-            # self.agg_stats.n_billable_query_responses += request_processor.billable_query_responses_count()
-            # self.agg_stats.n_query_responses += request_processor.query_responses_count()
-
-        # result = Result(result)
-        # result.response_stats = response_stats
-        # if handle_retries and hasattr(request, 'retry'):
-        #     result.retry_stats = request.retry.statistics  # type: ignore
 
         self.agg_stats.n_results += 1
         return result
