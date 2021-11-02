@@ -20,7 +20,7 @@ python-zyte-api
 
 Python client libraries for `Zyte Data API`_.
 
-Command-line utility and [![tox](https://github.com/zytedata/python-zyte-api/actions/workflows/test.yml/badge.svg)](https://github.com/zytedata/python-zyte-api/actions/workflows/test.yml)asyncio-based library are provided by this package.
+Command-line utility and asyncio-based library are provided by this package.
 
 Installation
 ============
