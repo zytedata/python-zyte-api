@@ -19,7 +19,7 @@ from ..stats import AggStats, ResponseStats
 from ..utils import user_agent
 
 
-AIO_API_TIMEOUT = aiohttp.ClientTimeout(total=max(API_TIMEOUT, 60) * 5)
+AIO_API_TIMEOUT = aiohttp.ClientTimeout(total=API_TIMEOUT + 120)
 
 
 def create_session(connection_pool_size=100, **kwargs) -> aiohttp.ClientSession:
