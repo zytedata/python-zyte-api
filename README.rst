@@ -22,6 +22,22 @@ Python client libraries for `Zyte Data API`_.
 
 Command-line utility and [![tox](https://github.com/zytedata/python-zyte-api/actions/workflows/test.yml/badge.svg)](https://github.com/zytedata/python-zyte-api/actions/workflows/test.yml)asyncio-based library are provided by this package.
 
+Installation
+============
+
+::
+
+    pip install zyte-api
+
+``zyte-api`` requires Python 3.6+.
+
+API key
+=======
+
+Make sure you have an API key for the `Zyte Data API`_ service.
+You can set ``ZYTE_API_KEY`` environment
+variable with the key to avoid passing it around explicitly.
+
 Read the `documentation <http://python-zyte-api.readthedocs.io>`_  for more information.
 
 License is BSD 3-clause.
