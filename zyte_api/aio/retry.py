@@ -75,9 +75,9 @@ class RetryFactory:
         # wait 20-40s again
         wait_fixed(20) + wait_random(0, 20),
 
-        # wait from 30 to 330s, with full jitter and exponentially
+        # wait from 30 to 630s, with full jitter and exponentially
         # increasing max wait time
-        wait_fixed(30) + wait_random_exponential(multiplier=1, max=300)
+        wait_fixed(30) + wait_random_exponential(multiplier=1, max=600)
     )
 
     # connection errors, other client and server failures
@@ -87,7 +87,7 @@ class RetryFactory:
     )
     # temporary_download_error_wait = network_error_wait
     throttling_stop = stop_never
-    network_error_stop = stop_after_delay(2 * 60)  # was: 15*60
+    network_error_stop = stop_after_delay(15 * 60)
     # temporary_download_error_stop = stop_after_delay(15 * 60)
 
     def wait(self, retry_state: RetryCallState) -> float:
