@@ -18,9 +18,11 @@ from ..constants import API_URL, API_TIMEOUT
 from ..stats import AggStats, ResponseStats
 from ..utils import user_agent
 
-AIO_API_TIMEOUT = aiohttp.ClientTimeout(total=API_TIMEOUT + 60,
-                                        sock_read=API_TIMEOUT + 30,
-                                        sock_connect=10)
+
+# 120 seconds is probably too long, but we are concerned about the case with
+# many concurrent requests and some processing logic running in the same reactor,
+# thus, saturating the CPU. This will make timeouts more likely.
+AIO_API_TIMEOUT = aiohttp.ClientTimeout(total=API_TIMEOUT + 120)
 
 
 def create_session(connection_pool_size=100, **kwargs) -> aiohttp.ClientSession:
