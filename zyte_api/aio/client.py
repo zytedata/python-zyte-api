@@ -19,6 +19,9 @@ from ..stats import AggStats, ResponseStats
 from ..utils import user_agent
 
 
+# 120 seconds is probably too long, but we are concerned about the case with
+# many concurrent requests and some processing logic running in the same reactor,
+# thus, saturating the CPU. This will make timeouts more likely.
 AIO_API_TIMEOUT = aiohttp.ClientTimeout(total=API_TIMEOUT + 120)
 
 
