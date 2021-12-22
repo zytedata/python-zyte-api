@@ -44,7 +44,7 @@ To get results for this ``requests.jl`` file, run:
 
 .. code-block:: shell
 
-    python -m zyte-api --intype jl requests.jl --output res.jl
+    python -m zyte_api --intype jl requests.jl --output res.jl
 
 Processing speed
 ~~~~~~~~~~~~~~~~
@@ -61,7 +61,7 @@ To set these options in the CLI, use the ``--n-conn`` argument:
 
 .. code-block:: shell
 
-    python -m zyte-api urls.txt --n-conn 30 --output res.jl
+    python -m zyte_api urls.txt --n-conn 30 --output res.jl
 
 If too many requests are being processed in parallel, you'll be getting
 throttling errors. They are handled by CLI automatically, but they make
@@ -84,7 +84,7 @@ input queries before sending them to the API:
 
 .. code-block:: shell
 
-    python -m zyte-api urls.txt --shuffle --output res.jl
+    python -m zyte_api urls.txt --shuffle --output res.jl
 
-Run ``python -m zyte-api --help`` to get description of all supported
+Run ``python -m zyte_api --help`` to get description of all supported
 options.
