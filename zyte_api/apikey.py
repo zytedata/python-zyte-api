@@ -14,7 +14,7 @@ def get_apikey(key: Optional[str] = None) -> str:
     if key is not None:
         return key
     try:
-        return os.environ[ENV_VARIABLE]
+        return os.environ.get(ENV_VARIABLE)
     except KeyError:
         raise NoApiKey("API key not found. Please set {} "
                        "environment variable.".format(ENV_VARIABLE))
