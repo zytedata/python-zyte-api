@@ -31,9 +31,8 @@ def create_session(connection_pool_size: int = 100, **kwargs) -> aiohttp.ClientS
     """ Create a session with parameters suited for Zyte API """
     kwargs.setdefault('timeout', AIO_API_TIMEOUT)
     verify_ssl_provided = "verify_ssl" in kwargs
-    # verify_ssl could be either None (default) or False (skip)
-    # https://docs.aiohttp.org/en/stable/client_reference.html#tcpconnector
-    ssl = False if kwargs.pop("verify_ssl", None) is False else None
+
+    ssl = _set_ssl_mode(kwargs.pop("verify_ssl", None))
     if "connector" not in kwargs:
         kwargs["connector"] = TCPConnector(limit=connection_pool_size, ssl=ssl)
     else:
@@ -55,24 +54,30 @@ def _post_func(session):
         return session.post
 
 
+def _set_ssl_mode(verify_ssl: Optional[bool]) -> Optional[bool]:
+    # ssl certificate check could be either
+    # None (default, enabled), False (disabled), or custom SSL context (not relevant)
+    # https://docs.aiohttp.org/en/stable/client_reference.html#tcpconnector
+    return False if verify_ssl is False else None
+
+
 class AsyncClient:
     def __init__(self, *,
                  api_key: Optional[str] = None,
                  api_url: str = API_URL,
                  n_conn: int = 15,
-                 verify_ssl: bool = True
                  ):
         self.api_key: str = get_apikey(api_key)
         self.api_url: str = api_url
         self.n_conn: int = n_conn
         self.agg_stats = AggStats()
-        self.verify_ssl: bool = verify_ssl
 
     async def request_raw(self, query: dict, *,
                           endpoint: str = 'extract',
                           session=None,
                           handle_retries=True,
                           retrying: Optional[AsyncRetrying] = None,
+                          verify_ssl: Optional[bool] = None
                           ):
         retrying = retrying or zyte_api_retrying
         post = _post_func(session)
@@ -91,6 +96,7 @@ class AsyncClient:
                 json=query,
                 auth=auth,
                 headers=headers,
+                ssl=_set_ssl_mode(verify_ssl)
             )
 
             try:
