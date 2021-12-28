@@ -44,7 +44,6 @@ def create_session(connection_pool_size: int = 100, **kwargs) -> aiohttp.ClientS
 
 
 def _post_func(session):
-    # TODO Add validate ssl to requests
     """ Return a function to send a POST request """
     if session is None:
         return partial(aiohttp.request,
@@ -77,7 +76,6 @@ class AsyncClient:
                           session=None,
                           handle_retries=True,
                           retrying: Optional[AsyncRetrying] = None,
-                          verify_ssl: Optional[bool] = None
                           ):
         retrying = retrying or zyte_api_retrying
         post = _post_func(session)
@@ -95,8 +93,7 @@ class AsyncClient:
                 url=self.api_url + endpoint,
                 json=query,
                 auth=auth,
-                headers=headers,
-                ssl=_set_ssl_mode(verify_ssl)
+                headers=headers
             )
 
             try:

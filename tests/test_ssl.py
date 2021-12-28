@@ -2,9 +2,9 @@ import ssl
 from typing import Optional, Union
 
 import pytest
-from aiohttp import TCPConnector
+from aiohttp import ClientConnectorCertificateError, TCPConnector
 
-from tests.mockserver import MockServer
+from tests.server.mockserver import MockServer
 from zyte_api.aio.client import create_session, AsyncClient
 
 
@@ -56,8 +56,25 @@ def test_verify_connector_conflict(verify_ssl: Optional[bool],
 
 
 @pytest.mark.asyncio
-async def test_base_request():
-    with MockServer() as server:
-        client = AsyncClient(api_url=server.urljoin("/"), api_key="TEST")
-        resp = await client.request_raw({'url': 'https://example.com', 'browserHtml': True})
-        print()
+async def test_disabled_ssl_verification():
+    with MockServer():
+        session = create_session(verify_ssl=False)
+        data = {'url': 'https://example.com', 'browserHtml': True}
+        client = AsyncClient(api_url="https://127.0.0.1:4443/", api_key="TEST")
+        resp = await client.request_raw(data,
+                                        handle_retries=False,
+                                        session=session)
+        # Check mirorred data
+        assert resp == data
+
+
+@pytest.mark.asyncio
+async def test_enabled_ssl_verification():
+    with MockServer():
+        session = create_session()
+        data = {'url': 'https://example.com', 'browserHtml': True}
+        client = AsyncClient(api_url="https://127.0.0.1:4443/", api_key="TEST")
+        with pytest.raises(ClientConnectorCertificateError):
+            await client.request_raw(data,
+                                     handle_retries=False,
+                                     session=session)
