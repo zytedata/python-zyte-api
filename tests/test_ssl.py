@@ -4,7 +4,8 @@ from typing import Optional, Union
 import pytest
 from aiohttp import TCPConnector
 
-from zyte_api.aio.client import create_session
+from tests.mockserver import MockServer
+from zyte_api.aio.client import create_session, AsyncClient
 
 
 @pytest.mark.parametrize(
@@ -52,3 +53,11 @@ def test_verify_connector_conflict(verify_ssl: Optional[bool],
     connector = TCPConnector(ssl=ssl_mode)
     with pytest.raises(ValueError, match=error_message):
         create_session(connector=connector, verify_ssl=verify_ssl)
+
+
+@pytest.mark.asyncio
+async def test_base_request():
+    with MockServer() as server:
+        client = AsyncClient(api_url=server.urljoin("/"), api_key="TEST")
+        resp = await client.request_raw({'url': 'https://example.com', 'browserHtml': True})
+        print()
