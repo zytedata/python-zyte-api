@@ -18,7 +18,7 @@ from zyte_api.aio.client import create_session, AsyncClient
 )
 def test_verify_ssl(verify_ssl: Optional[bool], expected_ssl_mode: Optional[bool]):
     session = create_session(verify_ssl=verify_ssl)
-    assert session.connector._ssl == expected_ssl_mode  # NOQA
+    assert session.connector._ssl == expected_ssl_mode  # type: ignore
 
 
 @pytest.mark.parametrize(
@@ -33,7 +33,7 @@ def test_verify_ssl(verify_ssl: Optional[bool], expected_ssl_mode: Optional[bool
 def test_connector_ssl(ssl_mode: Optional[Union[bool, ssl.SSLContext]]):
     connector = TCPConnector(ssl=ssl_mode)
     session = create_session(connector=connector)
-    assert session.connector._ssl == ssl_mode  # NOQA
+    assert session.connector._ssl == ssl_mode  # type: ignore
 
 
 @pytest.mark.parametrize(
