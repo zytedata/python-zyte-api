@@ -74,7 +74,7 @@ async def test_enabled_ssl_verification():
         session = create_session()
         data = {'url': 'https://example.com', 'browserHtml': True}
         client = AsyncClient(api_url="https://127.0.0.1:4443/", api_key="TEST")
-        with pytest.raises(ClientConnectorCertificateError):
+        with pytest.raises((ClientConnectorCertificateError, ssl.SSLError)): # NOQA
             await client.request_raw(data,
                                      handle_retries=False,
                                      session=session)
