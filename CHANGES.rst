@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.1.3 (2022-02-03)
+------------------
+
+* Minor documenation fix
+* Remove support for Python 3.6
+* Added support for Python 3.10
+
 0.1.2 (2021-11-10)
 ------------------
 

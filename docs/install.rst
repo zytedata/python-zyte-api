@@ -8,7 +8,7 @@ Installation
 
     pip install zyte-api
 
-``zyte-api`` requires Python 3.6+.
+``zyte-api`` requires Python 3.7+.
 
 API key
 =======
