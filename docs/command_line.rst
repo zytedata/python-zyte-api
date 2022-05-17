@@ -27,7 +27,7 @@ Then run a script, to get the results:
 If you need more flexibility, you can customize the requests by creating
 a JsonLines file with queries: a JSON object per line. You can pass any
 `Zyte Data API`_ options there. For example, you could create the following
-``requests.jl`` file:
+``requests.jsonl`` file:
 
 .. code-block:: json
 
@@ -40,11 +40,11 @@ See `API docs`_ for a description of all supported parameters.
 .. _API docs: https://docs.zyte.com/zyte-api/openapi.html
 .. _Zyte Data API: https://docs.zyte.com/zyte-api/get-started.html
 
-To get results for this ``requests.jl`` file, run:
+To get results for this ``requests.jsonl`` file, run:
 
 .. code-block:: shell
 
-    python -m zyte_api --intype jl requests.jl --output res.jl
+    python -m zyte_api requests.jsonl --output res.jsonl
 
 Processing speed
 ~~~~~~~~~~~~~~~~
