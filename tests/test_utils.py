@@ -1,6 +1,6 @@
 import pytest
 
-from zyte_api.__main__ import _guess_intype
+from zyte_api.utils import _guess_intype
 
 
 @pytest.mark.parametrize(

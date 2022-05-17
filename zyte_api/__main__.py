@@ -2,12 +2,10 @@
 
 import argparse
 import json
-import re
 import sys
 import asyncio
 import logging
 import random
-from os.path import splitext
 
 import tqdm
 
@@ -16,6 +14,7 @@ from zyte_api.aio.client import (
     AsyncClient
 )
 from zyte_api.constants import ENV_VARIABLE, API_URL
+from zyte_api.utils import _guess_intype
 
 
 logger = logging.getLogger('zyte_api')
@@ -55,20 +54,6 @@ async def run(queries, out, n_conn, stop_on_errors, api_url,
     logger.info(f"\nAPI error types:\n{client.agg_stats.api_error_types.most_common()}")
     logger.info(f"\nStatus codes:\n{client.agg_stats.status_codes.most_common()}")
     logger.info(f"\nException types:\n{client.agg_stats.exception_types.most_common()}")
-
-
-def _guess_intype(file_name, lines):
-    _, dot_extension = splitext(file_name)
-    extension = dot_extension[1:]
-    if extension in {"jl", "jsonl"}:
-        return "jl"
-    if extension == "txt":
-        return "txt"
-
-    if re.search(r'^\s*\{', lines[0]):
-        return "jl"
-
-    return "txt"
 
 
 def read_input(input_fp, intype):
