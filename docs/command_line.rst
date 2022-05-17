@@ -15,7 +15,7 @@ Then run a script, to get the results:
 
 .. code-block:: shell
 
-    python -m zyte_api urls.txt --output res.jl
+    python -m zyte_api urls.txt --output res.jsonl
 
 .. note::
     The results can be stored in an order which is different from the input
@@ -61,7 +61,7 @@ To set these options in the CLI, use the ``--n-conn`` argument:
 
 .. code-block:: shell
 
-    python -m zyte_api urls.txt --n-conn 30 --output res.jl
+    python -m zyte_api urls.txt --n-conn 30 --output res.jsonl
 
 If too many requests are being processed in parallel, you'll be getting
 throttling errors. They are handled by CLI automatically, but they make
@@ -84,7 +84,7 @@ input queries before sending them to the API:
 
 .. code-block:: shell
 
-    python -m zyte_api urls.txt --shuffle --output res.jl
+    python -m zyte_api urls.txt --shuffle --output res.jsonl
 
 Run ``python -m zyte_api --help`` to get description of all supported
 options.
