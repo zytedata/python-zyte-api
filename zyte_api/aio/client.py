@@ -7,7 +7,7 @@ import time
 from base64 import b64decode
 from collections.abc import Mapping
 from functools import partial
-from typing import Awaitable, Iterator, List, Optional
+from typing import Awaitable, Iterator, List, Optional, Union
 
 import aiohttp
 from aiohttp import TCPConnector
@@ -20,6 +20,12 @@ from ..constants import API_URL, API_TIMEOUT
 from ..stats import AggStats, ResponseStats
 from ..utils import _to_lower_camel_case, user_agent
 
+
+class _NotLoaded:
+    pass
+
+
+_NOT_LOADED = _NotLoaded()
 
 # 120 seconds is probably too long, but we are concerned about the case with
 # many concurrent requests and some processing logic running in the same reactor,
@@ -56,6 +62,7 @@ class ExtractResult(Mapping):
 
     def __init__(self, api_response: dict):
         self._api_response = api_response
+        self._http_response_body: Union[bytes|_NotLoaded] = _NOT_LOADED
 
     def __getitem__(self, key):
         return self._api_response[key]
@@ -67,13 +74,12 @@ class ExtractResult(Mapping):
         return len(self._api_response)
 
     @property
-    def http_response_body(self): -> bytes:
-        if hasattr(self, "_http_response_body"):
-            return self._http_response_body
-        base64_body = self._api_response.get("httpResponseBody", None)
-        if base64_body is None:
-            raise ValueError("API response has no httpResponseBody key.")
-        self._http_response_body = b64decode(base64_body)
+    def http_response_body(self) -> Union[bytes|_NotLoaded]:
+        if self._http_response_body is _NOT_LOADED:
+            base64_body = self._api_response.get("httpResponseBody", None)
+            if base64_body is None:
+                raise ValueError("API response has no httpResponseBody key.")
+            self._http_response_body = b64decode(base64_body)
         return self._http_response_body
 
 
@@ -198,9 +204,9 @@ class AsyncClient:
         handle_retries: bool = True,
         retrying: Optional[AsyncRetrying] = None,
         **kwargs,
-    ) -> Awaitable[ExtractResult]:
+    ) -> ExtractResult:
         """…"""
-        query = self._build_extract_query({**kwargs, 'url'=url})
+        query = self._build_extract_query({**kwargs, 'url': url})
         response = await self.request_raw(
             query=query,
             endpoint='extract',
