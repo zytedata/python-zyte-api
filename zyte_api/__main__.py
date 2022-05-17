@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 """ Basic command-line interface for Zyte Data APIs. """
+
 import argparse
 import json
+import re
 import sys
 import asyncio
 import logging
 import random
+from os.path import splitext
 
 import tqdm
 
@@ -17,6 +19,8 @@ from zyte_api.constants import ENV_VARIABLE, API_URL
 
 
 logger = logging.getLogger('zyte_api')
+
+_UNSET = object()
 
 
 async def run(queries, out, n_conn, stop_on_errors, api_url,
@@ -53,15 +57,32 @@ async def run(queries, out, n_conn, stop_on_errors, api_url,
     logger.info(f"\nException types:\n{client.agg_stats.exception_types.most_common()}")
 
 
+def _guess_intype(file_name, lines):
+    _, dot_extension = splitext(file_name)
+    extension = dot_extension[1:]
+    if extension in {"jl", "jsonl"}:
+        return "jl"
+    if extension == "txt":
+        return "txt"
+
+    if re.search(r'^\s*\{', lines[0]):
+        return "jl"
+
+    return "txt"
+
+
 def read_input(input_fp, intype):
-    assert intype in {"txt", "jl"}
+    assert intype in {"txt", "jl", _UNSET}
+    lines = input_fp.readlines()
+    if intype is _UNSET:
+        intype = _guess_intype(input_fp.name, lines)
     if intype == "txt":
-        urls = [u.strip() for u in input_fp.readlines() if u.strip()]
+        urls = [u.strip() for u in lines if u.strip()]
         records = [{"url": url, "browserHtml": True} for url in urls]
     else:
         records = [
             json.loads(line.strip())
-            for line in input_fp.readlines() if line.strip()
+            for line in lines if line.strip()
         ]
     # Automatically replicating the url in echoData to being able to
     # to match URLs with content in the responses
@@ -82,11 +103,14 @@ if __name__ == '__main__':
                    type=argparse.FileType("r", encoding='utf8'),
                    help="Input file with urls, url per line by default. The "
                         "Format can be changed using `--intype` argument.")
-    p.add_argument("--intype", default="txt", choices=["txt", "jl"],
-                   help='Type of the input file (default: %(default)s). '
-                        'Allowed values are "txt": input should be one '
-                        'URL per line, and "jl": input should be a jsonlines '
-                        'file, with {"url": "...", ..} dicts')
+    p.add_argument("--intype", default=_UNSET, choices=["txt", "jl"],
+                   help="Type of the input file. "
+                        "Allowed values are 'txt' (1 URL per line) and 'jl' "
+                        "(JSON Lines file, each object describing the "
+                        "parameters of a request). "
+                        "If not specified, the input type is guessed based on "
+                        "the input file name extension (.jl, .jsonl, .txt) or "
+                        "content, and assumed to be txt if guessing fails.")
     p.add_argument("--limit", type=int,
                    help="Max number of URLs to take from the input")
     p.add_argument("--output", "-o",
