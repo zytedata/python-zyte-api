@@ -5,6 +5,7 @@ Command-line interface
 ======================
 
 The most basic way to use the client is from a command line.
+
 First, create a file with urls, an URL per line (e.g. ``urls.txt``).
 
 Second, set ``ZYTE_API_KEY`` env variable with your
@@ -17,12 +18,13 @@ Then run a script, to get the results:
 
     zyte-api urls.txt --output res.jsonl
 
-.. note::
-    The results can be stored in an order which is different from the input
-    order. If you need to match the output results to the input URLs, the
-    best way is to use the ``echoData`` field (see below); it is passed through,
-    and returned as-is in the ``echoData`` attribute. By default it will
-    contain the input URL the content belongs to.
+.. note:: You may use ``python -m zyte_api`` instead of ``zyte-api``.
+
+The results may be stored in an order which is different from the input order.
+If you need to match the output results to the input URLs, the best way is to
+use the ``echoData`` field (see below); it is passed through, and returned
+as-is in the ``echoData`` attribute. By default it will contain the input URL
+the content belongs to.
 
 If you need more flexibility, you can customize the requests by creating
 a JsonLines file with queries: a JSON object per line. You can pass any
