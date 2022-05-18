@@ -21,6 +21,9 @@ setup(
     author_email='opensource@zyte.com',
     url='https://github.com/zytedata/python-zyte-api',
     packages=find_packages(exclude=['tests', 'examples']),
+    entry_points = {
+        'console_scripts': ['zyte-api=zyte_api.__main__:_main'],
+    },
     install_requires=[
         'requests',
         'tenacity',

@@ -76,10 +76,10 @@ def read_input(input_fp, intype):
     return records
 
 
-if __name__ == '__main__':
+def _main(program_name='zyte-api'):
     """ Process urls from input file through Zyte Data API """
     p = argparse.ArgumentParser(
-        prog='python -m zyte_api',
+        prog=program_name,
         description="""
         Process input URLs from a file using Zyte Data API.
         """,
@@ -141,3 +141,7 @@ if __name__ == '__main__':
                api_key=args.api_key)
     loop.run_until_complete(coro)
     loop.close()
+
+
+if __name__ == '__main__':
+    _main(program_name='python -m zyte_api')
