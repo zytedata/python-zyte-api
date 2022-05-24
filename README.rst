@@ -38,11 +38,11 @@ Make sure you have an API key for the `Zyte Data API`_ service.
 You can set ``ZYTE_API_KEY`` environment
 variable with the key to avoid passing it around explicitly.
 
-Read the `documentation <http://python-zyte-api.readthedocs.io>`_  for more information.
+Read the `documentation <https://python-zyte-api.readthedocs.io>`_  for more information.
 
 License is BSD 3-clause.
 
-* Documentation: http://python-zyte-api.readthedocs.io
+* Documentation: https://python-zyte-api.readthedocs.io
 * Source code: https://github.com/zytedata/python-zyte-api
 * Issue tracker: https://github.com/zytedata/python-zyte-api/issues
 

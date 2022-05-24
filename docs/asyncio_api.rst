@@ -20,7 +20,7 @@ You can use the method ``request_raw`` to perform individual requests:
             'browserHtml': True
         })
 
-    response = asyncio.run(single_request("http://books.toscrape.com"))
+    response = asyncio.run(single_request("https://books.toscrape.com"))
     # Do something with the response ..
 
 There is also ``request_parallel_as_completed`` method, which allows
@@ -52,7 +52,7 @@ to process many URLs in parallel, using multiple connections:
                     print(e, file=sys.stderr)
                     raise
 
-    urls = ["http://toscrape.com", "http://books.toscrape.com"]
+    urls = ["https://toscrape.com", "https://books.toscrape.com"]
     asyncio.run(extract_from(urls, n_conn=15))
 
 ``request_parallel_as_completed`` is modelled after ``asyncio.as_completed``
