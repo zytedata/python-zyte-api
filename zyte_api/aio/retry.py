@@ -51,7 +51,7 @@ def _is_network_error(exc: BaseException) -> bool:
 
 
 def _is_throttling_error(exc: BaseException) -> bool:
-    return isinstance(exc, RequestError) and exc.status in (429, 503)
+    return isinstance(exc, RequestError) and exc.status in (429, 503, 520)
 
 
 # def _is_temporary_download_error(exc: Exception) -> bool:
