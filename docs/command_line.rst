@@ -20,6 +20,12 @@ Then run a script, to get the results:
 
 .. note:: You may use ``python -m zyte_api`` instead of ``zyte-api``.
 
+Requests to get browser HTML from those input URLs will be sent to Zyte Data
+API, using up to 20 parallel connections, and the API responses will be stored
+in the ``res.jsonl`` `JSON Lines`_ file, 1 response per line.
+
+.. _JSON Lines: https://jsonlines.org/
+
 The results may be stored in an order which is different from the input order.
 If you need to match the output results to the input URLs, the best way is to
 use the ``echoData`` field (see below); it is passed through, and returned
@@ -27,7 +33,7 @@ as-is in the ``echoData`` attribute. By default it will contain the input URL
 the content belongs to.
 
 If you need more flexibility, you can customize the requests by creating
-a JsonLines file with queries: a JSON object per line. You can pass any
+a JSON Lines file with queries: a JSON object per line. You can pass any
 `Zyte Data API`_ options there. For example, you could create the following
 ``requests.jsonl`` file:
 
