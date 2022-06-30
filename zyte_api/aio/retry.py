@@ -54,8 +54,8 @@ def _is_throttling_error(exc: BaseException) -> bool:
     return isinstance(exc, RequestError) and exc.status in (429, 503)
 
 
-# def _is_temporary_download_error(exc: Exception) -> bool:
-#     return isinstance(exc, RequestError) and exc.status == 520
+def _is_temporary_download_error(exc: Exception) -> bool:
+    return isinstance(exc, RequestError) and exc.status == 520
 
 
 class RetryFactory:
@@ -63,9 +63,9 @@ class RetryFactory:
     Build custom retry configuration
     """
     retry_condition = (
-        retry_if_exception(_is_throttling_error) |
-        retry_if_exception(_is_network_error)
-        # retry_if_exception(_is_temporary_download_error)
+        retry_if_exception(_is_throttling_error)
+        | retry_if_exception(_is_network_error)
+        | retry_if_exception(_is_temporary_download_error)
     )
     # throttling
     throttling_wait = wait_chain(
@@ -85,10 +85,10 @@ class RetryFactory:
         # wait from 3s to ~1m
         wait_random(3, 7) + wait_random_exponential(multiplier=1, max=55)
     )
-    # temporary_download_error_wait = network_error_wait
+    temporary_download_error_wait = network_error_wait
     throttling_stop = stop_never
     network_error_stop = stop_after_delay(5 * 60)
-    # temporary_download_error_stop = stop_after_delay(15 * 60)
+    temporary_download_error_stop = stop_after_delay(15 * 60)
 
     def wait(self, retry_state: RetryCallState) -> float:
         assert retry_state.outcome, "Unexpected empty outcome"
@@ -98,8 +98,8 @@ class RetryFactory:
             return self.throttling_wait(retry_state=retry_state)
         elif _is_network_error(exc):
             return self.network_error_wait(retry_state=retry_state)
-        # elif _is_temporary_download_error(exc):
-        #     return self.temporary_download_error_wait(retry_state=retry_state)
+        elif _is_temporary_download_error(exc):
+            return self.temporary_download_error_wait(retry_state=retry_state)
         else:
             raise RuntimeError("Invalid retry state exception: %s" % exc)
 
@@ -111,8 +111,8 @@ class RetryFactory:
             return self.throttling_stop(retry_state)
         elif _is_network_error(exc):
             return self.network_error_stop(retry_state)
-        # elif _is_temporary_download_error(exc):
-        #     return self.temporary_download_error_stop(retry_state)
+        elif _is_temporary_download_error(exc):
+            return self.temporary_download_error_stop(retry_state)
         else:
             raise RuntimeError("Invalid retry state exception: %s" % exc)
 
