@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.2.0 (2022-07-14)
+------------------
+
+* Temporary download errors are now retried 3 times by default.
+  They were not retried in previous releases.
+
 0.1.4 (2022-05-21)
 ------------------
 This release contains usability improvements to the command-line script:
