@@ -1,8 +1,8 @@
 Changes
 =======
 
-0.2.1 (to be released)
-----------------------
+0.2.1 (2022-07-29)
+------------------
 
 * ``aiohttp.client_exceptions.ClientConnectorError`` is now treated as a
   network error and retried accordingly.
