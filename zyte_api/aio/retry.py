@@ -38,6 +38,7 @@ _NETWORK_ERRORS = (
     client_exceptions.ServerTimeoutError,
     client_exceptions.ClientPayloadError,
     client_exceptions.ClientConnectorSSLError,
+    client_exceptions.ClientConnectorError,
 )
 
 
