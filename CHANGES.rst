@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.2.1 (to be released)
+----------------------
+
+* ``aiohttp.client_exceptions.ClientConnectorError`` is now treated as a
+  network error and retried accordingly.
+* Removed the unused ``zyte_api.sync`` module.
+
 0.2.0 (2022-07-14)
 ------------------
 
