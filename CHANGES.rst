@@ -1,8 +1,8 @@
 Changes
 =======
 
-0.3.0 (to be released)
-----------------------
+0.3.0 (2022-07-29)
+------------------
 
 Internal AggStats class is cleaned up:
 
