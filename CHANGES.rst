@@ -1,6 +1,19 @@
 Changes
 =======
 
+0.3.0 (to be released)
+----------------------
+
+Internal AggStats class is cleaned up:
+
+* ``AggStats.n_extracted_queries`` attribute is removed, as it was a duplicate
+  of ``AggStats.n_results``
+* ``AggStats.n_results`` is renamed to ``AggStats.n_success``
+* ``AggStats.n_input_queries`` is removed as redundant and misleading;
+  AggStats got a new ``AggStats.n_processed`` property instead.
+
+This change is backwards incompatible if you used stats directly.
+
 0.2.1 (2022-07-29)
 ------------------
 
