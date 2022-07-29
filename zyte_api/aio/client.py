@@ -114,14 +114,11 @@ class AsyncClient:
         try:
             # Try to make a request
             result = await request()
-            self.agg_stats.n_extracted_queries += 1
+            self.agg_stats.n_success += 1
         except Exception:
             self.agg_stats.n_fatal_errors += 1
             raise
-        finally:
-            self.agg_stats.n_input_queries += 1
 
-        self.agg_stats.n_results += 1
         return result
 
     def request_parallel_as_completed(self,
