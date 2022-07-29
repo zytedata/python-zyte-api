@@ -24,16 +24,13 @@ class AggStats:
     def __init__(self):
         self.time_connect_stats = Statistics()
         self.time_total_stats = Statistics()
-        self.n_results = 0
-        self.n_fatal_errors = 0
 
-        self.n_attempts = 0
-        self.n_429 = 0
-        self.n_errors = 0
+        self.n_success = 0  # number of successful results returned to the user
+        self.n_fatal_errors = 0  # number of errors returned to the user, after all retries
 
-        self.n_input_queries = 0
-        self.n_extracted_queries = 0  # Queries answered without any type of error
-        self.n_query_responses = 0
+        self.n_attempts = 0  # total amount of requests made to Zyte API, including retries
+        self.n_429 = 0  # number of 429 (throttling) responses
+        self.n_errors = 0  # number of errors, including errors which were retried
 
         self.status_codes = Counter()
         self.exception_types = Counter()
@@ -47,8 +44,8 @@ class AggStats:
             self.n_errors - self.n_fatal_errors,
             self.n_fatal_errors,
             self.error_ratio(),
-            self.n_extracted_queries,
-            self.n_input_queries,
+            self.n_success,
+            self.n_processed,
             self.success_ratio()
         )
 
@@ -66,7 +63,7 @@ class AggStats:
                 self.n_fatal_errors,
                 self.n_errors - self.n_fatal_errors) +
             "Successful URLs:          {} of {}\n".format(
-                self.n_extracted_queries, self.n_input_queries) +
+                self.n_success, self.n_processed) +
             "Success ratio:            {:0.1%}\n".format(self.success_ratio())
         )
 
@@ -80,7 +77,12 @@ class AggStats:
 
     @zero_on_division_error
     def success_ratio(self):
-        return self.n_extracted_queries / self.n_input_queries
+        return self.n_success / self.n_processed
+
+    @property
+    def n_processed(self):
+        """ Total number of processed URLs """
+        return self.n_success + self.n_fatal_errors
 
 
 @attr.s
