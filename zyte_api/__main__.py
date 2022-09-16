@@ -1,4 +1,4 @@
-""" Basic command-line interface for Zyte Data APIs. """
+""" Basic command-line interface for Zyte API. """
 
 import argparse
 import json
@@ -77,11 +77,11 @@ def read_input(input_fp, intype):
 
 
 def _main(program_name='zyte-api'):
-    """ Process urls from input file through Zyte Data API """
+    """ Process urls from input file through Zyte API """
     p = argparse.ArgumentParser(
         prog=program_name,
         description="""
-        Process input URLs from a file using Zyte Data API.
+        Process input URLs from a file using Zyte API.
         """,
     )
     p.add_argument("input",
@@ -107,11 +107,11 @@ def _main(program_name='zyte-api'):
                    help="number of connections to the API server "
                         "(default: %(default)s)")
     p.add_argument("--api-key",
-                   help="Zyte Data API key. "
+                   help="Zyte API key. "
                         "You can also set %s environment variable instead "
                         "of using this option." % ENV_VARIABLE)
     p.add_argument("--api-url",
-                   help="Zyte Data API endpoint (default: %(default)s)",
+                   help="Zyte API endpoint (default: %(default)s)",
                    default=API_URL)
     p.add_argument("--loglevel", "-L", default="INFO",
                    choices=["DEBUG", "INFO", "WARNING", "ERROR"],
@@ -130,7 +130,7 @@ def _main(program_name='zyte-api'):
         queries = queries[:args.limit]
 
     logger.info(f"Loaded {len(queries)} urls from {args.input.name}; shuffled: {args.shuffle}")
-    logger.info(f"Running Zyte Data API (connections: {args.n_conn})")
+    logger.info(f"Running Zyte API (connections: {args.n_conn})")
 
     loop = asyncio.get_event_loop()
     coro = run(queries,

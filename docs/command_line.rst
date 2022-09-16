@@ -20,9 +20,9 @@ Then run a script, to get the results:
 
 .. note:: You may use ``python -m zyte_api`` instead of ``zyte-api``.
 
-Requests to get browser HTML from those input URLs will be sent to Zyte Data
-API, using up to 20 parallel connections, and the API responses will be stored
-in the ``res.jsonl`` `JSON Lines`_ file, 1 response per line.
+Requests to get browser HTML from those input URLs will be sent to Zyte API,
+using up to 20 parallel connections, and the API responses will be stored in
+the ``res.jsonl`` `JSON Lines`_ file, 1 response per line.
 
 .. _JSON Lines: https://jsonlines.org/
 
@@ -34,7 +34,7 @@ the content belongs to.
 
 If you need more flexibility, you can customize the requests by creating
 a JSON Lines file with queries: a JSON object per line. You can pass any
-`Zyte Data API`_ options there. For example, you could create the following
+`Zyte API`_ options there. For example, you could create the following
 ``requests.jsonl`` file:
 
 .. code-block:: json
@@ -46,7 +46,7 @@ a JSON Lines file with queries: a JSON object per line. You can pass any
 See `API docs`_ for a description of all supported parameters.
 
 .. _API docs: https://docs.zyte.com/zyte-api/openapi.html
-.. _Zyte Data API: https://docs.zyte.com/zyte-api/get-started.html
+.. _Zyte API: https://docs.zyte.com/zyte-api/get-started.html
 
 To get results for this ``requests.jsonl`` file, run:
 
@@ -76,11 +76,11 @@ throttling errors. They are handled by CLI automatically, but they make
 extraction less efficient; please tune the concurrency options to
 not hit the throttling errors (HTTP 429) often.
 
-You may be also limited by the website speed. The Zyte Data API tries not to hit
-any individual website too hard, but it could be better to limit this on
-a client side as well. If you're extracting data from a single website,
-it could make sense to decrease the amount of parallel requests; it can ensure
-higher success ratio overall.
+You may be also limited by the website speed. The Zyte API tries not to hit any
+individual website too hard, but it could be better to limit this on a client
+side as well. If you're extracting data from a single website, it could make
+sense to decrease the amount of parallel requests; it can ensure higher success
+ratio overall.
 
 If you're extracting data from multiple websites, it makes sense to spread the
 load across time: if you have websites A, B and C, don't send requests in

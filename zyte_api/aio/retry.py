@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Zyte Data Extraction retrying logic.
+Zyte API retrying logic.
 
-TODO: add sync support; only aio is supported at the moment.
 TODO: Implement retry logic for temparary errors (520) using the proposed retry-after header.
 """
 import asyncio

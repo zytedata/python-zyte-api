@@ -6,7 +6,7 @@ import attr
 
 @attr.s(auto_attribs=True)
 class ParsedError:
-    """ Parsed error from Zyte Data API """
+    """ Parsed error from Zyte API """
     response_body: bytes
     data: Optional[dict]
     parse_error: Optional[str]
