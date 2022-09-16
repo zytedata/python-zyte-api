@@ -18,7 +18,7 @@ python-zyte-api
    :target: https://codecov.io/gh/zytedata/zyte-api
    :alt: Coverage report
 
-Python client libraries for `Zyte Data API`_.
+Python client libraries for `Zyte API`_.
 
 Command-line utility and asyncio-based library are provided by this package.
 
@@ -34,7 +34,7 @@ Installation
 API key
 =======
 
-Make sure you have an API key for the `Zyte Data API`_ service.
+Make sure you have an API key for the `Zyte API`_ service.
 You can set ``ZYTE_API_KEY`` environment
 variable with the key to avoid passing it around explicitly.
 
@@ -46,4 +46,4 @@ License is BSD 3-clause.
 * Source code: https://github.com/zytedata/python-zyte-api
 * Issue tracker: https://github.com/zytedata/python-zyte-api/issues
 
-.. _Zyte Data API: https://docs.zyte.com/zyte-api/get-started.html
+.. _Zyte API: https://docs.zyte.com/zyte-api/get-started.html

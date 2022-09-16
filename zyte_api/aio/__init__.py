@@ -1,3 +1,3 @@
 """
-Asyncio client for Zyte Data API
+Asyncio client for Zyte API
 """

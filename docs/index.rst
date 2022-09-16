@@ -2,7 +2,7 @@
 python-zyte-api
 ===============
 
-Python client libraries for `Zyte Data API`_.
+Python client libraries for `Zyte API`_.
 
 Command-line utility and asyncio-based library are provided by this package.
 
@@ -25,4 +25,4 @@ Command-line utility and asyncio-based library are provided by this package.
    changelog
    license
 
-.. _Zyte Data API: https://docs.zyte.com/zyte-api/get-started.html
+.. _Zyte API: https://docs.zyte.com/zyte-api/get-started.html

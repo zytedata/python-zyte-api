@@ -1,5 +1,5 @@
 """
-Asyncio client for Zyte Data API
+Asyncio client for Zyte API
 """
 
 import asyncio
@@ -127,7 +127,7 @@ class AsyncClient:
                                       endpoint: str = 'extract',
                                       session: Optional[aiohttp.ClientSession] = None,
                                       ) -> Iterator[asyncio.Future]:
-        """ Send multiple requests to Zyte Data API in parallel.
+        """ Send multiple requests to Zyte API in parallel.
         Return an `asyncio.as_completed` iterator.
 
         ``queries`` is a list of requests to process (dicts).
