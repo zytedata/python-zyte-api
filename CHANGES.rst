@@ -1,6 +1,11 @@
 Changes
 =======
 
+TBR
+---
+
+* Require to install ``Brotli`` as a dependency.
+
 0.3.0 (2022-07-29)
 ------------------
 

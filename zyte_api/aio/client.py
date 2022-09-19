@@ -10,6 +10,7 @@ from typing import Optional, Iterator, List
 import aiohttp
 from aiohttp import TCPConnector
 from tenacity import AsyncRetrying
+from aiohttp.http_parser import HAS_BROTLI
 
 from .errors import RequestError
 from .retry import zyte_api_retrying
@@ -64,6 +65,12 @@ class AsyncClient:
         post = _post_func(session)
         auth = aiohttp.BasicAuth(self.api_key)
         headers = {'User-Agent': user_agent(aiohttp)}
+
+        # NOTE: Remove this check if the following commit for aiohttp which
+        # adds direct client support for brotli has been released after 3.8.1:
+        # https://github.com/aio-libs/aiohttp/commit/28ea32d2282728a94af73c87efd6ab314c14320e
+        if HAS_BROTLI:
+            headers['Accept-Encoding'] = 'br'
 
         response_stats = []
         start_global = time.perf_counter()

@@ -27,10 +27,11 @@ setup(
     install_requires=[
         'requests',
         'tenacity',
-        'aiohttp >= 3.6.0',
+        'aiohttp >= 3.7.3',
         'tqdm',
         'attrs',
         'runstats',
+        'brotli',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
