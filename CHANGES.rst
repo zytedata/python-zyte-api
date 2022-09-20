@@ -1,10 +1,11 @@
 Changes
 =======
 
-TBR
----
+0.4.0 (2022-09-20)
+------------------
 
-* Require to install ``Brotli`` as a dependency.
+* Require to install ``Brotli`` as a dependency. This changes the requests to
+  have ``Accept-Encoding: br`` and automatically decompress brotli responses.
 
 0.3.0 (2022-07-29)
 ------------------
