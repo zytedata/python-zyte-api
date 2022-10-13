@@ -87,7 +87,7 @@ class RetryFactory:
     )
     temporary_download_error_wait = network_error_wait
     throttling_stop = stop_never
-    network_error_stop = stop_after_delay(5 * 60)
+    network_error_stop = stop_after_delay(15 * 60)
     temporary_download_error_stop = stop_after_attempt(4)
 
     def wait(self, retry_state: RetryCallState) -> float:
