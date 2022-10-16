@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.4.1 (to be released)
+----------------------
+
+* Network errors, like server timeouts or disconnections, are now retried for
+  up to 15 minutes, instead of 5 minutes.
+
 0.4.0 (2022-09-20)
 ------------------
 
