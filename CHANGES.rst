@@ -1,8 +1,14 @@
 Changes
 =======
 
-0.4.1 (to be released)
-----------------------
+0.4.2 (2022-10-28)
+------------------
+* Bump minimum ``aiohttp`` version to 3.8.0, as earlier versions don't support
+  brotli decompression of responses
+* Declared Python 3.11 support
+
+0.4.1 (2022-10-16)
+------------------
 
 * Network errors, like server timeouts or disconnections, are now retried for
   up to 15 minutes, instead of 5 minutes.
