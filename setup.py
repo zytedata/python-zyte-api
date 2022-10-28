@@ -27,7 +27,7 @@ setup(
     install_requires=[
         'requests',
         'tenacity',
-        'aiohttp >= 3.7.3',
+        'aiohttp >= 3.8.0',
         'tqdm',
         'attrs',
         'runstats',
