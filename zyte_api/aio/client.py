@@ -3,6 +3,7 @@ Asyncio client for Zyte API
 """
 
 import asyncio
+import logging
 import time
 from functools import partial
 from typing import Optional, Iterator, List
@@ -18,18 +19,27 @@ from ..constants import API_URL, API_TIMEOUT
 from ..stats import AggStats, ResponseStats
 from ..utils import user_agent
 
-
 # 120 seconds is probably too long, but we are concerned about the case with
 # many concurrent requests and some processing logic running in the same reactor,
 # thus, saturating the CPU. This will make timeouts more likely.
 AIO_API_TIMEOUT = aiohttp.ClientTimeout(total=API_TIMEOUT + 120)
 
+logger = logging.getLogger(__name__)
 
-def create_session(connection_pool_size=100, **kwargs) -> aiohttp.ClientSession:
+
+def create_session(connection_pool_size: int = 100, **kwargs) -> aiohttp.ClientSession:
     """ Create a session with parameters suited for Zyte API """
     kwargs.setdefault('timeout', AIO_API_TIMEOUT)
+    verify_ssl_provided = "verify_ssl" in kwargs
+
+    ssl = _set_ssl_mode(kwargs.pop("verify_ssl", None))
     if "connector" not in kwargs:
-        kwargs["connector"] = TCPConnector(limit=connection_pool_size)
+        kwargs["connector"] = TCPConnector(limit=connection_pool_size, ssl=ssl)
+    else:
+        # If verify_ssl was explicitly provided, but differs from ssl mode provided to connector
+        if verify_ssl_provided and kwargs["connector"]._ssl != ssl:  # NOQA
+            raise ValueError(f"Provided `verify_ssl` argument ({ssl}) "
+                             f"conflicts with `connector` argument (connector._ssl={kwargs['connector']._ssl})")  # NOQA
     return aiohttp.ClientSession(**kwargs)
 
 
@@ -43,15 +53,22 @@ def _post_func(session):
         return session.post
 
 
+def _set_ssl_mode(verify_ssl: Optional[bool]) -> Optional[bool]:
+    # ssl certificate check could be either
+    # None (default, enabled), False (disabled), or custom SSL context (not relevant)
+    # https://docs.aiohttp.org/en/stable/client_reference.html#tcpconnector
+    return False if verify_ssl is False else None
+
+
 class AsyncClient:
     def __init__(self, *,
-                 api_key=None,
-                 api_url=API_URL,
-                 n_conn=15,
+                 api_key: Optional[str] = None,
+                 api_url: str = API_URL,
+                 n_conn: int = 15,
                  ):
-        self.api_key = get_apikey(api_key)
-        self.api_url = api_url
-        self.n_conn = n_conn
+        self.api_key: str = get_apikey(api_key)
+        self.api_url: str = api_url
+        self.n_conn: int = n_conn
         self.agg_stats = AggStats()
 
     async def request_raw(self, query: dict, *,
@@ -76,7 +93,7 @@ class AsyncClient:
                 url=self.api_url + endpoint,
                 json=query,
                 auth=auth,
-                headers=headers,
+                headers=headers
             )
 
             try:
@@ -141,7 +158,7 @@ class AsyncClient:
         async def _request(query):
             async with sem:
                 return await self.request_raw(query,
-                    endpoint=endpoint,
-                    session=session)
+                                              endpoint=endpoint,
+                                              session=session)
 
         return asyncio.as_completed([_request(query) for query in queries])
