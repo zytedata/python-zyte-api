@@ -25,13 +25,14 @@ setup(
         'console_scripts': ['zyte-api=zyte_api.__main__:_main'],
     },
     install_requires=[
-        'requests',
-        'tenacity',
         'aiohttp >= 3.8.0',
-        'tqdm',
         'attrs',
-        'runstats',
         'brotli',
+        'requests',
+        'runstats',
+        'tenacity',
+        'tqdm',
+        'w3lib',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
