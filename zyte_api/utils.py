@@ -1,6 +1,6 @@
 import re
 from os.path import splitext
-from typing import Union
+from typing import AnyStr
 from urllib.parse import quote, unquote, urlsplit, urlunsplit
 
 from w3lib.url import RFC3986_RESERVED, RFC3986_UNRESERVED, RFC3986_USERINFO_SAFE_CHARS
@@ -54,7 +54,7 @@ def _process_query(query):
 
 
 def _safe_url_string(
-    url: Union[bytes, str],
+    url: AnyStr,
     encoding: str = "utf8",
     path_encoding: str = "utf8",
     quote_path: bool = True,
