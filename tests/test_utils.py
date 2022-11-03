@@ -1,7 +1,16 @@
+from itertools import chain
+
 import pytest
 from pytest import raises
+from w3lib.url import _path_safe_chars, _safe_chars
 
-from zyte_api.utils import _guess_intype, _process_query
+from zyte_api.utils import (
+    _guess_intype,
+    _process_query,
+    RFC2396_FRAGMENT_SAFE_CHARS,
+    RFC2396_PATH_SAFE_CHARS,
+    RFC2396_QUERY_SAFE_CHARS,
+)
 
 
 @pytest.mark.parametrize(
@@ -59,14 +68,6 @@ def test_guess_intype(file_name, first_line, expected):
 
 
 @pytest.mark.parametrize(
-    "unaffected",
-    (
-        {},
-        {"a": "b"},
-        {"a": {"b": "c"}},
-    ),
-)
-@pytest.mark.parametrize(
     "input,output",
     (
         (
@@ -74,25 +75,90 @@ def test_guess_intype(file_name, first_line, expected):
             {"url": "https://example.com"},
         ),
         (
-            {"url": "https://example.com/a b"},
-            {"url": "https://example.com/a%20b"},
+            {
+                "a": {"b", "c"},
+                "d": "https://example.com/ a",
+                "url": "https://example.com/ a",
+            },
+            {
+                "a": {"b", "c"},
+                "d": "https://example.com/ a",
+                "url": "https://example.com/%20a",
+            },
+        ),
+        *(
+            (
+                {"url": f"https://example.com/{bytes([char]).decode()}"},
+                {"url": f"https://example.com/%{char:X}"},
+            )
+            for char in chain(
+                (
+                    ord(' '),
+                ),
+                # Characters that w3lib would not escape: []|%
+                (
+                    char
+                    for char in _path_safe_chars
+                    if (
+                        char not in RFC2396_PATH_SAFE_CHARS
+                        and char not in b"?#"
+                    )
+                )
+            )
         ),
         (
-            {"url": "https://example.com/a|b"},
-            {"url": "https://example.com/a%7Cb"},
+            {"url": "https://example.com/ñ"},
+            {"url": "https://example.com/%C3%B1"},
+        ),
+        *(
+            (
+                {"url": f"https://example.com?{bytes([char]).decode()}"},
+                {"url": f"https://example.com?%{char:X}"},
+            )
+            for char in chain(
+                (
+                    ord(' '),
+                ),
+                # Characters that w3lib would not escape: []|%
+                (
+                    char
+                    for char in _safe_chars
+                    if (
+                        char not in RFC2396_QUERY_SAFE_CHARS
+                        and char not in b"#"
+                    )
+                )
+            )
         ),
         (
-            {"url": "https://example.com?a=b c"},
-            {"url": "https://example.com?a=b%20c"},
+            {"url": "https://example.com?ñ"},
+            {"url": "https://example.com?%C3%B1"},
+        ),
+        *(
+            (
+                {"url": f"https://example.com#{bytes([char]).decode()}"},
+                {"url": f"https://example.com#%{char:X}"},
+            )
+            for char in chain(
+                (
+                    ord(' '),
+                ),
+                # Characters that w3lib would not escape: #[]|%
+                (
+                    char
+                    for char in _safe_chars
+                    if char not in RFC2396_FRAGMENT_SAFE_CHARS
+                )
+            )
         ),
         (
-            {"url": "https://example.com?a=b|c"},
-            {"url": "https://example.com?a=b%7Cc"},
+            {"url": "https://example.com#ñ"},
+            {"url": "https://example.com#%C3%B1"},
         ),
     ),
 )
-def test_process_query(unaffected, input, output):
-    assert _process_query({**unaffected, **input}) == {**unaffected, **output}
+def test_process_query(input, output):
+    assert _process_query(input) == output
 
 
 def test_process_query_bytes():

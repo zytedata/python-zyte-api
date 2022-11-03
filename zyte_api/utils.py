@@ -1,9 +1,9 @@
 import re
+from string import ascii_letters, digits
 from os.path import splitext
 from typing import AnyStr
 from urllib.parse import quote, unquote, urlsplit, urlunsplit
 
-from w3lib.url import RFC3986_RESERVED, RFC3986_UNRESERVED, RFC3986_USERINFO_SAFE_CHARS
 from w3lib.util import to_unicode
 
 from .__version__ import __version__
@@ -13,8 +13,15 @@ _ascii_tab_newline_re = re.compile(
     r"[\t\n\r]"
 )
 
-_SAFE_CHARS = RFC3986_RESERVED + RFC3986_UNRESERVED + b"%"
-_PATH_SAFE_CHARS = _SAFE_CHARS.replace(b"#", b"")
+RFC2396_RESERVED_CHARS = b";/?:@&=+$,"
+RFC2396_UNRESERVED_CHARS = (ascii_letters + digits + "-_.!~*'()").encode()
+RFC2396_USERINFO_SAFE_CHARS = RFC2396_UNRESERVED_CHARS + b";:&=+$,"
+RFC2396_PATH_SEPARATORS = b"/;"
+RFC2396_PATH_SAFE_CHARS = (
+    RFC2396_UNRESERVED_CHARS + RFC2396_PATH_SEPARATORS + b":@&=+$,"
+)
+RFC2396_QUERY_SAFE_CHARS = RFC2396_RESERVED_CHARS + RFC2396_UNRESERVED_CHARS
+RFC2396_FRAGMENT_SAFE_CHARS = RFC2396_QUERY_SAFE_CHARS
 
 
 def _guess_intype(file_name, lines):
@@ -82,11 +89,17 @@ def _safe_url_string(
     netloc_bytes = b""
     if username is not None or password is not None:
         if username is not None:
-            safe_username = quote(unquote(username), RFC3986_USERINFO_SAFE_CHARS)
+            safe_username = quote(
+                unquote(username),
+                RFC2396_USERINFO_SAFE_CHARS,
+            )
             netloc_bytes += safe_username.encode(encoding)
         if password is not None:
             netloc_bytes += b":"
-            safe_password = quote(unquote(password), RFC3986_USERINFO_SAFE_CHARS)
+            safe_password = quote(
+                unquote(password),
+                RFC2396_USERINFO_SAFE_CHARS,
+            )
             netloc_bytes += safe_password.encode(encoding)
         netloc_bytes += b"@"
     if hostname is not None:
@@ -101,7 +114,7 @@ def _safe_url_string(
     netloc = netloc_bytes.decode()
 
     if quote_path:
-        path = quote(parts.path.encode(path_encoding), _PATH_SAFE_CHARS)
+        path = quote(parts.path.encode(path_encoding), RFC2396_PATH_SAFE_CHARS)
     else:
         path = parts.path
 
@@ -110,8 +123,11 @@ def _safe_url_string(
             parts.scheme,
             netloc,
             path,
-            quote(parts.query.encode(encoding), _SAFE_CHARS),
-            quote(parts.fragment.encode(encoding), _SAFE_CHARS),
+            quote(parts.query.encode(encoding), RFC2396_QUERY_SAFE_CHARS),
+            quote(
+                parts.fragment.encode(encoding),
+                RFC2396_FRAGMENT_SAFE_CHARS,
+            ),
         )
     )
 
