@@ -29,7 +29,8 @@ def create_session(connection_pool_size=100, **kwargs) -> aiohttp.ClientSession:
     """ Create a session with parameters suited for Zyte API """
     kwargs.setdefault('timeout', AIO_API_TIMEOUT)
     if "connector" not in kwargs:
-        kwargs["connector"] = TCPConnector(limit=connection_pool_size)
+        kwargs["connector"] = TCPConnector(limit=connection_pool_size,
+                                           force_close=True)
     return aiohttp.ClientSession(**kwargs)
 
 
@@ -132,9 +133,9 @@ class AsyncClient:
 
         ``queries`` is a list of requests to process (dicts).
 
-        ``session`` is an optional aiohttp.ClientSession object;
-        use it to enable HTTP Keep-Alive. Set the session TCPConnector
-        limit to a value greater than the number of connections.
+        ``session`` is an optional aiohttp.ClientSession object.
+        Set the session TCPConnector limit to a value greater than
+        the number of connections.
         """
         sem = asyncio.Semaphore(self.n_conn)
 

@@ -1,6 +1,12 @@
 Changes
 =======
 
+(TBD)
+-----
+
+* Connections are no longer reused between requests.
+  This reduces the amount of ``ServerDisconnectedError`` exceptions.
+
 0.4.2 (2022-10-28)
 ------------------
 * Bump minimum ``aiohttp`` version to 3.8.0, as earlier versions don't support
