@@ -1,8 +1,8 @@
 Changes
 =======
 
-(TBD)
------
+0.4.3 (2022-11-10)
+------------------
 
 * Connections are no longer reused between requests.
   This reduces the amount of ``ServerDisconnectedError`` exceptions.
