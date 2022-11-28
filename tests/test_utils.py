@@ -7,9 +7,6 @@ from w3lib.url import _path_safe_chars, _safe_chars
 from zyte_api.utils import (
     _guess_intype,
     _process_query,
-    RFC2396_FRAGMENT_SAFE_CHARS,
-    RFC2396_PATH_SAFE_CHARS,
-    RFC2396_QUERY_SAFE_CHARS,
 )
 
 
@@ -70,10 +67,13 @@ def test_guess_intype(file_name, first_line, expected):
 @pytest.mark.parametrize(
     "input,output",
     (
+        # Safe URLs are returned unmodified.
         (
             {"url": "https://example.com"},
             {"url": "https://example.com"},
         ),
+        # Unsafe URLs in the url field are modified, while left untouched on
+        # other fields.
         (
             {
                 "a": {"b", "c"},
@@ -86,75 +86,8 @@ def test_guess_intype(file_name, first_line, expected):
                 "url": "https://example.com/%20a",
             },
         ),
-        *(
-            (
-                {"url": f"https://example.com/{bytes([char]).decode()}"},
-                {"url": f"https://example.com/%{char:X}"},
-            )
-            for char in chain(
-                (
-                    ord(' '),
-                ),
-                # Characters that w3lib would not escape: []|%
-                (
-                    char
-                    for char in _path_safe_chars
-                    if (
-                        char not in RFC2396_PATH_SAFE_CHARS
-                        and char not in b"?#"
-                    )
-                )
-            )
-        ),
-        (
-            {"url": "https://example.com/ñ"},
-            {"url": "https://example.com/%C3%B1"},
-        ),
-        *(
-            (
-                {"url": f"https://example.com?{bytes([char]).decode()}"},
-                {"url": f"https://example.com?%{char:X}"},
-            )
-            for char in chain(
-                (
-                    ord(' '),
-                ),
-                # Characters that w3lib would not escape: []|%
-                (
-                    char
-                    for char in _safe_chars
-                    if (
-                        char not in RFC2396_QUERY_SAFE_CHARS
-                        and char not in b"#"
-                    )
-                )
-            )
-        ),
-        (
-            {"url": "https://example.com?ñ"},
-            {"url": "https://example.com?%C3%B1"},
-        ),
-        *(
-            (
-                {"url": f"https://example.com#{bytes([char]).decode()}"},
-                {"url": f"https://example.com#%{char:X}"},
-            )
-            for char in chain(
-                (
-                    ord(' '),
-                ),
-                # Characters that w3lib would not escape: #[]|%
-                (
-                    char
-                    for char in _safe_chars
-                    if char not in RFC2396_FRAGMENT_SAFE_CHARS
-                )
-            )
-        ),
-        (
-            {"url": "https://example.com#ñ"},
-            {"url": "https://example.com#%C3%B1"},
-        ),
+        # NOTE: We use w3lib.url.safe_url_string for escaping. Tests covering
+        # the URL escaping logic exist upstream.
     ),
 )
 def test_process_query(input, output):
