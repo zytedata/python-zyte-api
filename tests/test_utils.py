@@ -1,13 +1,7 @@
-from itertools import chain
-
 import pytest
 from pytest import raises
-from w3lib.url import _path_safe_chars, _safe_chars
 
-from zyte_api.utils import (
-    _guess_intype,
-    _process_query,
-)
+from zyte_api.utils import _guess_intype, _process_query
 
 
 @pytest.mark.parametrize(
