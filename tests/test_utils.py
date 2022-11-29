@@ -61,11 +61,6 @@ def test_guess_intype(file_name, first_line, expected):
 @pytest.mark.parametrize(
     "input,output",
     (
-        # Safe URLs are returned unmodified.
-        (
-            {"url": "https://example.com"},
-            {"url": "https://example.com"},
-        ),
         # Unsafe URLs in the url field are modified, while left untouched on
         # other fields.
         (
@@ -79,6 +74,16 @@ def test_guess_intype(file_name, first_line, expected):
                 "d": "https://example.com/ a",
                 "url": "https://example.com/%20a",
             },
+        ),
+        # Safe URLs are returned unmodified.
+        (
+            {"url": "https://example.com"},
+            {"url": "https://example.com"},
+        ),
+        # URL fragments are kept.
+        (
+            {"url": "https://example.com#a"},
+            {"url": "https://example.com#a"},
         ),
         # NOTE: We use w3lib.url.safe_url_string for escaping. Tests covering
         # the URL escaping logic exist upstream.
