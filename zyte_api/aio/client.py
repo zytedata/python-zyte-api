@@ -16,7 +16,7 @@ from .retry import zyte_api_retrying
 from ..apikey import get_apikey
 from ..constants import API_URL, API_TIMEOUT
 from ..stats import AggStats, ResponseStats
-from ..utils import user_agent
+from ..utils import _process_query, user_agent
 
 
 # 120 seconds is probably too long, but we are concerned about the case with
@@ -75,7 +75,7 @@ class AsyncClient:
 
             post_kwargs = dict(
                 url=self.api_url + endpoint,
-                json=query,
+                json=_process_query(query),
                 auth=auth,
                 headers=headers,
             )
