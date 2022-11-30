@@ -49,11 +49,13 @@ class AsyncClient:
                  api_key=None,
                  api_url=API_URL,
                  n_conn=15,
+                 retrying: Optional[AsyncRetrying] = None,
                  ):
         self.api_key = get_apikey(api_key)
         self.api_url = api_url
         self.n_conn = n_conn
         self.agg_stats = AggStats()
+        self.retrying = retrying or zyte_api_retrying
 
     async def request_raw(self, query: dict, *,
                           endpoint: str = 'extract',
@@ -61,7 +63,7 @@ class AsyncClient:
                           handle_retries=True,
                           retrying: Optional[AsyncRetrying] = None,
                           ):
-        retrying = retrying or zyte_api_retrying
+        retrying = retrying or self.retrying
         post = _post_func(session)
         auth = aiohttp.BasicAuth(self.api_key)
         headers = {'User-Agent': user_agent(aiohttp), 'Accept-Encoding': 'br'}
