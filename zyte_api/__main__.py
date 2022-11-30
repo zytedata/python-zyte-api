@@ -149,7 +149,7 @@ def _main(program_name='zyte-api'):
                stop_on_errors=False,
                api_url=args.api_url,
                api_key=args.api_key,
-               retry_errors=args.dont_retry_errors)
+               retry_errors=not args.dont_retry_errors)
     loop.run_until_complete(coro)
     loop.close()
 
