@@ -1,8 +1,8 @@
 Changes
 =======
 
-0.4.4 (TBD)
------------
+0.4.4 (2022-12-01)
+------------------
 
 * Fixed an issue with submitting URLs which contain unescaped symbols
 * New "retrying" argument for AsyncClient.__init__, which allows to set
