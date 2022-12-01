@@ -18,7 +18,7 @@ from tenacity import (
     retry_if_exception,
     RetryCallState,
     before_sleep_log,
-    after_log, AsyncRetrying, before_log,
+    after_log, AsyncRetrying, before_log, retry_base,
 )
 from tenacity.stop import stop_never
 
@@ -62,7 +62,7 @@ class RetryFactory:
     """
     Build custom retry configuration
     """
-    retry_condition = (
+    retry_condition: retry_base = (
         retry_if_exception(_is_throttling_error)
         | retry_if_exception(_is_network_error)
         | retry_if_exception(_is_temporary_download_error)

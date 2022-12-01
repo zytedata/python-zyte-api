@@ -8,13 +8,19 @@ import logging
 import random
 
 import tqdm
+from tenacity import retry_if_exception
 
 from zyte_api.aio.client import (
     create_session,
-    AsyncClient
+    AsyncClient,
 )
 from zyte_api.constants import ENV_VARIABLE, API_URL
 from zyte_api.utils import _guess_intype
+from zyte_api.aio.retry import RetryFactory, _is_throttling_error
+
+
+class DontRetryErrorsFactory(RetryFactory):
+    retry_condition = retry_if_exception(_is_throttling_error)
 
 
 logger = logging.getLogger('zyte_api')
@@ -22,10 +28,11 @@ logger = logging.getLogger('zyte_api')
 _UNSET = object()
 
 
-async def run(queries, out, n_conn, stop_on_errors, api_url,
-              api_key=None):
-
-    client = AsyncClient(n_conn=n_conn, api_key=api_key, api_url=api_url)
+async def run(queries, out, *, n_conn, stop_on_errors, api_url,
+              api_key=None, retry_errors=True):
+    retrying = None if retry_errors else DontRetryErrorsFactory().build()
+    client = AsyncClient(n_conn=n_conn, api_key=api_key, api_url=api_url,
+                         retrying=retrying)
     async with create_session(connection_pool_size=n_conn) as session:
         result_iter = client.request_parallel_as_completed(
             queries=queries,
@@ -117,6 +124,9 @@ def _main(program_name='zyte-api'):
                    choices=["DEBUG", "INFO", "WARNING", "ERROR"],
                    help="log level (default: %(default)s)")
     p.add_argument("--shuffle", help="Shuffle input URLs", action="store_true")
+    p.add_argument("--dont-retry-errors",
+                   help="Don't retry request and network errors",
+                   action="store_true")
     args = p.parse_args()
     logging.basicConfig(
         stream=sys.stderr,
@@ -138,7 +148,8 @@ def _main(program_name='zyte-api'):
                n_conn=args.n_conn,
                stop_on_errors=False,
                api_url=args.api_url,
-               api_key=args.api_key)
+               api_key=args.api_key,
+               retry_errors=not args.dont_retry_errors)
     loop.run_until_complete(coro)
     loop.close()
 
