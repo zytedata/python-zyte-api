@@ -31,7 +31,7 @@ setup(
         'runstats',
         'tenacity',
         'tqdm',
-        'w3lib',
+        'w3lib >= 2.1.1',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
