@@ -1,6 +1,14 @@
 Changes
 =======
 
+0.4.5 (TBD)
+-----------
+
+* w3lib >= 2.1.1 is required in install_requires, to ensure that URLs
+  are escaped properly.
+* unnecessary ``requests`` library is removed from install_requires
+* fixed tox 4 support
+
 0.4.4 (2022-12-01)
 ------------------
 
