@@ -28,7 +28,6 @@ setup(
         'aiohttp >= 3.8.0',
         'attrs',
         'brotli',
-        'requests',
         'runstats',
         'tenacity',
         'tqdm',
