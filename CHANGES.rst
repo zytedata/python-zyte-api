@@ -1,8 +1,8 @@
 Changes
 =======
 
-0.4.5 (TBD)
------------
+0.4.5 (2023-01-03)
+------------------
 
 * w3lib >= 2.1.1 is required in install_requires, to ensure that URLs
   are escaped properly.
