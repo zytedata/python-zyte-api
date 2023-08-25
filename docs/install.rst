@@ -10,6 +10,8 @@ Installation
 
 ``zyte-api`` requires Python 3.7+.
 
+.. _api-key:
+
 API key
 =======
 

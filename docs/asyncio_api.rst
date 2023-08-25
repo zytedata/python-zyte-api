@@ -12,16 +12,18 @@ You can use the method ``request_raw`` to perform individual requests:
     import asyncio
     from zyte_api.aio.client import AsyncClient
 
-    client = AsyncClient()
+    client = AsyncClient(api_key="YOUR_API_KEY")
+
 
     async def single_request(url):
-        return await client.request_raw({
-            'url': url,
-            'browserHtml': True
-        })
+        return await client.request_raw({"url": url, "browserHtml": True})
+
 
     response = asyncio.run(single_request("https://books.toscrape.com"))
-    # Do something with the response ..
+    # Do something with the response…
+
+.. tip:: You can skip the ``api_key`` parameter if you :ref:`use an environment
+    variable instead <api-key>`.
 
 There is also ``request_parallel_as_completed`` method, which allows
 to process many URLs in parallel, using multiple connections:
