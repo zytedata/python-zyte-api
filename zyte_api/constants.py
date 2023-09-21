@@ -7,4 +7,4 @@ ENV_VARIABLE = 'ZYTE_API_KEY'
 API_URL = 'https://api.zyte.com/v1/'
 
 # Default timeout that server uses. Client timeouts should be larger than that.
-API_TIMEOUT = 60
+API_TIMEOUT = 240
