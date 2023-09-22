@@ -44,8 +44,5 @@ def _process_query(query):
     return {**query, "url": safe_url}
 
 
-def user_agent(library):
-    return 'python-zyte-api/{} {}/{}'.format(
-        __version__,
-        library.__name__,
-        library.__version__)
+def user_agent():
+    return f'python-zyte-api/{__version__}'

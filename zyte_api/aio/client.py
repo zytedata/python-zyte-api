@@ -66,7 +66,7 @@ class AsyncClient:
         retrying = retrying or self.retrying
         post = _post_func(session)
         auth = aiohttp.BasicAuth(self.api_key)
-        headers = {'User-Agent': user_agent(aiohttp), 'Accept-Encoding': 'br'}
+        headers = {'User-Agent': user_agent(), 'Accept-Encoding': 'br'}
 
         response_stats = []
         start_global = time.perf_counter()
