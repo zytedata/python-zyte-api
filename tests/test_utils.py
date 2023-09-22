@@ -1,7 +1,7 @@
 import pytest
 from pytest import raises
 
-from zyte_api.utils import _guess_intype, _process_query
+from zyte_api.utils import __version__, _guess_intype, _process_query, _user_agent
 
 
 @pytest.mark.parametrize(
@@ -96,3 +96,20 @@ def test_process_query(input, output):
 def test_process_query_bytes():
     with raises(ValueError):
         _process_query({"url": b"https://example.com"})
+
+
+@pytest.mark.parametrize(
+    "custom_user_agent,expected",
+    (
+        (
+            None,
+            f'python-zyte-api/{__version__}',
+        ),
+        (
+            'scrapy-zyte-api/0.11.1',
+            f'python-zyte-api/{__version__}, scrapy-zyte-api/0.11.1',
+        ),
+    ),
+)
+def test_user_agent(custom_user_agent, expected):
+    assert _user_agent(custom_user_agent) == expected
