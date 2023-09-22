@@ -50,7 +50,7 @@ class AsyncClient:
                  api_url=API_URL,
                  n_conn=15,
                  retrying: Optional[AsyncRetrying] = None,
-                 user_agent: None,
+                 user_agent: Optional[str] = None,
                  ):
         self.api_key = get_apikey(api_key)
         self.api_url = api_url
