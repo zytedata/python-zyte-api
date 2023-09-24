@@ -16,7 +16,7 @@ from .retry import zyte_api_retrying
 from ..apikey import get_apikey
 from ..constants import API_URL, API_TIMEOUT
 from ..stats import AggStats, ResponseStats
-from ..utils import _process_query, _user_agent
+from ..utils import _process_query, USER_AGENT
 
 
 # 120 seconds is probably too long, but we are concerned about the case with
@@ -57,7 +57,7 @@ class AsyncClient:
         self.n_conn = n_conn
         self.agg_stats = AggStats()
         self.retrying = retrying or zyte_api_retrying
-        self.user_agent = user_agent
+        self.user_agent = user_agent or USER_AGENT
 
     async def request_raw(self, query: dict, *,
                           endpoint: str = 'extract',
@@ -69,7 +69,7 @@ class AsyncClient:
         post = _post_func(session)
         auth = aiohttp.BasicAuth(self.api_key)
         headers = {
-            'User-Agent': f'{_user_agent(self.user_agent)}',
+            'User-Agent': self.user_agent,
             'Accept-Encoding': 'br'
         }
 
