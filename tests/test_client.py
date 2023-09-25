@@ -12,8 +12,8 @@ from zyte_api.utils import USER_AGENT
             USER_AGENT,
         ),
         (
-            f'{USER_AGENT}, scrapy-zyte-api/0.11.1',
-            f'{USER_AGENT}, scrapy-zyte-api/0.11.1',
+            f'scrapy-zyte-api/0.11.1 {USER_AGENT}',
+            f'scrapy-zyte-api/0.11.1 {USER_AGENT}',
         ),
     ),
 )
