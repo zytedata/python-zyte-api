@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.4.6 (2023-09-21)
+------------------
+
+* Increased the client timeout to match the server’s.
+* Mentioned the ``api_key`` parameter of ``AsyncClient`` in the docs example.
+
 0.4.5 (2023-01-03)
 ------------------
 
