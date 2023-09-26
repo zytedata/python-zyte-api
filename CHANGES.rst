@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.4.6 (2023-09-21)
+0.4.6 (2023-09-26)
 ------------------
 
 * Increased the client timeout to match the server’s.
