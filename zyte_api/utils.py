@@ -5,6 +5,8 @@ from w3lib.url import safe_url_string
 
 from .__version__ import __version__
 
+USER_AGENT = f'python-zyte-api/{__version__}'
+
 
 def _guess_intype(file_name, lines):
     _, dot_extension = splitext(file_name)
@@ -42,10 +44,3 @@ def _process_query(query):
     if url == safe_url:
         return query
     return {**query, "url": safe_url}
-
-
-def user_agent(library):
-    return 'python-zyte-api/{} {}/{}'.format(
-        __version__,
-        library.__name__,
-        library.__version__)
