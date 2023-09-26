@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.4.7 (to be released)
+----------------------
+
+* ``AsyncClient`` now lets you set a custom user agent to send to Zyte API.
+
 0.4.6 (2023-09-26)
 ------------------
 
