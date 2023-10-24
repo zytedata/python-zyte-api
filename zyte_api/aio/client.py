@@ -96,14 +96,11 @@ class AsyncClient:
                         stats.record_read()
                         stats.record_request_error(content, self.agg_stats)
 
-                        request_id = resp.headers.get("request-id")
-                        message = f"(request_id={request_id}) {resp.reason}"
-
                         raise RequestError(
                             request_info=resp.request_info,
                             history=resp.history,
                             status=resp.status,
-                            message=message,
+                            message=resp.reason,
                             headers=resp.headers,
                             response_content=content,
                             request_id=request_id,
