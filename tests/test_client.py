@@ -48,3 +48,4 @@ async def test_request_raw_error(mock_post):
     assert {"request-id": request_id} == excinfo.value.headers
     assert status == excinfo.value.status
     assert content == excinfo.value.response_content
+    assert request_id == excinfo.value.request_id
