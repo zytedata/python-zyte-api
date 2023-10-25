@@ -103,7 +103,6 @@ class AsyncClient:
                             message=resp.reason,
                             headers=resp.headers,
                             response_content=content,
-                            request_id=request_id,
                         )
 
                     response = await resp.json()
