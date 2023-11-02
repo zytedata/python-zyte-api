@@ -1,8 +1,14 @@
 Changes
 =======
 
+0.4.8 (YYYY-MM-DD)
+------------------
+
+* Include the Zyte API request ID value in a new ``.request_id`` attribute
+  in :class:`zyte_api.aio.errors.RequestError`.
+
 0.4.7 (2023-09-26)
-----------------------
+------------------
 
 * ``AsyncClient`` now lets you set a custom user agent to send to Zyte API.
 
