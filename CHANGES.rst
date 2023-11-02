@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.4.8 (YYYY-MM-DD)
+0.4.8 (2023-11-02)
 ------------------
 
 * Include the Zyte API request ID value in a new ``.request_id`` attribute
