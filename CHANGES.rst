@@ -5,7 +5,7 @@ Changes
 ------------------
 
 * Include the Zyte API request ID value in a new ``.request_id`` attribute
-  in :class:`zyte_api.aio.errors.RequestError`.
+  in ``zyte_api.aio.errors.RequestError``.
 
 0.4.7 (2023-09-26)
 ------------------
