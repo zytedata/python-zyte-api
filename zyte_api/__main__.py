@@ -1,11 +1,11 @@
 """ Basic command-line interface for Zyte API. """
 
 import argparse
-import json
-import sys
 import asyncio
+import json
 import logging
 import random
+import sys
 
 import tqdm
 from tenacity import retry_if_exception
@@ -14,9 +14,9 @@ from zyte_api.aio.client import (
     create_session,
     AsyncClient,
 )
+from zyte_api.aio.retry import RetryFactory, _is_throttling_error
 from zyte_api.constants import ENV_VARIABLE, API_URL
 from zyte_api.utils import _guess_intype
-from zyte_api.aio.retry import RetryFactory, _is_throttling_error
 
 
 class DontRetryErrorsFactory(RetryFactory):
@@ -44,7 +44,7 @@ async def run(
     api_url,
     api_key=None,
     retry_errors=True,
-    include_all_responses,
+    store_errors=None,
 ):
     retrying = None if retry_errors else DontRetryErrorsFactory().build()
     client = AsyncClient(
@@ -65,8 +65,11 @@ async def run(
                     result = await fut
                     write_output(result, out, pbar)
                 except Exception as e:
-                    if stop_on_errors or not include_all_responses:
+                    if stop_on_errors:
                         raise
+
+                    if not store_errors:
+                        continue
 
                     write_output(e.parsed.response_body.decode(), out, pbar)
                     logger.error(str(e))
@@ -163,7 +166,7 @@ def _main(program_name="zyte-api"):
         action="store_true",
     )
     p.add_argument(
-        "--include-all-responses",
+        "--store-errors",
         help="when set to true, it includes all types of responses, and when set to false,"
              " it includes only error-free responses in the output.",
     )
@@ -190,7 +193,7 @@ def _main(program_name="zyte-api"):
         api_url=args.api_url,
         api_key=args.api_key,
         retry_errors=not args.dont_retry_errors,
-        include_all_responses=args.include_all_responses,
+        store_errors=args.store_errors,
     )
     loop.run_until_complete(coro)
     loop.close()
