@@ -4,7 +4,6 @@ from unittest.mock import Mock, patch, AsyncMock
 import pytest
 
 from zyte_api.__main__ import run
-from zyte_api.aio.errors import RequestError
 
 
 class RequestError(Exception):
