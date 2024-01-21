@@ -28,13 +28,6 @@ logger = logging.getLogger("zyte_api")
 _UNSET = object()
 
 
-def write_output(result, out, pbar):
-    json.dump(result, out, ensure_ascii=False)
-    out.write("\n")
-    out.flush()
-    pbar.update()
-
-
 async def run(
     queries,
     out,
@@ -46,6 +39,12 @@ async def run(
     retry_errors=True,
     store_errors=None,
 ):
+    def write_output(content):
+        json.dump(content, out, ensure_ascii=False)
+        out.write("\n")
+        out.flush()
+        pbar.update()
+
     retrying = None if retry_errors else DontRetryErrorsFactory().build()
     client = AsyncClient(
         n_conn=n_conn, api_key=api_key, api_url=api_url, retrying=retrying
@@ -63,15 +62,14 @@ async def run(
             for fut in result_iter:
                 try:
                     result = await fut
-                    write_output(result, out, pbar)
+                    write_output(result)
                 except Exception as e:
                     if stop_on_errors:
                         raise
 
-                    if not store_errors:
-                        continue
+                    if store_errors:
+                        write_output(e.parsed.response_body.decode())
 
-                    write_output(e.parsed.response_body.decode(), out, pbar)
                     logger.error(str(e))
                 finally:
                     pbar.set_postfix_str(str(client.agg_stats))

@@ -1,3 +1,4 @@
+import json
 import os
 from unittest.mock import Mock, patch, AsyncMock
 
@@ -9,18 +10,22 @@ from zyte_api.__main__ import run
 class RequestError(Exception):
     @property
     def parsed(self):
-        mock = Mock(response_body=Mock(decode=Mock(return_value=linkedin_response())))
+        mock = Mock(
+            response_body=Mock(decode=Mock(return_value=forbidden_domain_response()))
+        )
         return mock
 
 
-def is_file_not_empty(file_path):
+def get_json_content(file_object):
+    if not file_object:
+        return
+
+    file_path = file_object.name
     try:
         with open(file_path, "r") as file:
-            # Read the first character to check if the file is empty
-            first_char = file.read(1)
-            return bool(first_char)
+            return json.load(file)
     except FileNotFoundError:
-        return False
+        pass
 
 
 def delete_file(file_path):
@@ -31,8 +36,13 @@ def delete_file(file_path):
         print(f"File '{file_path}' not found. Unable to delete.")
 
 
-def linkedin_response():
-    response_str = '{"blockedDomain":"linkedin.com","type":"/download/domain-forbidden","title":"Domain Forbidden","status":451,"detail":"Extraction for the domain linkedin.com is forbidden."}'
+def forbidden_domain_response():
+    response_str = {
+        "type": "/download/temporary-error",
+        "title": "Temporary Downloading Error",
+        "status": 520,
+        "detail": "There is a downloading problem which might be temporary. Retry in N seconds from 'Retry-After' header or open a support ticket from https://support.zyte.com/support/tickets/new if it fails consistently.",
+    }
     return response_str
 
 
@@ -46,7 +56,7 @@ async def fake_exception(value=True):
 
 
 @pytest.mark.parametrize(
-    "queries,out",
+    "queries,out,expected_response,store_errors,exception",
     (
         (
             # test if it stores the error(s) also by adding flag
@@ -59,18 +69,34 @@ async def fake_exception(value=True):
                     }
                 ],
                 open("test_response.jsonl", "w"),
+                forbidden_domain_response(),
+                True,
+                fake_exception,
+            ),
+            # test with store_errors=False
+            (
+                [
+                    {
+                        "url": "https://linkedin.com",
+                        "browserHtml": True,
+                        "echoData": "https://linkedin.com",
+                    }
+                ],
+                None,  # provide no file
+                None,  # expected response should be None
+                False,
+                fake_exception,
             ),
         )
     ),
 )
 @pytest.mark.asyncio
-async def test_run(queries, out):
+async def test_run(queries, out, expected_response, store_errors, exception):
     n_conn = 5
     stop_on_errors = False
     api_url = "https://example.com"
     api_key = "fake_key"
     retry_errors = True
-    store_errors = True
 
     # Create a mock for AsyncClient
     async_client_mock = Mock()
@@ -88,7 +114,7 @@ async def test_run(queries, out):
 
         # Set up the AsyncClient instance to return the mocked iterator
         async_client_mock.return_value.request_parallel_as_completed.return_value = [
-            fake_exception(),
+            exception(),
         ]
 
         # Call the run function with the mocked AsyncClient
@@ -103,4 +129,4 @@ async def test_run(queries, out):
             store_errors=store_errors,
         )
 
-    assert is_file_not_empty(out.name)
+    assert get_json_content(out) == expected_response
