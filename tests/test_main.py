@@ -64,9 +64,9 @@ async def fake_exception(value=True):
             (
                 [
                     {
-                        "url": "https://linkedin.com",
+                        "url": "https://forbidden.example",
                         "browserHtml": True,
-                        "echoData": "https://linkedin.com",
+                        "echoData": "https://forbidden.example",
                     }
                 ],
                 forbidden_domain_response(),
@@ -77,9 +77,9 @@ async def fake_exception(value=True):
             (
                 [
                     {
-                        "url": "https://linkedin.com",
+                        "url": "https://forbidden.example",
                         "browserHtml": True,
-                        "echoData": "https://linkedin.com",
+                        "echoData": "https://forbidden.example",
                     }
                 ],
                 None,  # expected response should be None
