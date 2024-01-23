@@ -1,5 +1,6 @@
 import json
 import os
+from json import JSONDecodeError
 from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
@@ -24,7 +25,7 @@ def get_json_content(file_object):
     try:
         with open(file_path, "r") as file:
             return json.load(file)
-    except FileNotFoundError:
+    except JSONDecodeError:
         pass
 
 
@@ -56,7 +57,7 @@ async def fake_exception(value=True):
 
 
 @pytest.mark.parametrize(
-    "queries,out,expected_response,store_errors,exception",
+    "queries,expected_response,store_errors,exception",
     (
         (
             # test if it stores the error(s) also by adding flag
@@ -68,7 +69,6 @@ async def fake_exception(value=True):
                         "echoData": "https://linkedin.com",
                     }
                 ],
-                open("test_response.jsonl", "w"),
                 forbidden_domain_response(),
                 True,
                 fake_exception,
@@ -82,7 +82,6 @@ async def fake_exception(value=True):
                         "echoData": "https://linkedin.com",
                     }
                 ],
-                None,  # provide no file
                 None,  # expected response should be None
                 False,
                 fake_exception,
@@ -91,7 +90,8 @@ async def fake_exception(value=True):
     ),
 )
 @pytest.mark.asyncio
-async def test_run(queries, out, expected_response, store_errors, exception):
+async def test_run(queries, expected_response, store_errors, exception):
+    temporary_file = open("temporary_file.jsonl", "w")
     n_conn = 5
     stop_on_errors = False
     api_url = "https://example.com"
@@ -120,7 +120,7 @@ async def test_run(queries, out, expected_response, store_errors, exception):
         # Call the run function with the mocked AsyncClient
         await run(
             queries=queries,
-            out=out,
+            out=temporary_file,
             n_conn=n_conn,
             stop_on_errors=stop_on_errors,
             api_url=api_url,
@@ -129,4 +129,4 @@ async def test_run(queries, out, expected_response, store_errors, exception):
             store_errors=store_errors,
         )
 
-    assert get_json_content(out) == expected_response
+    assert get_json_content(temporary_file) == expected_response

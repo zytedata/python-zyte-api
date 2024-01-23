@@ -62,15 +62,15 @@ async def run(
             for fut in result_iter:
                 try:
                     result = await fut
-                    write_output(result)
                 except Exception as e:
-                    if stop_on_errors:
-                        raise
-
+                    logger.error(str(e))
                     if store_errors:
                         write_output(e.parsed.response_body.decode())
 
-                    logger.error(str(e))
+                    if stop_on_errors:
+                        raise
+                else:
+                    write_output(result)
                 finally:
                     pbar.set_postfix_str(str(client.agg_stats))
         finally:
