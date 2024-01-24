@@ -63,12 +63,13 @@ async def run(
                 try:
                     result = await fut
                 except Exception as e:
-                    logger.error(str(e))
                     if store_errors:
                         write_output(e.parsed.response_body.decode())
 
                     if stop_on_errors:
                         raise
+
+                    logger.error(str(e))
                 else:
                     write_output(result)
                 finally:
