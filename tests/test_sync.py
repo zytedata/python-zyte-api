@@ -1,3 +1,5 @@
+from types import GeneratorType
+
 from zyte_api import ZyteAPI
 from zyte_api.apikey import NoApiKey
 
