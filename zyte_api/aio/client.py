@@ -129,50 +129,27 @@ class AsyncClient:
 
         return result
 
-    # def request_parallel_as_completed(self,
-    #                                   queries: List[dict],
-    #                                   *,
-    #                                   endpoint: str = 'extract',
-    #                                   session: Optional[aiohttp.ClientSession] = None,
-    #                                   handle_retries=True,
-    #                                   retrying: Optional[AsyncRetrying] = None,
-    #                                   ) -> Iterator[asyncio.Future]:
-    #     """ Send multiple requests to Zyte API in parallel.
-    #     Return an `asyncio.as_completed` iterator.
-    #
-    #     ``queries`` is a list of requests to process (dicts).
-    #
-    #     ``session`` is an optional aiohttp.ClientSession object.
-    #     Set the session TCPConnector limit to a value greater than
-    #     the number of connections.
-    #     """
-    #     sem = asyncio.Semaphore(self.n_conn)
-    #
-    #     async def _request(query):
-    #         async with sem:
-    #             return await self.request_raw(query,
-    #                 endpoint=endpoint,
-    #                 session=session,
-    #                 handle_retries=handle_retries,
-    #                 retrying=retrying,
-    #             )
-    #
-    #     return asyncio.as_completed([_request(query) for query in queries])
-
     def request_parallel_as_completed(self,
                                       queries: List[dict],
                                       *,
                                       endpoint: str = 'extract',
                                       session: Optional[aiohttp.ClientSession] = None,
-                                      handle_retries=True,
-                                      retrying: Optional[AsyncRetrying] = None,
                                       ) -> Iterator[asyncio.Future]:
+        """ Send multiple requests to Zyte API in parallel.
+        Return an `asyncio.as_completed` iterator.
+
+        ``queries`` is a list of requests to process (dicts).
+
+        ``session`` is an optional aiohttp.ClientSession object.
+        Set the session TCPConnector limit to a value greater than
+        the number of connections.
+        """
+        sem = asyncio.Semaphore(self.n_conn)
+
         async def _request(query):
-            return await self.request_raw(query,
-                endpoint=endpoint,
-                session=session,
-                handle_retries=handle_retries,
-                retrying=retrying,
-            )
+            async with sem:
+                return await self.request_raw(query,
+                    endpoint=endpoint,
+                    session=session)
 
         return asyncio.as_completed([_request(query) for query in queries])
