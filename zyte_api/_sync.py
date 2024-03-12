@@ -9,6 +9,23 @@ from .constants import API_URL
 
 
 class ZyteAPI:
+    """Synchronous Zyte API client.
+
+    To create an instance, pass your API key:
+
+    .. code-block:: python
+
+        client = ZyteAPI(api_key="YOUR_API_KEY")
+
+    Or :ref:`use an environment variable <api-key>` and omit your API key:
+
+    .. code-block:: python
+
+        client = ZyteAPI()
+
+    Use :meth:`get` and :meth:`iter` to send queries to Zyte API.
+    """
+
     def __init__(
         self,
         *,
@@ -37,8 +54,9 @@ class ZyteAPI:
     ) -> dict:
         """Send a query to Zyte API and get the result.
 
-        .. tip:: To send multiple requests in parallel, use :meth:`iter`
-                 instead.
+        .. code-block:: python
+
+            result = client.get({"url": "https://toscrape.com", "httpResponseBody": True})
         """
         return asyncio.run(
             self._async_client.request_raw(
@@ -62,6 +80,15 @@ class ZyteAPI:
     ) -> Generator[dict, None, None]:
         """Send multiple queries to Zyte API in parallel and iterate over their
         results as they come.
+
+        .. code-block:: python
+
+            queries = [
+                {"url": "https://books.toscrape.com", "httpResponseBody": True},
+                {"url": "https://quotes.toscrape.com", "httpResponseBody": True},
+            ]
+            for result in client.iter(queries):
+                print(result)
 
         Results may come an a different order from the original list of
         *queries*. You can use echoData_ to attach metadata to queries that you
