@@ -1,0 +1,80 @@
+import asyncio
+from tenacity import AsyncRetrying
+from typing import Generator, List, Optional, Union
+
+from aiohttp import ClientSession
+
+from .aio.client import AsyncClient
+from .constants import API_URL
+
+
+class ZyteAPI:
+    def __init__(
+        self,
+        *,
+        api_key=None,
+        api_url=API_URL,
+        n_conn=15,
+        retrying: Optional[AsyncRetrying] = None,
+        user_agent: Optional[str] = None,
+    ):
+        self._async_client = AsyncClient(
+            api_key=api_key,
+            api_url=api_url,
+            n_conn=n_conn,
+            retrying=retrying,
+            user_agent=user_agent,
+        )
+
+    def get(
+        self,
+        query: dict,
+        *,
+        endpoint: str = 'extract',
+        session: Optional[ClientSession] = None,
+        handle_retries: bool = True,
+        retrying: Optional[AsyncRetrying] = None,
+    ) -> dict:
+        """Send a query to Zyte API and get the result.
+
+        .. tip:: To send multiple requests in parallel, use :meth:`iter`
+                 instead.
+        """
+        return asyncio.run(
+            self._async_client.request_raw(
+                query=query,
+                endpoint=endpoint,
+                session=session,
+                handle_retries=handle_retries,
+                retrying=retrying,
+            )
+        )
+
+
+    def iter(
+        self,
+        queries: List[dict],
+        *,
+        endpoint: str = 'extract',
+        session: Optional[ClientSession] = None,
+        handle_retries: bool = True,
+        retrying: Optional[AsyncRetrying] = None,
+    ) -> Generator[dict, None, None]:
+        """Send multiple queries to Zyte API in parallel and iterate over their
+        results as they come.
+
+        Results may come an a different order from the original list of
+        *queries*. You can use echoData_ to attach metadata to queries that you
+        can later use to restore their original order.
+
+        .. _echoData: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/echoData
+        """
+        loop = asyncio.get_event_loop()
+        for future in self._async_client.request_parallel_as_completed(
+            queries=queries,
+            endpoint=endpoint,
+            session=session,
+            handle_retries=handle_retries,
+            retrying=retrying,
+        ):
+            yield loop.run_until_complete(future)

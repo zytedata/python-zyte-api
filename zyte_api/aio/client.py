@@ -134,6 +134,8 @@ class AsyncClient:
                                       *,
                                       endpoint: str = 'extract',
                                       session: Optional[aiohttp.ClientSession] = None,
+                                      handle_retries=True,
+                                      retrying: Optional[AsyncRetrying] = None,
                                       ) -> Iterator[asyncio.Future]:
         """ Send multiple requests to Zyte API in parallel.
         Return an `asyncio.as_completed` iterator.
@@ -150,6 +152,9 @@ class AsyncClient:
             async with sem:
                 return await self.request_raw(query,
                     endpoint=endpoint,
-                    session=session)
+                    session=session,
+                    handle_retries=handle_retries,
+                    retrying=retrying,
+                )
 
         return asyncio.as_completed([_request(query) for query in queries])
