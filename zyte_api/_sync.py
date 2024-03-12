@@ -96,7 +96,11 @@ class ZyteAPI:
 
         .. _echoData: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/echoData
         """
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         for future in self._async_client.request_parallel_as_completed(
             queries=queries,
             endpoint=endpoint,

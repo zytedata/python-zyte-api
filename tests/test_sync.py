@@ -1,0 +1,56 @@
+import json
+from asyncio import Future
+from types import GeneratorType
+from unittest.mock import AsyncMock, patch
+
+from zyte_api import ZyteAPI
+from zyte_api.apikey import NoApiKey
+
+import pytest
+
+
+def test_api_key():
+    ZyteAPI(api_key="a")
+    with pytest.raises(NoApiKey):
+        ZyteAPI()
+
+
+# https://stackoverflow.com/a/59351425
+class MockResponse(AsyncMock):
+    def __init__(self, text, status=200):
+        self._text = text
+        self.status = status
+
+    async def text(self):
+        return self._text
+
+    async def __aexit__(self, exc_type, exc, tb):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+
+def test_get(mockserver):
+    client = ZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+    expected_result = {"url": "https://a.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="}
+    actual_result = client.get({"url": "https://a.example", "httpResponseBody": True})
+    assert actual_result == expected_result
+
+
+def test_iter(mockserver):
+    client = ZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+    queries = [
+        {"url": "https://a.example", "httpResponseBody": True},
+        {"url": "https://b.example", "httpResponseBody": True},
+    ]
+    expected_results = [
+        {"url": "https://a.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="},
+        {"url": "https://b.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="},
+    ]
+    actual_results = client.iter(queries)
+    assert isinstance(actual_results, GeneratorType)
+    actual_results_list = list(actual_results)
+    assert len(actual_results_list) == len(expected_results)
+    for actual_result in actual_results_list:
+        assert actual_result in expected_results
