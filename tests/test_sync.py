@@ -1,8 +1,3 @@
-import json
-from asyncio import Future
-from types import GeneratorType
-from unittest.mock import AsyncMock, patch
-
 from zyte_api import ZyteAPI
 from zyte_api.apikey import NoApiKey
 
@@ -13,22 +8,6 @@ def test_api_key():
     ZyteAPI(api_key="a")
     with pytest.raises(NoApiKey):
         ZyteAPI()
-
-
-# https://stackoverflow.com/a/59351425
-class MockResponse(AsyncMock):
-    def __init__(self, text, status=200):
-        self._text = text
-        self.status = status
-
-    async def text(self):
-        return self._text
-
-    async def __aexit__(self, exc_type, exc, tb):
-        pass
-
-    async def __aenter__(self):
-        return self
 
 
 def test_get(mockserver):
