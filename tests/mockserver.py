@@ -42,8 +42,20 @@ class DefaultResource(Resource):
             [b"abcd1234"],
         )
 
+        url = request_data["url"]
+        domain = urlparse(url).netloc
+        if domain == "exception.example":
+            request.setResponseCode(401)
+            response_data = {
+                "status": 401,
+                "type": "/auth/key-not-found",
+                "title": "Authentication Key Not Found",
+                "detail": "The authentication key is not valid or can't be matched.",
+            }
+            return json.dumps(response_data).encode()
+
         response_data: Dict[str, Any] = {
-            "url": request_data["url"],
+            "url": url,
         }
 
         assert "httpResponseBody" in request_data

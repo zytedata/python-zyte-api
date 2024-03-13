@@ -77,7 +77,7 @@ class ZyteAPI:
         session: Optional[ClientSession] = None,
         handle_retries: bool = True,
         retrying: Optional[AsyncRetrying] = None,
-    ) -> Generator[dict, None, None]:
+    ) -> Generator[Union[dict, Exception], None, None]:
         """Send multiple queries to Zyte API in parallel and iterate over their
         results as they come.
 
@@ -95,6 +95,8 @@ class ZyteAPI:
         can later use to restore their original order.
 
         .. _echoData: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/echoData
+
+        When exceptions occur, they are also yielded, not raised.
         """
         try:
             loop = asyncio.get_event_loop()
@@ -108,4 +110,7 @@ class ZyteAPI:
             handle_retries=handle_retries,
             retrying=retrying,
         ):
-            yield loop.run_until_complete(future)
+            try:
+                yield loop.run_until_complete(future)
+            except Exception as exception:
+                yield exception
