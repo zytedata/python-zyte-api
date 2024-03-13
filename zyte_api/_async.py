@@ -1,7 +1,7 @@
 import asyncio
 import time
 from functools import partial
-from typing import Optional, Iterator, List
+from typing import AsyncGenerator, Iterator, List, Optional, Union
 
 import aiohttp
 from tenacity import AsyncRetrying
@@ -123,7 +123,7 @@ class AsyncZyteAPI:
         session: Optional[aiohttp.ClientSession] = None,
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
-    ) -> Iterator[asyncio.Future]:
+    ) -> AsyncGenerator[Union[dict, Exception], None]:
         """ Send multiple requests to Zyte API in parallel.
         Return an `asyncio.as_completed` iterator.
 
