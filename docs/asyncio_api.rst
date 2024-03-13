@@ -34,7 +34,7 @@ to process many URLs in parallel, using multiple connections:
     import json
     import sys
 
-    from zyte_api.aio.client import AsyncClient, create_session
+    from zyte_api.aio.client import AsyncClient
     from zyte_api.aio.errors import RequestError
 
     async def extract_from(urls, n_conn):
@@ -43,16 +43,14 @@ to process many URLs in parallel, using multiple connections:
             {"url": url, "browserHtml": True}
             for url in urls
         ]
-        async with create_session(n_conn) as session:
-            res_iter = client.request_parallel_as_completed(requests, session=session)
-            for fut in res_iter:
-                try:
-                    res = await fut
-                    # do something with a result, e.g.
-                    print(json.dumps(res))
-                except RequestError as e:
-                    print(e, file=sys.stderr)
-                    raise
+        for fut in client.request_parallel_as_completed(requests):
+            try:
+                res = await fut
+                # do something with a result, e.g.
+                print(json.dumps(res))
+            except RequestError as e:
+                print(e, file=sys.stderr)
+                raise
 
     urls = ["https://toscrape.com", "https://books.toscrape.com"]
     asyncio.run(extract_from(urls, n_conn=15))

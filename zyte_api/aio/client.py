@@ -145,6 +145,8 @@ class AsyncClient:
         the number of connections.
         """
         sem = asyncio.Semaphore(self.n_conn)
+        if session is None:
+            session = create_session(n_conn=self.n_conn)
 
         async def _request(query):
             async with sem:
