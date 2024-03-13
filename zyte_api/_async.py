@@ -1,48 +1,18 @@
-"""
-Asyncio client for Zyte API
-"""
-
 import asyncio
 import time
 from functools import partial
 from typing import Optional, Iterator, List
-from warnings import warn
 
 import aiohttp
-from aiohttp import TCPConnector
 from tenacity import AsyncRetrying
 
-from .errors import RequestError
-from .retry import zyte_api_retrying
-from ..apikey import get_apikey
-from ..constants import API_URL, API_TIMEOUT
-from ..stats import AggStats, ResponseStats
-from ..utils import USER_AGENT, _process_query
-
-
-warn(
-    (
-        "The zyte_api.aio.client module is deprecated. Replace AsyncClient "
-        "with zyte_api.AsyncZyteAPI (note that method names are different) "
-        "and create_session with zyte_api.create_session."
-    ),
-    DeprecationWarning,
-)
-
-
-# 120 seconds is probably too long, but we are concerned about the case with
-# many concurrent requests and some processing logic running in the same reactor,
-# thus, saturating the CPU. This will make timeouts more likely.
-AIO_API_TIMEOUT = aiohttp.ClientTimeout(total=API_TIMEOUT + 120)
-
-
-def create_session(connection_pool_size=100, **kwargs) -> aiohttp.ClientSession:
-    """ Create a session with parameters suited for Zyte API """
-    kwargs.setdefault('timeout', AIO_API_TIMEOUT)
-    if "connector" not in kwargs:
-        kwargs["connector"] = TCPConnector(limit=connection_pool_size,
-                                           force_close=True)
-    return aiohttp.ClientSession(**kwargs)
+from .aio.errors import RequestError
+from .aio.retry import zyte_api_retrying
+from .apikey import get_apikey
+from .constants import API_URL, API_TIMEOUT
+from .stats import AggStats, ResponseStats
+from .utils import USER_AGENT, _process_query
+from ._utils import _AIO_API_TIMEOUT, create_session
 
 
 def _post_func(session):
@@ -50,19 +20,21 @@ def _post_func(session):
     if session is None:
         return partial(aiohttp.request,
                        method='POST',
-                       timeout=AIO_API_TIMEOUT)
+                       timeout=_AIO_API_TIMEOUT)
     else:
         return session.post
 
 
-class AsyncClient:
-    def __init__(self, *,
-                 api_key=None,
-                 api_url=API_URL,
-                 n_conn=15,
-                 retrying: Optional[AsyncRetrying] = None,
-                 user_agent: Optional[str] = None,
-                 ):
+class AsyncZyteAPI:
+    def __init__(
+        self,
+        *,
+        api_key=None,
+        api_url=API_URL,
+        n_conn=15,
+        retrying: Optional[AsyncRetrying] = None,
+        user_agent: Optional[str] = None,
+    ):
         self.api_key = get_apikey(api_key)
         self.api_url = api_url
         self.n_conn = n_conn
@@ -70,12 +42,15 @@ class AsyncClient:
         self.retrying = retrying or zyte_api_retrying
         self.user_agent = user_agent or USER_AGENT
 
-    async def request_raw(self, query: dict, *,
-                          endpoint: str = 'extract',
-                          session=None,
-                          handle_retries=True,
-                          retrying: Optional[AsyncRetrying] = None,
-                          ):
+    async def get(
+        self,
+        query: dict,
+        *,
+        endpoint: str = 'extract',
+        session=None,
+        handle_retries=True,
+        retrying: Optional[AsyncRetrying] = None,
+    ):
         retrying = retrying or self.retrying
         post = _post_func(session)
         auth = aiohttp.BasicAuth(self.api_key)
@@ -140,12 +115,15 @@ class AsyncClient:
 
         return result
 
-    def request_parallel_as_completed(self,
-                                      queries: List[dict],
-                                      *,
-                                      endpoint: str = 'extract',
-                                      session: Optional[aiohttp.ClientSession] = None,
-                                      ) -> Iterator[asyncio.Future]:
+    async def iter(
+        self,
+        queries: List[dict],
+        *,
+        endpoint: str = 'extract',
+        session: Optional[aiohttp.ClientSession] = None,
+        handle_retries=True,
+        retrying: Optional[AsyncRetrying] = None,
+    ) -> Iterator[asyncio.Future]:
         """ Send multiple requests to Zyte API in parallel.
         Return an `asyncio.as_completed` iterator.
 
@@ -159,8 +137,16 @@ class AsyncClient:
 
         async def _request(query):
             async with sem:
-                return await self.request_raw(query,
+                return await self.get(
+                    query,
                     endpoint=endpoint,
-                    session=session)
+                    session=session,
+                    handle_retries=handle_retries,
+                    retrying=retrying,
+                )
 
-        return asyncio.as_completed([_request(query) for query in queries])
+        for result in asyncio.as_completed([_request(query) for query in queries]):
+            try:
+                yield await result
+            except Exception as exception:
+                yield exception
