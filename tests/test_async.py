@@ -34,7 +34,11 @@ async def test_iter(mockserver):
         {"url": "https://b.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="},
     ]
     actual_results = []
-    async for actual_result in client.iter(queries):
+    for future in client.iter(queries):
+        try:
+            actual_result = await future
+        except Exception as exception:
+            actual_result = exception
         actual_results.append(actual_result)
     assert len(actual_results) == len(expected_results)
     for actual_result in actual_results:

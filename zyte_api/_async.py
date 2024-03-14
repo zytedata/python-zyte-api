@@ -1,7 +1,7 @@
 import asyncio
 import time
 from functools import partial
-from typing import AsyncGenerator, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 import aiohttp
 from tenacity import AsyncRetrying
@@ -115,7 +115,7 @@ class AsyncZyteAPI:
 
         return result
 
-    async def iter(
+    def iter(
         self,
         queries: List[dict],
         *,
@@ -123,9 +123,13 @@ class AsyncZyteAPI:
         session: Optional[aiohttp.ClientSession] = None,
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
-    ) -> AsyncGenerator[Union[dict, Exception], None]:
-        """ Send multiple requests to Zyte API in parallel.
-        Return an `asyncio.as_completed` iterator.
+    ) -> Iterator[asyncio.Future[Dict[str, Any]]]:
+        """Send multiple requests to Zyte API in parallel, and return an
+        iterator of futures for responses.
+
+        `Responses are iterated in arrival order
+        <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.as_completed>`__,
+        i.e. response order may not match the order in the original query.
 
         ``queries`` is a list of requests to process (dicts).
 
@@ -145,8 +149,4 @@ class AsyncZyteAPI:
                     retrying=retrying,
                 )
 
-        for result in asyncio.as_completed([_request(query) for query in queries]):
-            try:
-                yield await result
-            except Exception as exception:
-                yield exception
+        return asyncio.as_completed([_request(query) for query in queries])
