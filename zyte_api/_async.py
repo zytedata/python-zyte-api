@@ -1,7 +1,7 @@
 import asyncio
 import time
 from functools import partial
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, TYPE_CHECKING, Union
 
 import aiohttp
 from tenacity import AsyncRetrying
@@ -13,6 +13,12 @@ from .constants import API_URL, API_TIMEOUT
 from .stats import AggStats, ResponseStats
 from .utils import USER_AGENT, _process_query
 from ._utils import _AIO_API_TIMEOUT, create_session
+
+
+if TYPE_CHECKING:
+    _ResponseFuture = asyncio.Future[Dict[str, Any]]
+else:
+    _ResponseFuture = asyncio.Future
 
 
 def _post_func(session):
@@ -123,7 +129,7 @@ class AsyncZyteAPI:
         session: Optional[aiohttp.ClientSession] = None,
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
-    ) -> Iterator[asyncio.Future[Dict[str, Any]]]:
+    ) -> Iterator[_ResponseFuture]:
         """Send multiple requests to Zyte API in parallel, and return an
         iterator of futures for responses.
 
