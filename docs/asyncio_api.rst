@@ -54,5 +54,7 @@ parallel, using multiple connections:
     urls = ["https://toscrape.com", "https://books.toscrape.com"]
     asyncio.run(extract_from(urls, n_conn=15))
 
+``iter`` yields results as they come, not necessarily in their original order.
+
 ``iter`` and ``get`` methods handle throttling (http 429 errors) and network
 errors, retrying a request in these cases.
