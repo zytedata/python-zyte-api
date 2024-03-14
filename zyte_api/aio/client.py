@@ -145,8 +145,12 @@ class AsyncClient:
         the number of connections.
         """
         sem = asyncio.Semaphore(self.n_conn)
-        if session is None:
+
+        if session is not None:
+            close_session = False
+        else:
             session = create_session(n_conn=self.n_conn)
+            close_session = True
 
         async def _request(query):
             async with sem:
@@ -154,4 +158,7 @@ class AsyncClient:
                     endpoint=endpoint,
                     session=session)
 
-        return asyncio.as_completed([_request(query) for query in queries])
+        yield from asyncio.as_completed([_request(query) for query in queries])
+
+        if close_session:
+            asyncio.run(session.close())
