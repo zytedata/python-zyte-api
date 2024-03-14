@@ -18,7 +18,7 @@ from ._utils import _AIO_API_TIMEOUT, create_session
 if TYPE_CHECKING:
     _ResponseFuture = asyncio.Future[Dict[str, Any]]
 else:
-    _ResponseFuture = asyncio.Future
+    _ResponseFuture = asyncio.Future  # Python 3.8 support
 
 
 def _post_func(session):
