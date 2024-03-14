@@ -158,7 +158,8 @@ class AsyncClient:
                     endpoint=endpoint,
                     session=session)
 
-        yield from asyncio.as_completed([_request(query) for query in queries])
-
-        if close_session:
-            asyncio.run(session.close())
+        try:
+            yield from asyncio.as_completed([_request(query) for query in queries])
+        finally:
+            if close_session:
+                asyncio.run(session.close())
