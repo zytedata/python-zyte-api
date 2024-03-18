@@ -6,8 +6,8 @@ from typing import Any, Dict, Iterator, List, Optional, TYPE_CHECKING, Union
 import aiohttp
 from tenacity import AsyncRetrying
 
-from .aio.errors import RequestError
-from .aio.retry import zyte_api_retrying
+from ._errors import RequestError
+from ._retry import zyte_api_retrying
 from .apikey import get_apikey
 from .constants import API_URL, API_TIMEOUT
 from .stats import AggStats, ResponseStats

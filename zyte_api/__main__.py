@@ -10,11 +10,9 @@ import sys
 import tqdm
 from tenacity import retry_if_exception
 
-from zyte_api.aio.client import (
-    create_session,
-    AsyncZyteAPI,
-)
-from zyte_api.aio.retry import RetryFactory, _is_throttling_error
+from zyte_api._async import AsyncZyteAPI
+from zyte_api._utils import create_session
+from zyte_api._retry import RetryFactory, _is_throttling_error
 from zyte_api.constants import ENV_VARIABLE, API_URL
 from zyte_api.utils import _guess_intype
 

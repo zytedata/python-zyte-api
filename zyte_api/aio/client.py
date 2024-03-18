@@ -6,7 +6,6 @@ import asyncio
 import time
 from functools import partial
 from typing import Optional, Iterator, List
-from warnings import warn
 
 import aiohttp
 from aiohttp import TCPConnector
@@ -20,16 +19,6 @@ from ..apikey import get_apikey
 from ..constants import API_URL, API_TIMEOUT
 from ..stats import AggStats, ResponseStats
 from ..utils import USER_AGENT, _process_query
-
-
-warn(
-    (
-        "The zyte_api.aio.client module is deprecated. Replace AsyncClient "
-        "with zyte_api.AsyncZyteAPI (note that method names are different) "
-        "and create_session with zyte_api.create_session."
-    ),
-    DeprecationWarning,
-)
 
 
 class AsyncClient:

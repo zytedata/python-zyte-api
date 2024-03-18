@@ -1,6 +1,6 @@
 import pytest
 
-from zyte_api.aio.client import AsyncZyteAPI
+from zyte_api import AsyncZyteAPI
 from zyte_api.utils import USER_AGENT
 
 
