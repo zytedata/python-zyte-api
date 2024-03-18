@@ -50,7 +50,7 @@ async def run(
         n_conn=n_conn, api_key=api_key, api_url=api_url, retrying=retrying
     )
     async with create_session(connection_pool_size=n_conn) as session:
-        result_iter = client.request_parallel_as_completed(
+        result_iter = client.iter(
             queries=queries,
             session=session,
         )

@@ -4,8 +4,8 @@
 asyncio API
 ===========
 
-Create an instance of the ``AsyncZyteAPI`` to use the asyncio client API.
-You can use the method ``request_raw`` to perform individual requests:
+Create an instance of the ``AsyncZyteAPI`` to use the asyncio client API. You
+can use the method ``get`` to perform individual requests:
 
 .. code-block:: python
 
