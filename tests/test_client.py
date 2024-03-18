@@ -12,11 +12,11 @@ from zyte_api.utils import USER_AGENT
             USER_AGENT,
         ),
         (
-            f'scrapy-zyte-api/0.11.1 {USER_AGENT}',
-            f'scrapy-zyte-api/0.11.1 {USER_AGENT}',
+            f"scrapy-zyte-api/0.11.1 {USER_AGENT}",
+            f"scrapy-zyte-api/0.11.1 {USER_AGENT}",
         ),
     ),
 )
 def test_user_agent(user_agent, expected):
-    client = AsyncClient(api_key='123', api_url='http:\\test', user_agent=user_agent)
+    client = AsyncClient(api_key="123", api_url="http:\\test", user_agent=user_agent)
     assert client.user_agent == expected
