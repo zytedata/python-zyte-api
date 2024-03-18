@@ -47,6 +47,7 @@ class AsyncZyteAPI:
         self.agg_stats = AggStats()
         self.retrying = retrying or zyte_api_retrying
         self.user_agent = user_agent or USER_AGENT
+        self._semaphore = asyncio.Semaphore(n_conn)
 
     async def get(
         self,
@@ -80,26 +81,27 @@ class AsyncZyteAPI:
             )
 
             try:
-                async with post(**post_kwargs) as resp:
-                    stats.record_connected(resp.status, self.agg_stats)
-                    if resp.status >= 400:
-                        content = await resp.read()
-                        resp.release()
-                        stats.record_read()
-                        stats.record_request_error(content, self.agg_stats)
+                async with self._semaphore:
+                    async with post(**post_kwargs) as resp:
+                        stats.record_connected(resp.status, self.agg_stats)
+                        if resp.status >= 400:
+                            content = await resp.read()
+                            resp.release()
+                            stats.record_read()
+                            stats.record_request_error(content, self.agg_stats)
 
-                        raise RequestError(
-                            request_info=resp.request_info,
-                            history=resp.history,
-                            status=resp.status,
-                            message=resp.reason,
-                            headers=resp.headers,
-                            response_content=content,
-                        )
+                            raise RequestError(
+                                request_info=resp.request_info,
+                                history=resp.history,
+                                status=resp.status,
+                                message=resp.reason,
+                                headers=resp.headers,
+                                response_content=content,
+                            )
 
-                    response = await resp.json()
-                    stats.record_read(self.agg_stats)
-                    return response
+                        response = await resp.json()
+                        stats.record_read(self.agg_stats)
+                        return response
             except Exception as e:
                 if not isinstance(e, RequestError):
                     self.agg_stats.n_errors += 1
@@ -143,10 +145,8 @@ class AsyncZyteAPI:
         Set the session TCPConnector limit to a value greater than
         the number of connections.
         """
-        sem = asyncio.Semaphore(self.n_conn)
-
         async def _request(query):
-            async with sem:
+            async with self._semaphore:
                 return await self.get(
                     query,
                     endpoint=endpoint,
