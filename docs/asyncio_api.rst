@@ -60,7 +60,7 @@ When using ``iter`` or multiple ``get`` calls, consider using a session:
     from zyte_api import AsyncZyteAPI, create_session
 
     async def main():
-        client = AsyncZyteAPI(api_key="YOUR_API_KEY"
+        client = AsyncZyteAPI(api_key="YOUR_API_KEY")
         async with create_session(n_conn=client.n_conn) as session:
             queries = [
                 {"url": "https://toscrape.com", "httpResponseBody": True},
