@@ -61,7 +61,7 @@ When using ``iter`` or multiple ``get`` calls, consider using a session:
 
     async def main():
         client = AsyncZyteAPI(api_key="YOUR_API_KEY")
-        async with create_session(n_conn=client.n_conn) as session:
+        async with create_session(client.n_conn) as session:
             queries = [
                 {"url": "https://toscrape.com", "httpResponseBody": True},
                 {"url": "https://books.toscrape.com", "httpResponseBody": True},
@@ -74,5 +74,14 @@ When using ``iter`` or multiple ``get`` calls, consider using a session:
 
     asyncio.run(main())
 
-Sessions allow enforcing a concurrency limit (``n_conn``) and improve
-performance through a pool of reusable connections to the Zyte API server.
+Sessions improve performance through a pool of reusable connections to the Zyte
+API server.
+
+To send many queries with a concurrency limit, set ``n_conn`` in your client:
+
+.. code-block::
+
+    client = AsyncZyteAPI(n_conn=15)
+    
+Then use ``iter`` to send your queries. ``n_conn`` is not enforced when using 
+``get`` instead of ``iter``.
