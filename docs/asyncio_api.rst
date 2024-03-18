@@ -79,7 +79,7 @@ API server.
 
 To send many queries with a concurrency limit, set ``n_conn`` in your client:
 
-.. code-block::
+.. code-block:: python
 
     client = AsyncZyteAPI(n_conn=15)
     
