@@ -4,7 +4,7 @@ from typing import Generator, List, Optional, Union
 
 from aiohttp import ClientSession
 
-from .aio.client import AsyncClient
+from ._async import AsyncZyteAPI
 from .constants import API_URL
 
 
@@ -35,7 +35,7 @@ class ZyteAPI:
         retrying: Optional[AsyncRetrying] = None,
         user_agent: Optional[str] = None,
     ):
-        self._async_client = AsyncClient(
+        self._async_client = AsyncZyteAPI(
             api_key=api_key,
             api_url=api_url,
             n_conn=n_conn,
@@ -59,7 +59,7 @@ class ZyteAPI:
             result = client.get({"url": "https://toscrape.com", "httpResponseBody": True})
         """
         return asyncio.run(
-            self._async_client.request_raw(
+            self._async_client.get(
                 query=query,
                 endpoint=endpoint,
                 session=session,
@@ -103,7 +103,7 @@ class ZyteAPI:
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-        for future in self._async_client.request_parallel_as_completed(
+        for future in self._async_client.iter(
             queries=queries,
             endpoint=endpoint,
             session=session,
