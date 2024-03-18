@@ -12,7 +12,7 @@ from tenacity import retry_if_exception
 
 from zyte_api.aio.client import (
     create_session,
-    AsyncClient,
+    AsyncZyteAPI,
 )
 from zyte_api.aio.retry import RetryFactory, _is_throttling_error
 from zyte_api.constants import ENV_VARIABLE, API_URL
@@ -46,7 +46,7 @@ async def run(
         pbar.update()
 
     retrying = None if retry_errors else DontRetryErrorsFactory().build()
-    client = AsyncClient(
+    client = AsyncZyteAPI(
         n_conn=n_conn, api_key=api_key, api_url=api_url, retrying=retrying
     )
     async with create_session(connection_pool_size=n_conn) as session:

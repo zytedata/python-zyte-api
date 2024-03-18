@@ -98,26 +98,26 @@ async def test_run(queries, expected_response, store_errors, exception):
     api_key = "fake_key"
     retry_errors = True
 
-    # Create a mock for AsyncClient
+    # Create a mock for AsyncZyteAPI
     async_client_mock = Mock()
 
     # Create a mock for the request_parallel_as_completed method
     request_parallel_mock = Mock()
     async_client_mock.return_value.request_parallel_as_completed = request_parallel_mock
 
-    # Patch the AsyncClient class in __main__ with the mock
-    with patch("zyte_api.__main__.AsyncClient", async_client_mock), patch(
+    # Patch the AsyncZyteAPI class in __main__ with the mock
+    with patch("zyte_api.__main__.AsyncZyteAPI", async_client_mock), patch(
         "zyte_api.__main__.create_session"
     ) as create_session_mock:
         # Mock create_session to return an AsyncMock
         create_session_mock.return_value = AsyncMock()
 
-        # Set up the AsyncClient instance to return the mocked iterator
+        # Set up the AsyncZyteAPI instance to return the mocked iterator
         async_client_mock.return_value.request_parallel_as_completed.return_value = [
             exception(),
         ]
 
-        # Call the run function with the mocked AsyncClient
+        # Call the run function with the mocked AsyncZyteAPI
         await run(
             queries=queries,
             out=temporary_file,
