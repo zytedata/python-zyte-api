@@ -11,6 +11,7 @@ import aiohttp
 from tenacity import AsyncRetrying
 
 from .._async import _post_func
+from .._utils import create_session  # noqa: F401
 from ..apikey import get_apikey
 from ..constants import API_URL
 from ..stats import AggStats, ResponseStats
