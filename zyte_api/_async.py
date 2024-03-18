@@ -30,6 +30,62 @@ def _post_func(session):
     else:
         return session.post
 
+class _AsyncSession:
+    def __init__(self, client, **session_kwargs):
+        self._client = client
+        self._session = create_session(client.n_conn, **session_kwargs)
+        self._context = None
+
+    async def __aenter__(self):
+        self._context = await self._session.__aenter__()
+        return self
+
+    async def __aexit__(self, *exc_info):
+        result = await self._context.__aexit__(*exc_info)
+        self._context = None
+        return result
+
+    def _check_context(self):
+        if self._context is None:
+            raise RuntimeError(
+                "Attempt to use session method on a session either not opened "
+                "or already closed."
+            )
+
+    async def get(
+        self,
+        query: dict,
+        *,
+        endpoint: str = 'extract',
+        handle_retries=True,
+        retrying: Optional[AsyncRetrying] = None,
+    ):
+        self._check_context()
+        return await self._client.get(
+            query=query,
+            endpoint=endpoint,
+            handle_retries=handle_retries,
+            retrying=retrying,
+            session=self._context,
+        )
+
+    def iter(
+        self,
+        queries: List[dict],
+        *,
+        endpoint: str = 'extract',
+        handle_retries=True,
+        retrying: Optional[AsyncRetrying] = None,
+    ) -> Iterator[asyncio.Future]:
+        self._check_context()
+        return self._client.iter(
+            queries=queries,
+            endpoint=endpoint,
+            session=self._context,
+            handle_retries=handle_retries,
+            retrying=retrying,
+        )
+
 
 class AsyncZyteAPI:
     def __init__(
@@ -156,3 +212,6 @@ class AsyncZyteAPI:
                 )
 
         return asyncio.as_completed([_request(query) for query in queries])
+
+    def session(self, **kwargs):
+        return _AsyncSession(client=self, **kwargs)

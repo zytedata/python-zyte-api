@@ -31,7 +31,7 @@ parallel, using multiple connections:
     import json
     import sys
 
-    from zyte_api import AsyncZyteAPI, create_session
+    from zyte_api import AsyncZyteAPI
     from zyte_api.aio.errors import RequestError
 
     async def extract_from(urls, n_conn):
@@ -40,8 +40,8 @@ parallel, using multiple connections:
             {"url": url, "browserHtml": True}
             for url in urls
         ]
-        async with create_session(n_conn) as session:
-            res_iter = client.iter(requests, session=session)
+        async with client.session() as session:
+            res_iter = session.iter(requests)
             for fut in res_iter:
                 try:
                     res = await fut
