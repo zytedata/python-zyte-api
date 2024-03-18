@@ -4,64 +4,75 @@
 asyncio API
 ===========
 
-Create an instance of the ``AsyncClient`` to use the asyncio client API.
+Create an instance of the ``AsyncZyteAPI`` to use the asyncio client API.
 You can use the method ``request_raw`` to perform individual requests:
 
 .. code-block:: python
 
     import asyncio
-    from zyte_api.aio.client import AsyncClient
+    from zyte_api import AsyncZyteAPI
 
-    client = AsyncClient(api_key="YOUR_API_KEY")
+    client = AsyncZyteAPI(api_key="YOUR_API_KEY")
 
+    async def main():
+        result = await client.get({"url": "https://toscrape.com", "httpResponseBody": True})
 
-    async def single_request(url):
-        return await client.request_raw({"url": url, "browserHtml": True})
-
-
-    response = asyncio.run(single_request("https://books.toscrape.com"))
-    # Do something with the response…
+    asyncio.run(main())
 
 .. tip:: You can skip the ``api_key`` parameter if you :ref:`use an environment
     variable instead <api-key>`.
 
-There is also ``request_parallel_as_completed`` method, which allows
-to process many URLs in parallel, using multiple connections:
+There is also an ``iter`` method, which allows to process many URLs in
+parallel, using multiple connections:
 
 .. code-block:: python
 
     import asyncio
-    import json
-    import sys
 
-    from zyte_api.aio.client import AsyncClient
+    from zyte_api import AsyncZyteAPI
     from zyte_api.aio.errors import RequestError
 
-    async def extract_from(urls, n_conn):
-        client = AsyncClient(n_conn=n_conn)
-        requests = [
-            {"url": url, "browserHtml": True}
-            for url in urls
+    async def main():
+        client = AsyncZyteAPI(api_key="YOUR_API_KEY")
+        queries = [
+            {"url": "https://toscrape.com", "httpResponseBody": True},
+            {"url": "https://books.toscrape.com", "httpResponseBody": True},
         ]
-        for fut in client.request_parallel_as_completed(requests):
+        for future in client.iter(queries):
             try:
-                res = await fut
-                # do something with a result, e.g.
-                print(json.dumps(res))
+                result = await future
             except RequestError as e:
-                print(e, file=sys.stderr)
-                raise
+                ...
 
-    urls = ["https://toscrape.com", "https://books.toscrape.com"]
-    asyncio.run(extract_from(urls, n_conn=15))
+    asyncio.run(main())
 
-``request_parallel_as_completed`` is modelled after ``asyncio.as_completed``
-(see https://docs.python.org/3/library/asyncio-task.html#asyncio.as_completed),
-and actually uses it under the hood.
+``iter`` yields results as they come, not necessarily in their original order.
 
-``request_parallel_as_completed`` and ``request_raw`` methods handle
-throttling (http 429 errors) and network errors, retrying a request in
-these cases.
+``iter`` and ``get`` methods handle throttling (http 429 errors) and network
+errors, retrying a request in these cases.
 
-CLI interface implementation (``zyte_api/__main__.py``) can serve
-as an usage example.
+When using ``iter`` or multiple ``get`` calls, consider using a session:
+
+.. code-block:: python
+
+    import asyncio
+
+    from zyte_api import AsyncZyteAPI, create_session
+
+    async def main():
+        client = AsyncZyteAPI(api_key="YOUR_API_KEY"
+        async with create_session(n_conn=client.n_conn) as session:
+            queries = [
+                {"url": "https://toscrape.com", "httpResponseBody": True},
+                {"url": "https://books.toscrape.com", "httpResponseBody": True},
+            ]
+            for future in client.iter(queries, session=session):
+                try:
+                    result = await future
+                except RequestError as e:
+                    ...
+
+    asyncio.run(main())
+
+Sessions allow enforcing a concurrency limit (``n_conn``) and improves
+performance through a pool of reusable connections to the Zyte API server.
