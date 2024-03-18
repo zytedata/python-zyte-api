@@ -74,5 +74,5 @@ When using ``iter`` or multiple ``get`` calls, consider using a session:
 
     asyncio.run(main())
 
-Sessions allow enforcing a concurrency limit (``n_conn``) and improves
+Sessions allow enforcing a concurrency limit (``n_conn``) and improve
 performance through a pool of reusable connections to the Zyte API server.
