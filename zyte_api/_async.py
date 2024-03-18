@@ -145,14 +145,13 @@ class AsyncZyteAPI:
         Set the session TCPConnector limit to a value greater than
         the number of connections.
         """
-        async def _request(query):
-            async with self._semaphore:
-                return await self.get(
-                    query,
-                    endpoint=endpoint,
-                    session=session,
-                    handle_retries=handle_retries,
-                    retrying=retrying,
-                )
+        def _request(query):
+            return self.get(
+                query,
+                endpoint=endpoint,
+                session=session,
+                handle_retries=handle_retries,
+                retrying=retrying,
+            )
 
         return asyncio.as_completed([_request(query) for query in queries])
