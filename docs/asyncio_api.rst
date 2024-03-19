@@ -14,8 +14,10 @@ You can use the method ``request_raw`` to perform individual requests:
 
     client = AsyncZyteAPI(api_key="YOUR_API_KEY")
 
+
     async def main():
         result = await client.get({"url": "https://toscrape.com", "httpResponseBody": True})
+
 
     asyncio.run(main())
 
@@ -32,6 +34,7 @@ parallel, using multiple connections:
     from zyte_api import AsyncZyteAPI
     from zyte_api.aio.errors import RequestError
 
+
     async def main():
         client = AsyncZyteAPI(api_key="YOUR_API_KEY")
         queries = [
@@ -43,6 +46,7 @@ parallel, using multiple connections:
                 result = await future
             except RequestError as e:
                 ...
+
 
     asyncio.run(main())
 
@@ -59,6 +63,7 @@ When using ``iter`` or multiple ``get`` calls, consider using a session:
 
     from zyte_api import AsyncZyteAPI, create_session
 
+
     async def main():
         client = AsyncZyteAPI(api_key="YOUR_API_KEY")
         async with create_session(client.n_conn) as session:
@@ -72,6 +77,7 @@ When using ``iter`` or multiple ``get`` calls, consider using a session:
                 except RequestError as e:
                     ...
 
+
     asyncio.run(main())
 
 Sessions improve performance through a pool of reusable connections to the Zyte
@@ -82,6 +88,5 @@ To send many queries with a concurrency limit, set ``n_conn`` in your client:
 .. code-block:: python
 
     client = AsyncZyteAPI(n_conn=15)
-    
 Then use ``iter`` to send your queries. ``n_conn`` is not enforced when using 
 ``get`` instead of ``iter``.

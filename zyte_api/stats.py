@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from typing import Optional
-from collections import Counter
 import functools
 import time
+from collections import Counter
+from typing import Optional
 
 import attr
 from runstats import Statistics
@@ -17,6 +17,7 @@ def zero_on_division_error(meth):
             return meth(*args, **kwargs)
         except ZeroDivisionError:
             return 0
+
     return wrapper
 
 
@@ -26,9 +27,13 @@ class AggStats:
         self.time_total_stats = Statistics()
 
         self.n_success = 0  # number of successful results returned to the user
-        self.n_fatal_errors = 0  # number of errors returned to the user, after all retries
+        self.n_fatal_errors = (
+            0  # number of errors returned to the user, after all retries
+        )
 
-        self.n_attempts = 0  # total amount of requests made to Zyte API, including retries
+        self.n_attempts = (
+            0  # total amount of requests made to Zyte API, including retries
+        )
         self.n_429 = 0  # number of 429 (throttling) responses
         self.n_errors = 0  # number of errors, including errors which were retried
 
@@ -46,25 +51,29 @@ class AggStats:
             self.error_ratio(),
             self.n_success,
             self.n_processed,
-            self.success_ratio()
+            self.success_ratio(),
         )
 
     def summary(self):
         return (
-            "\n" +
-            "Summary\n" +
-            "-------\n" +
-            "Mean connection time:     {:0.2f}\n".format(self.time_connect_stats.mean()) +
-            "Mean response time:       {:0.2f}\n".format(self.time_total_stats.mean()) +
-            "Throttle ratio:           {:0.1%}\n".format(self.throttle_ratio()) +
-            "Attempts:                 {}\n".format(self.n_attempts) +
-            "Errors:                   {:0.1%}, fatal: {}, non fatal: {}\n".format(
+            "\n"
+            + "Summary\n"
+            + "-------\n"
+            + "Mean connection time:     {:0.2f}\n".format(
+                self.time_connect_stats.mean()
+            )
+            + "Mean response time:       {:0.2f}\n".format(self.time_total_stats.mean())
+            + "Throttle ratio:           {:0.1%}\n".format(self.throttle_ratio())
+            + "Attempts:                 {}\n".format(self.n_attempts)
+            + "Errors:                   {:0.1%}, fatal: {}, non fatal: {}\n".format(
                 self.error_ratio(),
                 self.n_fatal_errors,
-                self.n_errors - self.n_fatal_errors) +
-            "Successful URLs:          {} of {}\n".format(
-                self.n_success, self.n_processed) +
-            "Success ratio:            {:0.1%}\n".format(self.success_ratio())
+                self.n_errors - self.n_fatal_errors,
+            )
+            + "Successful URLs:          {} of {}\n".format(
+                self.n_success, self.n_processed
+            )
+            + "Success ratio:            {:0.1%}\n".format(self.success_ratio())
         )
 
     @zero_on_division_error
@@ -81,7 +90,7 @@ class AggStats:
 
     @property
     def n_processed(self):
-        """ Total number of processed URLs """
+        """Total number of processed URLs"""
         return self.n_success + self.n_fatal_errors
 
 
