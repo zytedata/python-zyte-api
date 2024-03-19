@@ -3,6 +3,7 @@ from tenacity import AsyncRetrying
 
 from zyte_api import AsyncZyteAPI, RequestError
 from zyte_api.apikey import NoApiKey
+from zyte_api.errors import ParsedError
 
 
 def test_api_key():
@@ -54,6 +55,59 @@ async def test_get_handle_retries(value, exception, mockserver):
             {"url": "https://exception.example", "browserHtml": True},
             **kwargs,
         )
+
+
+@pytest.mark.asyncio
+async def test_get_request_error(mockserver):
+    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+    with pytest.raises(RequestError) as request_error_info:
+        await client.get(
+            {"url": "https://exception.example", "browserHtml": True},
+        )
+    parsed_error = request_error_info.value.parsed
+    assert isinstance(parsed_error, ParsedError)
+    assert parsed_error.data == {
+        "detail": "The authentication key is not valid or can't be matched.",
+        "status": 401,
+        "title": "Authentication Key Not Found",
+        "type": "/auth/key-not-found",
+    }
+
+
+@pytest.mark.asyncio
+async def test_get_request_error_empty_body(mockserver):
+    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+    with pytest.raises(RequestError) as request_error_info:
+        await client.get(
+            {"url": "https://empty-body-exception.example", "browserHtml": True},
+        )
+    parsed_error = request_error_info.value.parsed
+    assert isinstance(parsed_error, ParsedError)
+    assert parsed_error.data is None
+
+
+@pytest.mark.asyncio
+async def test_get_request_error_non_json(mockserver):
+    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+    with pytest.raises(RequestError) as request_error_info:
+        await client.get(
+            {"url": "https://nonjson-exception.example", "browserHtml": True},
+        )
+    parsed_error = request_error_info.value.parsed
+    assert isinstance(parsed_error, ParsedError)
+    assert parsed_error.data is None
+
+
+@pytest.mark.asyncio
+async def test_get_request_error_unexpected_json(mockserver):
+    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+    with pytest.raises(RequestError) as request_error_info:
+        await client.get(
+            {"url": "https://array-exception.example", "browserHtml": True},
+        )
+    parsed_error = request_error_info.value.parsed
+    assert isinstance(parsed_error, ParsedError)
+    assert parsed_error.data is None
 
 
 @pytest.mark.asyncio

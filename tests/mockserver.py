@@ -49,9 +49,18 @@ class DefaultResource(Resource):
                 "detail": "The authentication key is not valid or can't be matched.",
             }
             return json.dumps(response_data).encode()
+        if domain == "empty-body-exception.example":
+            request.setResponseCode(500)
+            return b""
         if domain == "nonjson.example":
             request.setResponseCode(200)
             return b"foo"
+        if domain == "nonjson-exception.example":
+            request.setResponseCode(500)
+            return b"foo"
+        if domain == "array-exception.example":
+            request.setResponseCode(500)
+            return b'["foo"]'
 
         response_data: Dict[str, Any] = {
             "url": url,
