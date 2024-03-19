@@ -3,26 +3,41 @@ from tenacity import AsyncRetrying
 
 from zyte_api import AsyncZyteAPI, RequestError
 from zyte_api._retry import RetryFactory
+from zyte_api.aio.client import AsyncClient
 from zyte_api.apikey import NoApiKey
 from zyte_api.errors import ParsedError
 
 from .mockserver import DropResource, MockServer
 
 
-def test_api_key():
-    AsyncZyteAPI(api_key="a")
+@pytest.mark.parametrize(
+    ("client_cls",),
+    (
+        (AsyncZyteAPI,),
+        (AsyncClient,),
+    ),
+)
+def test_api_key(client_cls):
+    client_cls(api_key="a")
     with pytest.raises(NoApiKey):
-        AsyncZyteAPI()
+        client_cls()
 
 
+@pytest.mark.parametrize(
+    ("client_cls", "get_method"),
+    (
+        (AsyncZyteAPI, "get"),
+        (AsyncClient, "request_raw"),
+    ),
+)
 @pytest.mark.asyncio
-async def test_get(mockserver):
-    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+async def test_get(client_cls, get_method, mockserver):
+    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     expected_result = {
         "url": "https://a.example",
         "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
     }
-    actual_result = await client.get(
+    actual_result = await getattr(client, get_method)(
         {"url": "https://a.example", "httpResponseBody": True}
     )
     assert actual_result == expected_result
@@ -36,6 +51,13 @@ class OutlierException(RuntimeError):
 
 
 @pytest.mark.parametrize(
+    ("client_cls", "get_method"),
+    (
+        (AsyncZyteAPI, "get"),
+        (AsyncClient, "request_raw"),
+    ),
+)
+@pytest.mark.parametrize(
     ("value", "exception"),
     (
         (UNSET, OutlierException),
@@ -44,7 +66,7 @@ class OutlierException(RuntimeError):
     ),
 )
 @pytest.mark.asyncio
-async def test_get_handle_retries(value, exception, mockserver):
+async def test_get_handle_retries(client_cls, get_method, value, exception, mockserver):
     kwargs = {}
     if value is not UNSET:
         kwargs["handle_retries"] = value
@@ -53,21 +75,26 @@ async def test_get_handle_retries(value, exception, mockserver):
         raise OutlierException
 
     retrying = AsyncRetrying(stop=broken_stop)
-    client = AsyncZyteAPI(
-        api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
-    )
+    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying)
     with pytest.raises(exception):
-        await client.get(
+        await getattr(client, get_method)(
             {"url": "https://exception.example", "browserHtml": True},
             **kwargs,
         )
 
 
+@pytest.mark.parametrize(
+    ("client_cls", "get_method"),
+    (
+        (AsyncZyteAPI, "get"),
+        (AsyncClient, "request_raw"),
+    ),
+)
 @pytest.mark.asyncio
-async def test_get_request_error(mockserver):
-    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+async def test_get_request_error(client_cls, get_method, mockserver):
+    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     with pytest.raises(RequestError) as request_error_info:
-        await client.get(
+        await getattr(client, get_method)(
             {"url": "https://exception.example", "browserHtml": True},
         )
     parsed_error = request_error_info.value.parsed
@@ -80,11 +107,18 @@ async def test_get_request_error(mockserver):
     }
 
 
+@pytest.mark.parametrize(
+    ("client_cls", "get_method"),
+    (
+        (AsyncZyteAPI, "get"),
+        (AsyncClient, "request_raw"),
+    ),
+)
 @pytest.mark.asyncio
-async def test_get_request_error_empty_body(mockserver):
-    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+async def test_get_request_error_empty_body(client_cls, get_method, mockserver):
+    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     with pytest.raises(RequestError) as request_error_info:
-        await client.get(
+        await getattr(client, get_method)(
             {"url": "https://empty-body-exception.example", "browserHtml": True},
         )
     parsed_error = request_error_info.value.parsed
@@ -92,11 +126,18 @@ async def test_get_request_error_empty_body(mockserver):
     assert parsed_error.data is None
 
 
+@pytest.mark.parametrize(
+    ("client_cls", "get_method"),
+    (
+        (AsyncZyteAPI, "get"),
+        (AsyncClient, "request_raw"),
+    ),
+)
 @pytest.mark.asyncio
-async def test_get_request_error_non_json(mockserver):
-    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+async def test_get_request_error_non_json(client_cls, get_method, mockserver):
+    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     with pytest.raises(RequestError) as request_error_info:
-        await client.get(
+        await getattr(client, get_method)(
             {"url": "https://nonjson-exception.example", "browserHtml": True},
         )
     parsed_error = request_error_info.value.parsed
@@ -104,11 +145,18 @@ async def test_get_request_error_non_json(mockserver):
     assert parsed_error.data is None
 
 
+@pytest.mark.parametrize(
+    ("client_cls", "get_method"),
+    (
+        (AsyncZyteAPI, "get"),
+        (AsyncClient, "request_raw"),
+    ),
+)
 @pytest.mark.asyncio
-async def test_get_request_error_unexpected_json(mockserver):
-    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+async def test_get_request_error_unexpected_json(client_cls, get_method, mockserver):
+    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     with pytest.raises(RequestError) as request_error_info:
-        await client.get(
+        await getattr(client, get_method)(
             {"url": "https://array-exception.example", "browserHtml": True},
         )
     parsed_error = request_error_info.value.parsed
@@ -116,9 +164,16 @@ async def test_get_request_error_unexpected_json(mockserver):
     assert parsed_error.data is None
 
 
+@pytest.mark.parametrize(
+    ("client_cls", "iter_method"),
+    (
+        (AsyncZyteAPI, "iter"),
+        (AsyncClient, "request_parallel_as_completed"),
+    ),
+)
 @pytest.mark.asyncio
-async def test_iter(mockserver):
-    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+async def test_iter(client_cls, iter_method, mockserver):
+    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     queries = [
         {"url": "https://a.example", "httpResponseBody": True},
         {"url": "https://exception.example", "httpResponseBody": True},
@@ -136,7 +191,7 @@ async def test_iter(mockserver):
         },
     ]
     actual_results = []
-    for future in client.iter(queries):
+    for future in getattr(client, iter_method)(queries):
         try:
             actual_result = await future
         except Exception as exception:
@@ -151,6 +206,13 @@ async def test_iter(mockserver):
 
 
 @pytest.mark.parametrize(
+    ("client_cls", "get_method"),
+    (
+        (AsyncZyteAPI, "get"),
+        (AsyncClient, "request_raw"),
+    ),
+)
+@pytest.mark.parametrize(
     ("subdomain", "waiter"),
     (
         ("e429", "throttling"),
@@ -158,7 +220,7 @@ async def test_iter(mockserver):
     ),
 )
 @pytest.mark.asyncio
-async def test_retry_wait(subdomain, waiter, mockserver):
+async def test_retry_wait(client_cls, get_method, subdomain, waiter, mockserver):
     def broken_wait(self, retry_state):
         raise OutlierException
 
@@ -168,17 +230,22 @@ async def test_retry_wait(subdomain, waiter, mockserver):
     setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
 
     retrying = CustomRetryFactory().build()
-    client = AsyncZyteAPI(
-        api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
-    )
+    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying)
     with pytest.raises(OutlierException):
-        await client.get(
+        await getattr(client, get_method)(
             {"url": f"https://{subdomain}.example", "browserHtml": True},
         )
 
 
+@pytest.mark.parametrize(
+    ("client_cls", "get_method"),
+    (
+        (AsyncZyteAPI, "get"),
+        (AsyncClient, "request_raw"),
+    ),
+)
 @pytest.mark.asyncio
-async def test_retry_wait_network_error():
+async def test_retry_wait_network_error(client_cls, get_method):
     waiter = "network_error"
 
     def broken_wait(self, retry_state):
@@ -191,15 +258,22 @@ async def test_retry_wait_network_error():
 
     retrying = CustomRetryFactory().build()
     with MockServer(resource=DropResource) as mockserver:
-        client = AsyncZyteAPI(
+        client = client_cls(
             api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
         )
         with pytest.raises(OutlierException):
-            await client.get(
+            await getattr(client, get_method)(
                 {"url": "https://example.com", "browserHtml": True},
             )
 
 
+@pytest.mark.parametrize(
+    ("client_cls", "get_method"),
+    (
+        (AsyncZyteAPI, "get"),
+        (AsyncClient, "request_raw"),
+    ),
+)
 @pytest.mark.parametrize(
     ("subdomain", "stopper"),
     (
@@ -208,7 +282,7 @@ async def test_retry_wait_network_error():
     ),
 )
 @pytest.mark.asyncio
-async def test_retry_stop(subdomain, stopper, mockserver):
+async def test_retry_stop(client_cls, get_method, subdomain, stopper, mockserver):
     def broken_stop(self, retry_state):
         raise OutlierException
 
@@ -219,17 +293,22 @@ async def test_retry_stop(subdomain, stopper, mockserver):
     setattr(CustomRetryFactory, f"{stopper}_stop", broken_stop)
 
     retrying = CustomRetryFactory().build()
-    client = AsyncZyteAPI(
-        api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
-    )
+    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying)
     with pytest.raises(OutlierException):
-        await client.get(
+        await getattr(client, get_method)(
             {"url": f"https://{subdomain}.example", "browserHtml": True},
         )
 
 
+@pytest.mark.parametrize(
+    ("client_cls", "get_method"),
+    (
+        (AsyncZyteAPI, "get"),
+        (AsyncClient, "request_raw"),
+    ),
+)
 @pytest.mark.asyncio
-async def test_retry_stop_network_error():
+async def test_retry_stop_network_error(client_cls, get_method):
     stopper = "network_error"
 
     def broken_stop(self, retry_state):
@@ -243,10 +322,10 @@ async def test_retry_stop_network_error():
 
     retrying = CustomRetryFactory().build()
     with MockServer(resource=DropResource) as mockserver:
-        client = AsyncZyteAPI(
+        client = client_cls(
             api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
         )
         with pytest.raises(OutlierException):
-            await client.get(
+            await getattr(client, get_method)(
                 {"url": "https://example.com", "browserHtml": True},
             )
