@@ -6,13 +6,14 @@ import attr
 
 @attr.s(auto_attribs=True)
 class ParsedError:
-    """ Parsed error from Zyte API """
+    """Parsed error from Zyte API"""
+
     response_body: bytes
     data: Optional[dict]
     parse_error: Optional[str]
 
     @classmethod
-    def from_body(cls, response_body: bytes) -> 'ParsedError':
+    def from_body(cls, response_body: bytes) -> "ParsedError":
         data = None
         parse_error = None
 
@@ -25,12 +26,8 @@ class ParsedError:
             except (json.JSONDecodeError, UnicodeDecodeError) as _:  # noqa: F841
                 parse_error = "bad_json"
 
-        return cls(
-            response_body=response_body,
-            data=data,
-            parse_error=parse_error
-        )
+        return cls(response_body=response_body, data=data, parse_error=parse_error)
 
     @property
     def type(self) -> Optional[str]:
-        return (self.data or {}).get('type', None)
+        return (self.data or {}).get("type", None)
