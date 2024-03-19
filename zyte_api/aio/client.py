@@ -4,23 +4,20 @@ Asyncio client for Zyte API
 
 import asyncio
 import time
-from functools import partial
-from typing import Optional, Iterator, List
+from typing import Iterator, List, Optional
 from warnings import warn
 
 import aiohttp
-from aiohttp import TCPConnector
 from tenacity import AsyncRetrying
 
-from .errors import RequestError
-from .retry import zyte_api_retrying
 from .._async import _post_func
-from .._utils import _AIO_API_TIMEOUT as AIO_API_TIMEOUT, create_session
+from .._utils import create_session  # noqa: F401
 from ..apikey import get_apikey
-from ..constants import API_URL, API_TIMEOUT
+from ..constants import API_URL
 from ..stats import AggStats, ResponseStats
 from ..utils import USER_AGENT, _process_query
-
+from .errors import RequestError
+from .retry import zyte_api_retrying
 
 warn(
     (
@@ -33,13 +30,15 @@ warn(
 
 
 class AsyncClient:
-    def __init__(self, *,
-                 api_key=None,
-                 api_url=API_URL,
-                 n_conn=15,
-                 retrying: Optional[AsyncRetrying] = None,
-                 user_agent: Optional[str] = None,
-                 ):
+    def __init__(
+        self,
+        *,
+        api_key=None,
+        api_url=API_URL,
+        n_conn=15,
+        retrying: Optional[AsyncRetrying] = None,
+        user_agent: Optional[str] = None,
+    ):
         self.api_key = get_apikey(api_key)
         self.api_url = api_url
         self.n_conn = n_conn
@@ -47,19 +46,19 @@ class AsyncClient:
         self.retrying = retrying or zyte_api_retrying
         self.user_agent = user_agent or USER_AGENT
 
-    async def request_raw(self, query: dict, *,
-                          endpoint: str = 'extract',
-                          session=None,
-                          handle_retries=True,
-                          retrying: Optional[AsyncRetrying] = None,
-                          ):
+    async def request_raw(
+        self,
+        query: dict,
+        *,
+        endpoint: str = "extract",
+        session=None,
+        handle_retries=True,
+        retrying: Optional[AsyncRetrying] = None,
+    ):
         retrying = retrying or self.retrying
         post = _post_func(session)
         auth = aiohttp.BasicAuth(self.api_key)
-        headers = {
-            'User-Agent': self.user_agent,
-            'Accept-Encoding': 'br'
-        }
+        headers = {"User-Agent": self.user_agent, "Accept-Encoding": "br"}
 
         response_stats = []
         start_global = time.perf_counter()
@@ -117,15 +116,16 @@ class AsyncClient:
 
         return result
 
-    def request_parallel_as_completed(self,
-                                      queries: List[dict],
-                                      *,
-                                      endpoint: str = 'extract',
-                                      session: Optional[aiohttp.ClientSession] = None,
-                                      handle_retries=True,
-                                      retrying: Optional[AsyncRetrying] = None,
-                                      ) -> Iterator[asyncio.Future]:
-        """ Send multiple requests to Zyte API in parallel.
+    def request_parallel_as_completed(
+        self,
+        queries: List[dict],
+        *,
+        endpoint: str = "extract",
+        session: Optional[aiohttp.ClientSession] = None,
+        handle_retries=True,
+        retrying: Optional[AsyncRetrying] = None,
+    ) -> Iterator[asyncio.Future]:
+        """Send multiple requests to Zyte API in parallel.
         Return an `asyncio.as_completed` iterator.
 
         ``queries`` is a list of requests to process (dicts).
@@ -138,7 +138,8 @@ class AsyncClient:
 
         async def _request(query):
             async with sem:
-                return await self.request_raw(query,
+                return await self.request_raw(
+                    query,
                     endpoint=endpoint,
                     session=session,
                     handle_retries=handle_retries,

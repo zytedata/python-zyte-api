@@ -5,7 +5,7 @@ from w3lib.url import safe_url_string
 
 from .__version__ import __version__
 
-USER_AGENT = f'python-zyte-api/{__version__}'
+USER_AGENT = f"python-zyte-api/{__version__}"
 
 
 def _guess_intype(file_name, lines):
@@ -16,7 +16,7 @@ def _guess_intype(file_name, lines):
     if extension == "txt":
         return "txt"
 
-    if re.search(r'^\s*\{', lines[0]):
+    if re.search(r"^\s*\{", lines[0]):
         return "jl"
 
     return "txt"

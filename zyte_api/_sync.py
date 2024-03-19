@@ -1,8 +1,8 @@
 import asyncio
-from tenacity import AsyncRetrying
 from typing import Generator, List, Optional, Union
 
 from aiohttp import ClientSession
+from tenacity import AsyncRetrying
 
 from ._async import AsyncZyteAPI
 from .constants import API_URL
@@ -47,7 +47,7 @@ class ZyteAPI:
         self,
         query: dict,
         *,
-        endpoint: str = 'extract',
+        endpoint: str = "extract",
         session: Optional[ClientSession] = None,
         handle_retries: bool = True,
         retrying: Optional[AsyncRetrying] = None,
@@ -68,12 +68,11 @@ class ZyteAPI:
             )
         )
 
-
     def iter(
         self,
         queries: List[dict],
         *,
-        endpoint: str = 'extract',
+        endpoint: str = "extract",
         session: Optional[ClientSession] = None,
         handle_retries: bool = True,
         retrying: Optional[AsyncRetrying] = None,
