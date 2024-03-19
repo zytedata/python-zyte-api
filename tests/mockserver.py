@@ -4,18 +4,14 @@ import socket
 import sys
 import time
 from base64 import b64encode
-from contextlib import asynccontextmanager
 from importlib import import_module
 from subprocess import PIPE, Popen
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from urllib.parse import urlparse
 
-from pytest_twisted import ensureDeferred
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred
-from twisted.internet.task import deferLater
 from twisted.web.resource import Resource
-from twisted.web.server import NOT_DONE_YET, Site
+from twisted.web.server import Site
 
 
 def get_ephemeral_port():

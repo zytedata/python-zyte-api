@@ -9,21 +9,23 @@ import logging
 
 from aiohttp import client_exceptions
 from tenacity import (
-    wait_chain,
-    wait_fixed,
-    wait_random_exponential,
-    wait_random,
+    AsyncRetrying,
+    RetryCallState,
+    after_log,
+    before_log,
+    before_sleep_log,
+    retry_base,
+    retry_if_exception,
     stop_after_attempt,
     stop_after_delay,
-    retry_if_exception,
-    RetryCallState,
-    before_sleep_log,
-    after_log, AsyncRetrying, before_log, retry_base,
+    wait_chain,
+    wait_fixed,
+    wait_random,
+    wait_random_exponential,
 )
 from tenacity.stop import stop_never
 
 from .errors import RequestError
-
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +64,7 @@ class RetryFactory:
     """
     Build custom retry configuration
     """
+
     retry_condition: retry_base = (
         retry_if_exception(_is_throttling_error)
         | retry_if_exception(_is_network_error)
@@ -71,19 +74,18 @@ class RetryFactory:
     throttling_wait = wait_chain(
         # always wait 20-40s first
         wait_fixed(20) + wait_random(0, 20),
-
         # wait 20-40s again
         wait_fixed(20) + wait_random(0, 20),
-
         # wait from 30 to 630s, with full jitter and exponentially
         # increasing max wait time
-        wait_fixed(30) + wait_random_exponential(multiplier=1, max=600)
+        wait_fixed(30) + wait_random_exponential(multiplier=1, max=600),
     )
 
     # connection errors, other client and server failures
     network_error_wait = (
         # wait from 3s to ~1m
-        wait_random(3, 7) + wait_random_exponential(multiplier=1, max=55)
+        wait_random(3, 7)
+        + wait_random_exponential(multiplier=1, max=55)
     )
     temporary_download_error_wait = network_error_wait
     throttling_stop = stop_never
