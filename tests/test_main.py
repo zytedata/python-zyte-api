@@ -193,7 +193,14 @@ def _run(*, input, mockserver, cli_params=None):
     return result
 
 
-def test_main(mockserver):
+def test_empty_input(mockserver):
+    result = _run(input="", mockserver=mockserver)
+    assert result.returncode
+    assert result.stdout == b""
+    assert result.stderr == b"No input queries found. Is the input file empty?\n"
+
+
+def test_intype_txt_implicit(mockserver):
     result = _run(input="https://a.example", mockserver=mockserver)
     assert not result.returncode
     assert (
@@ -202,8 +209,50 @@ def test_main(mockserver):
     )
 
 
-def test_empty_input(mockserver):
-    result = _run(input="", mockserver=mockserver)
-    assert result.returncode
-    assert result.stdout == b""
-    assert result.stderr == b"No input queries found. Is the input file empty?\n"
+def test_intype_txt_explicit(mockserver):
+    result = _run(
+        input="https://a.example", mockserver=mockserver, cli_params=["--intype", "txt"]
+    )
+    assert not result.returncode
+    assert (
+        result.stdout
+        == b'{"url": "https://a.example", "browserHtml": "<html><body>Hello<h1>World!</h1></body></html>"}\n'
+    )
+
+
+def test_intype_jsonl_implicit(mockserver):
+    result = _run(
+        input='{"url": "https://a.example", "browserHtml": true}', mockserver=mockserver
+    )
+    assert not result.returncode
+    assert (
+        result.stdout
+        == b'{"url": "https://a.example", "browserHtml": "<html><body>Hello<h1>World!</h1></body></html>"}\n'
+    )
+
+
+def test_intype_jsonl_explicit(mockserver):
+    result = _run(
+        input='{"url": "https://a.example", "browserHtml": true}',
+        mockserver=mockserver,
+        cli_params=["--intype", "jl"],
+    )
+    assert not result.returncode
+    assert (
+        result.stdout
+        == b'{"url": "https://a.example", "browserHtml": "<html><body>Hello<h1>World!</h1></body></html>"}\n'
+    )
+
+
+@pytest.mark.flaky(reruns=5)
+def test_limit_and_shuffle(mockserver):
+    result = _run(
+        input="https://a.example\nhttps://b.example",
+        mockserver=mockserver,
+        cli_params=["--limit", "1", "--shuffle"],
+    )
+    assert not result.returncode
+    assert (
+        result.stdout
+        == b'{"url": "https://b.example", "browserHtml": "<html><body>Hello<h1>World!</h1></body></html>"}\n'
+    )
