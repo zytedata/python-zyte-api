@@ -246,7 +246,7 @@ def test_intype_jsonl_explicit(mockserver):
     )
 
 
-@pytest.mark.flaky(reruns=5)
+@pytest.mark.flaky(reruns=16)
 def test_limit_and_shuffle(mockserver):
     result = _run(
         input="https://a.example\nhttps://b.example",

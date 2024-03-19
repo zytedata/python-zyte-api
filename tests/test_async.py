@@ -2,8 +2,11 @@ import pytest
 from tenacity import AsyncRetrying
 
 from zyte_api import AsyncZyteAPI, RequestError
+from zyte_api._retry import RetryFactory
 from zyte_api.apikey import NoApiKey
 from zyte_api.errors import ParsedError
+
+from .mockserver import DropResource, MockServer
 
 
 def test_api_key():
@@ -26,14 +29,17 @@ async def test_get(mockserver):
 
 
 UNSET = object()
-RETRY_EXCEPTION = RuntimeError
+
+
+class OutlierException(RuntimeError):
+    pass
 
 
 @pytest.mark.parametrize(
     ("value", "exception"),
     (
-        (UNSET, RETRY_EXCEPTION),
-        (True, RETRY_EXCEPTION),
+        (UNSET, OutlierException),
+        (True, OutlierException),
         (False, RequestError),
     ),
 )
@@ -44,7 +50,7 @@ async def test_get_handle_retries(value, exception, mockserver):
         kwargs["handle_retries"] = value
 
     def broken_stop(_):
-        raise RETRY_EXCEPTION
+        raise OutlierException
 
     retrying = AsyncRetrying(stop=broken_stop)
     client = AsyncZyteAPI(
@@ -142,3 +148,105 @@ async def test_iter(mockserver):
             assert Exception in expected_results
         else:
             assert actual_result in expected_results
+
+
+@pytest.mark.parametrize(
+    ("subdomain", "waiter"),
+    (
+        ("e429", "throttling"),
+        ("e520", "temporary_download_error"),
+    ),
+)
+@pytest.mark.asyncio
+async def test_retry_wait(subdomain, waiter, mockserver):
+    def broken_wait(self, retry_state):
+        raise OutlierException
+
+    class CustomRetryFactory(RetryFactory):
+        pass
+
+    setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
+
+    retrying = CustomRetryFactory().build()
+    client = AsyncZyteAPI(
+        api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
+    )
+    with pytest.raises(OutlierException):
+        await client.get(
+            {"url": f"https://{subdomain}.example", "browserHtml": True},
+        )
+
+
+@pytest.mark.asyncio
+async def test_retry_wait_network_error():
+    waiter = "network_error"
+
+    def broken_wait(self, retry_state):
+        raise OutlierException
+
+    class CustomRetryFactory(RetryFactory):
+        pass
+
+    setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
+
+    retrying = CustomRetryFactory().build()
+    with MockServer(resource=DropResource) as mockserver:
+        client = AsyncZyteAPI(
+            api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
+        )
+        with pytest.raises(OutlierException):
+            await client.get(
+                {"url": "https://example.com", "browserHtml": True},
+            )
+
+
+@pytest.mark.parametrize(
+    ("subdomain", "stopper"),
+    (
+        ("e429", "throttling"),
+        ("e520", "temporary_download_error"),
+    ),
+)
+@pytest.mark.asyncio
+async def test_retry_stop(subdomain, stopper, mockserver):
+    def broken_stop(self, retry_state):
+        raise OutlierException
+
+    class CustomRetryFactory(RetryFactory):
+        def wait(self, retry_state):
+            return None
+
+    setattr(CustomRetryFactory, f"{stopper}_stop", broken_stop)
+
+    retrying = CustomRetryFactory().build()
+    client = AsyncZyteAPI(
+        api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
+    )
+    with pytest.raises(OutlierException):
+        await client.get(
+            {"url": f"https://{subdomain}.example", "browserHtml": True},
+        )
+
+
+@pytest.mark.asyncio
+async def test_retry_stop_network_error():
+    stopper = "network_error"
+
+    def broken_stop(self, retry_state):
+        raise OutlierException
+
+    class CustomRetryFactory(RetryFactory):
+        def wait(self, retry_state):
+            return None
+
+    setattr(CustomRetryFactory, f"{stopper}_stop", broken_stop)
+
+    retrying = CustomRetryFactory().build()
+    with MockServer(resource=DropResource) as mockserver:
+        client = AsyncZyteAPI(
+            api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
+        )
+        with pytest.raises(OutlierException):
+            await client.get(
+                {"url": "https://example.com", "browserHtml": True},
+            )
