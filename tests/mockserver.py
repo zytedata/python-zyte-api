@@ -54,10 +54,13 @@ class DefaultResource(Resource):
             "url": url,
         }
 
-        assert "httpResponseBody" in request_data
         html = "<html><body>Hello<h1>World!</h1></body></html>"
-        body = b64encode(html.encode()).decode()
-        response_data["httpResponseBody"] = body
+        if "httpResponseBody" in request_data:
+            body = b64encode(html.encode()).decode()
+            response_data["httpResponseBody"] = body
+        else:
+            assert "browserHtml" in request_data
+            response_data["browserHtml"] = html
 
         return json.dumps(response_data).encode()
 

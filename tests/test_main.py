@@ -1,14 +1,17 @@
 import json
 import os
+import subprocess
 from json import JSONDecodeError
+from tempfile import NamedTemporaryFile
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
 from zyte_api.__main__ import run
+from zyte_api.aio.errors import RequestError
 
 
-class RequestError(Exception):
+class MockRequestError(Exception):
     @property
     def parsed(self):
         mock = Mock(
@@ -50,7 +53,7 @@ def forbidden_domain_response():
 async def fake_exception(value=True):
     # Simulating an error condition
     if value:
-        raise RequestError()
+        raise MockRequestError()
 
     create_session_mock = AsyncMock()
     return await create_session_mock.coroutine()
@@ -93,7 +96,6 @@ async def fake_exception(value=True):
 async def test_run(queries, expected_response, store_errors, exception):
     temporary_file = open("temporary_file.jsonl", "w")
     n_conn = 5
-    stop_on_errors = False
     api_url = "https://example.com"
     api_key = "fake_key"
     retry_errors = True
@@ -122,7 +124,6 @@ async def test_run(queries, expected_response, store_errors, exception):
             queries=queries,
             out=temporary_file,
             n_conn=n_conn,
-            stop_on_errors=stop_on_errors,
             api_url=api_url,
             api_key=api_key,
             retry_errors=retry_errors,
@@ -130,3 +131,75 @@ async def test_run(queries, expected_response, store_errors, exception):
         )
 
     assert get_json_content(temporary_file) == expected_response
+
+
+@pytest.mark.asyncio
+async def test_run_stop_on_errors_false(mockserver):
+    queries = [{"url": "https://exception.example", "httpResponseBody": True}]
+    with NamedTemporaryFile("w") as output_file:
+        with pytest.warns(
+            DeprecationWarning, match=r"^The stop_on_errors parameter is deprecated\.$"
+        ):
+            await run(
+                queries=queries,
+                out=output_file,
+                n_conn=1,
+                api_url=mockserver.urljoin("/"),
+                api_key="a",
+                stop_on_errors=False,
+            )
+
+
+@pytest.mark.asyncio
+async def test_run_stop_on_errors_true(mockserver):
+    queries = [{"url": "https://exception.example", "httpResponseBody": True}]
+    with NamedTemporaryFile("w") as output_file:
+        with pytest.warns(
+            DeprecationWarning, match=r"^The stop_on_errors parameter is deprecated\.$"
+        ):
+            with pytest.raises(RequestError):
+                await run(
+                    queries=queries,
+                    out=output_file,
+                    n_conn=1,
+                    api_url=mockserver.urljoin("/"),
+                    api_key="a",
+                    stop_on_errors=True,
+                )
+
+
+def _run(*, input, mockserver, cli_params=None):
+    cli_params = cli_params or tuple()
+    with NamedTemporaryFile("w") as url_list:
+        url_list.write(input)
+        url_list.flush()
+        result = subprocess.run(
+            [
+                "zyte-api",
+                "--api-key",
+                "a",
+                "--api-url",
+                mockserver.urljoin("/"),
+                url_list.name,
+                *cli_params,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    return result
+
+
+def test_main(mockserver):
+    result = _run(input="https://a.example", mockserver=mockserver)
+    assert not result.returncode
+    assert (
+        result.stdout
+        == b'{"url": "https://a.example", "browserHtml": "<html><body>Hello<h1>World!</h1></body></html>"}\n'
+    )
+
+
+def test_empty_input(mockserver):
+    result = _run(input="", mockserver=mockserver)
+    assert result.returncode
+    assert result.stdout == b""
+    assert result.stderr == b"No input queries found. Is the input file empty?\n"
