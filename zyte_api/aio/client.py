@@ -5,7 +5,6 @@ Asyncio client for Zyte API
 import asyncio
 import time
 from typing import Iterator, List, Optional
-from warnings import warn
 
 import aiohttp
 from tenacity import AsyncRetrying
@@ -18,15 +17,6 @@ from ..stats import AggStats, ResponseStats
 from ..utils import USER_AGENT, _process_query
 from .errors import RequestError
 from .retry import zyte_api_retrying
-
-warn(
-    (
-        "The zyte_api.aio.client module is deprecated. Replace AsyncClient "
-        "with zyte_api.AsyncZyteAPI (note that method names are different) "
-        "and create_session with zyte_api.create_session."
-    ),
-    DeprecationWarning,
-)
 
 
 class AsyncClient:

@@ -11,8 +11,9 @@ from warnings import warn
 import tqdm
 from tenacity import retry_if_exception
 
-from zyte_api.aio.client import AsyncClient, create_session
-from zyte_api.aio.retry import RetryFactory, _is_throttling_error
+from zyte_api._async import AsyncZyteAPI
+from zyte_api._retry import RetryFactory, _is_throttling_error
+from zyte_api._utils import create_session
 from zyte_api.constants import API_URL, ENV_VARIABLE
 from zyte_api.utils import _guess_intype
 
@@ -53,11 +54,11 @@ async def run(
         pbar.update()
 
     retrying = None if retry_errors else DontRetryErrorsFactory().build()
-    client = AsyncClient(
+    client = AsyncZyteAPI(
         n_conn=n_conn, api_key=api_key, api_url=api_url, retrying=retrying
     )
     async with create_session(connection_pool_size=n_conn) as session:
-        result_iter = client.request_parallel_as_completed(
+        result_iter = client.iter(
             queries=queries,
             session=session,
         )

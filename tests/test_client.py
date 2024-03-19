@@ -1,6 +1,6 @@
 import pytest
 
-from zyte_api.aio.client import AsyncClient
+from zyte_api import AsyncZyteAPI
 from zyte_api.utils import USER_AGENT
 
 
@@ -18,5 +18,5 @@ from zyte_api.utils import USER_AGENT
     ),
 )
 def test_user_agent(user_agent, expected):
-    client = AsyncClient(api_key="123", api_url="http:\\test", user_agent=user_agent)
+    client = AsyncZyteAPI(api_key="123", api_url="http:\\test", user_agent=user_agent)
     assert client.user_agent == expected
