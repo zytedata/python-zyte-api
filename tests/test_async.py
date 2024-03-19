@@ -1,6 +1,7 @@
 import pytest
+from tenacity import AsyncRetrying
 
-from zyte_api import AsyncZyteAPI
+from zyte_api import AsyncZyteAPI, RequestError
 from zyte_api.apikey import NoApiKey
 
 
@@ -21,6 +22,38 @@ async def test_get(mockserver):
         {"url": "https://a.example", "httpResponseBody": True}
     )
     assert actual_result == expected_result
+
+
+UNSET = object()
+RETRY_EXCEPTION = RuntimeError
+
+
+@pytest.mark.parametrize(
+    ("value", "exception"),
+    (
+        (UNSET, RETRY_EXCEPTION),
+        (True, RETRY_EXCEPTION),
+        (False, RequestError),
+    ),
+)
+@pytest.mark.asyncio
+async def test_get_handle_retries(value, exception, mockserver):
+    kwargs = {}
+    if value is not UNSET:
+        kwargs["handle_retries"] = value
+
+    def broken_stop(_):
+        raise RETRY_EXCEPTION
+
+    retrying = AsyncRetrying(stop=broken_stop)
+    client = AsyncZyteAPI(
+        api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
+    )
+    with pytest.raises(exception):
+        await client.get(
+            {"url": "https://exception.example", "browserHtml": True},
+            **kwargs,
+        )
 
 
 @pytest.mark.asyncio

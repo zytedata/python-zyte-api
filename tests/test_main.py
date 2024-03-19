@@ -258,3 +258,13 @@ def test_limit_and_shuffle(mockserver):
         result.stdout
         == b'{"url": "https://b.example", "browserHtml": "<html><body>Hello<h1>World!</h1></body></html>"}\n'
     )
+
+
+def test_run_non_json_response(mockserver):
+    result = _run(
+        input="https://nonjson.example",
+        mockserver=mockserver,
+    )
+    assert not result.returncode
+    assert result.stdout == b""
+    assert b"json.decoder.JSONDecodeError" in result.stderr
