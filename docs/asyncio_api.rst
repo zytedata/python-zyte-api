@@ -89,5 +89,6 @@ To send many queries with a concurrency limit, set ``n_conn`` in your client:
 .. code-block:: python
 
     client = AsyncZyteAPI(n_conn=15)
+
 Then use ``iter`` to send your queries. ``n_conn`` is not enforced when using 
 ``get`` instead of ``iter``.
