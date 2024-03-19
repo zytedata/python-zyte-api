@@ -11,9 +11,9 @@ import tqdm
 from tenacity import retry_if_exception
 
 from zyte_api._async import AsyncZyteAPI
-from zyte_api._utils import create_session
 from zyte_api._retry import RetryFactory, _is_throttling_error
-from zyte_api.constants import ENV_VARIABLE, API_URL
+from zyte_api._utils import create_session
+from zyte_api.constants import API_URL, ENV_VARIABLE
 from zyte_api.utils import _guess_intype
 
 
@@ -165,7 +165,7 @@ def _main(program_name="zyte-api"):
     p.add_argument(
         "--store-errors",
         help="when set to true, it includes all types of responses, and when set to false,"
-             " it includes only error-free responses in the output.",
+        " it includes only error-free responses in the output.",
     )
     args = p.parse_args()
     logging.basicConfig(stream=sys.stderr, level=getattr(logging, args.loglevel))

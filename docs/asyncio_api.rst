@@ -14,8 +14,10 @@ can use the method ``get`` to perform individual requests:
 
     client = AsyncZyteAPI(api_key="YOUR_API_KEY")
 
+
     async def single_request(url):
         return await client.get({"url": url, "browserHtml": True})
+
 
     response = asyncio.run(single_request("https://books.toscrape.com"))
 
@@ -33,12 +35,10 @@ parallel, using multiple connections:
 
     from zyte_api import AsyncZyteAPI, RequestError, create_session
 
+
     async def extract_from(urls, n_conn):
         client = AsyncZyteAPI(n_conn=n_conn)
-        requests = [
-            {"url": url, "browserHtml": True}
-            for url in urls
-        ]
+        requests = [{"url": url, "browserHtml": True} for url in urls]
         async with create_session(n_conn) as session:
             res_iter = client.iter(requests, session=session)
             for fut in res_iter:
@@ -49,6 +49,7 @@ parallel, using multiple connections:
                 except RequestError as e:
                     print(e, file=sys.stderr)
                     raise
+
 
     urls = ["https://toscrape.com", "https://books.toscrape.com"]
     asyncio.run(extract_from(urls, n_conn=15))

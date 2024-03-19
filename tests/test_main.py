@@ -1,7 +1,7 @@
 import json
 import os
 from json import JSONDecodeError
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 

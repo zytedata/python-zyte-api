@@ -10,11 +10,13 @@ class NoApiKey(Exception):
 
 
 def get_apikey(key: Optional[str] = None) -> str:
-    """ Return API key, probably loading it from an environment variable """
+    """Return API key, probably loading it from an environment variable"""
     if key is not None:
         return key
     try:
         return os.environ[ENV_VARIABLE]
     except KeyError:
-        raise NoApiKey("API key not found. Please set {} "
-                       "environment variable.".format(ENV_VARIABLE))
+        raise NoApiKey(
+            "API key not found. Please set {} "
+            "environment variable.".format(ENV_VARIABLE)
+        )

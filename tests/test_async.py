@@ -1,9 +1,7 @@
-from types import GeneratorType
+import pytest
 
 from zyte_api import AsyncZyteAPI
 from zyte_api.apikey import NoApiKey
-
-import pytest
 
 
 def test_api_key():
@@ -15,8 +13,13 @@ def test_api_key():
 @pytest.mark.asyncio
 async def test_get(mockserver):
     client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
-    expected_result = {"url": "https://a.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="}
-    actual_result = await client.get({"url": "https://a.example", "httpResponseBody": True})
+    expected_result = {
+        "url": "https://a.example",
+        "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
+    }
+    actual_result = await client.get(
+        {"url": "https://a.example", "httpResponseBody": True}
+    )
     assert actual_result == expected_result
 
 
@@ -29,9 +32,15 @@ async def test_iter(mockserver):
         {"url": "https://b.example", "httpResponseBody": True},
     ]
     expected_results = [
-        {"url": "https://a.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="},
+        {
+            "url": "https://a.example",
+            "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
+        },
         Exception,
-        {"url": "https://b.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="},
+        {
+            "url": "https://b.example",
+            "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
+        },
     ]
     actual_results = []
     for future in client.iter(queries):
