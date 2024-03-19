@@ -6,7 +6,8 @@ from zyte_api import create_session
 from zyte_api.utils import _guess_intype, _process_query
 
 
-def test_create_session_custom_connector():
+@pytest.mark.asyncio
+async def test_create_session_custom_connector():
     # Declare a connector with a random parameter to avoid it matching the
     # default one.
     custom_connector = TCPConnector(limit=1850)
