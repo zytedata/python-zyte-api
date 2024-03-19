@@ -1,10 +1,8 @@
-from types import GeneratorType
+import pytest
 
 from zyte_api import AsyncZyteAPI
 from zyte_api.apikey import NoApiKey
 from zyte_api.utils import USER_AGENT
-
-import pytest
 
 
 @pytest.mark.parametrize(
@@ -15,13 +13,13 @@ import pytest
             USER_AGENT,
         ),
         (
-            f'scrapy-zyte-api/0.11.1 {USER_AGENT}',
-            f'scrapy-zyte-api/0.11.1 {USER_AGENT}',
+            f"scrapy-zyte-api/0.11.1 {USER_AGENT}",
+            f"scrapy-zyte-api/0.11.1 {USER_AGENT}",
         ),
     ),
 )
 def test_user_agent(user_agent, expected):
-    client = AsyncZyteAPI(api_key='123', api_url='http:\\test', user_agent=user_agent)
+    client = AsyncZyteAPI(api_key="123", api_url="http:\\test", user_agent=user_agent)
     assert client.user_agent == expected
 
 
@@ -34,8 +32,13 @@ def test_api_key():
 @pytest.mark.asyncio
 async def test_get(mockserver):
     client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
-    expected_result = {"url": "https://a.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="}
-    actual_result = await client.get({"url": "https://a.example", "httpResponseBody": True})
+    expected_result = {
+        "url": "https://a.example",
+        "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
+    }
+    actual_result = await client.get(
+        {"url": "https://a.example", "httpResponseBody": True}
+    )
     assert actual_result == expected_result
 
 
@@ -48,9 +51,15 @@ async def test_iter(mockserver):
         {"url": "https://b.example", "httpResponseBody": True},
     ]
     expected_results = [
-        {"url": "https://a.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="},
+        {
+            "url": "https://a.example",
+            "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
+        },
         Exception,
-        {"url": "https://b.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="},
+        {
+            "url": "https://b.example",
+            "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
+        },
     ]
     actual_results = []
     for future in client.iter(queries):
@@ -76,9 +85,15 @@ async def test_session(mockserver):
         {"url": "https://b.example", "httpResponseBody": True},
     ]
     expected_results = [
-        {"url": "https://a.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="},
+        {
+            "url": "https://a.example",
+            "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
+        },
         Exception,
-        {"url": "https://b.example", "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg=="},
+        {
+            "url": "https://b.example",
+            "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
+        },
     ]
     actual_results = []
     async with client.session() as session:

@@ -1,19 +1,18 @@
 import asyncio
 import time
 from functools import partial
-from typing import Any, Dict, Iterator, List, Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
 import aiohttp
 from tenacity import AsyncRetrying
 
+from ._utils import _AIO_API_TIMEOUT, create_session
 from .aio.errors import RequestError
 from .aio.retry import zyte_api_retrying
 from .apikey import get_apikey
-from .constants import API_URL, API_TIMEOUT
+from .constants import API_URL
 from .stats import AggStats, ResponseStats
 from .utils import USER_AGENT, _process_query
-from ._utils import _AIO_API_TIMEOUT, create_session
-
 
 if TYPE_CHECKING:
     _ResponseFuture = asyncio.Future[Dict[str, Any]]
@@ -22,13 +21,12 @@ else:
 
 
 def _post_func(session):
-    """ Return a function to send a POST request """
+    """Return a function to send a POST request"""
     if session is None:
-        return partial(aiohttp.request,
-                       method='POST',
-                       timeout=_AIO_API_TIMEOUT)
+        return partial(aiohttp.request, method="POST", timeout=_AIO_API_TIMEOUT)
     else:
         return session.post
+
 
 class _AsyncSession:
     def __init__(self, client, **session_kwargs):
@@ -56,7 +54,7 @@ class _AsyncSession:
         self,
         query: dict,
         *,
-        endpoint: str = 'extract',
+        endpoint: str = "extract",
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
     ):
@@ -73,7 +71,7 @@ class _AsyncSession:
         self,
         queries: List[dict],
         *,
-        endpoint: str = 'extract',
+        endpoint: str = "extract",
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
     ) -> Iterator[asyncio.Future]:
@@ -108,7 +106,7 @@ class AsyncZyteAPI:
         self,
         query: dict,
         *,
-        endpoint: str = 'extract',
+        endpoint: str = "extract",
         session=None,
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
@@ -116,10 +114,7 @@ class AsyncZyteAPI:
         retrying = retrying or self.retrying
         post = _post_func(session)
         auth = aiohttp.BasicAuth(self.api_key)
-        headers = {
-            'User-Agent': self.user_agent,
-            'Accept-Encoding': 'br'
-        }
+        headers = {"User-Agent": self.user_agent, "Accept-Encoding": "br"}
 
         response_stats = []
         start_global = time.perf_counter()
@@ -181,7 +176,7 @@ class AsyncZyteAPI:
         self,
         queries: List[dict],
         *,
-        endpoint: str = 'extract',
+        endpoint: str = "extract",
         session: Optional[aiohttp.ClientSession] = None,
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
