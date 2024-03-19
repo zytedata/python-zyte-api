@@ -50,6 +50,7 @@ parallel, using multiple connections:
 
     asyncio.run(main())
 
+
 ``iter`` yields results as they come, not necessarily in their original order.
 
 ``iter`` and ``get`` methods handle throttling (http 429 errors) and network
