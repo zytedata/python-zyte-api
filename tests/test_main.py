@@ -173,9 +173,13 @@ def _run(*, input, mockserver, cli_params=None):
     with NamedTemporaryFile("w") as url_list:
         url_list.write(input)
         url_list.flush()
+        # Note: Using “python -m zyte_api” instead of “zyte-api” enables
+        # coverage tracking to work.
         result = subprocess.run(
             [
-                "zyte-api",
+                "python",
+                "-m",
+                "zyte_api",
                 "--api-key",
                 "a",
                 "--api-url",
