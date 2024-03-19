@@ -91,33 +91,34 @@ async def fake_exception(value=True):
 )
 @pytest.mark.asyncio
 async def test_run(queries, expected_response, store_errors, exception):
-    temporary_file = open("temporary_file.jsonl", "w")
+    tmp_path = "temporary_file.jsonl"
+    temporary_file = open(tmp_path, "w")
     n_conn = 5
     stop_on_errors = False
     api_url = "https://example.com"
     api_key = "fake_key"
     retry_errors = True
 
-    # Create a mock for AsyncClient
+    # Create a mock for AsyncZyteAPI
     async_client_mock = Mock()
 
-    # Create a mock for the request_parallel_as_completed method
+    # Create a mock for the iter method
     request_parallel_mock = Mock()
-    async_client_mock.return_value.request_parallel_as_completed = request_parallel_mock
+    async_client_mock.return_value.iter = request_parallel_mock
 
-    # Patch the AsyncClient class in __main__ with the mock
-    with patch("zyte_api.__main__.AsyncClient", async_client_mock), patch(
+    # Patch the AsyncZyteAPI class in __main__ with the mock
+    with patch("zyte_api.__main__.AsyncZyteAPI", async_client_mock), patch(
         "zyte_api.__main__.create_session"
     ) as create_session_mock:
         # Mock create_session to return an AsyncMock
         create_session_mock.return_value = AsyncMock()
 
-        # Set up the AsyncClient instance to return the mocked iterator
-        async_client_mock.return_value.request_parallel_as_completed.return_value = [
+        # Set up the AsyncZyteAPI instance to return the mocked iterator
+        async_client_mock.return_value.iter.return_value = [
             exception(),
         ]
 
-        # Call the run function with the mocked AsyncClient
+        # Call the run function with the mocked AsyncZyteAPI
         await run(
             queries=queries,
             out=temporary_file,
@@ -130,3 +131,4 @@ async def test_run(queries, expected_response, store_errors, exception):
         )
 
     assert get_json_content(temporary_file) == expected_response
+    os.unlink(tmp_path)
