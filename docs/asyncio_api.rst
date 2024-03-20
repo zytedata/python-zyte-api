@@ -83,11 +83,11 @@ When using ``iter`` or multiple ``get`` calls, consider using a session:
 Sessions improve performance through a pool of reusable connections to the Zyte
 API server.
 
-To send many queries with a concurrency limit, set ``n_conn`` in your client:
+To send many queries with a concurrency limit, set ``n_conn`` in your client
+(default is ``15``):
 
 .. code-block:: python
 
-    client = AsyncZyteAPI(n_conn=15)
+    client = AsyncZyteAPI(n_conn=30)
 
-Then use ``iter`` to send your queries. ``n_conn`` is not enforced when using 
-``get`` instead of ``iter``.
+``n_conn`` will be enforce across all your ``get`` and ``iter`` calls.
