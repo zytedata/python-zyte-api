@@ -18,9 +18,13 @@ python-zyte-api
    :target: https://codecov.io/gh/zytedata/zyte-api
    :alt: Coverage report
 
-Python client libraries for `Zyte API`_.
+.. description-start
 
-Command-line utility and asyncio-based library are provided by this package.
+Command-line client and Python client library for `Zyte API`_.
+
+.. _Zyte API: https://docs.zyte.com/zyte-api/get-started.html
+
+.. description-end
 
 Installation
 ============

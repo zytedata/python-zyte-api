@@ -2,7 +2,9 @@
 python-zyte-api
 ===============
 
-Command-line client and Python client library for `Zyte API`_.
+.. include:: ../README.rst
+   :start-after: description-start
+   :end-before: description-end
 
 :ref:`license` is BSD 3-clause.
 
@@ -23,5 +25,3 @@ Command-line client and Python client library for `Zyte API`_.
    contributing
    changelog
    license
-
-.. _Zyte API: https://docs.zyte.com/zyte-api/get-started.html
