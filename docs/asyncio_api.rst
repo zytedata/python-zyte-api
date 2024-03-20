@@ -4,8 +4,8 @@
 asyncio API
 ===========
 
-Create an instance of the ``AsyncZyteAPI`` to use the asyncio client API.
-You can use the method ``request_raw`` to perform individual requests:
+Create an instance of the ``AsyncZyteAPI`` to use the asyncio client API. You
+can use the method ``get`` to perform individual requests:
 
 .. code-block:: python
 
@@ -15,11 +15,11 @@ You can use the method ``request_raw`` to perform individual requests:
     client = AsyncZyteAPI(api_key="YOUR_API_KEY")
 
 
-    async def single_request(url):
-        return await client.get({"url": url, "browserHtml": True})
+    async def main():
+        result = await client.get({"url": "https://toscrape.com", "httpResponseBody": True})
 
 
-    response = asyncio.run(single_request("https://books.toscrape.com"))
+    asyncio.run(main())
 
 .. tip:: You can skip the ``api_key`` parameter if you :ref:`use an environment
     variable instead <api-key>`.
@@ -30,32 +30,64 @@ parallel, using multiple connections:
 .. code-block:: python
 
     import asyncio
-    import json
-    import sys
 
-    from zyte_api import AsyncZyteAPI, create_session
-    from zyte_api.aio.errors import RequestError
+    from zyte_api import AsyncZyteAPI, RequestError, create_session
 
 
-    async def extract_from(urls, n_conn):
-        client = AsyncZyteAPI(n_conn=n_conn)
-        requests = [{"url": url, "browserHtml": True} for url in urls]
-        async with create_session(n_conn) as session:
-            res_iter = client.iter(requests, session=session)
-            for fut in res_iter:
-                try:
-                    res = await fut
-                    # do something with a result, e.g.
-                    print(json.dumps(res))
-                except RequestError as e:
-                    print(e, file=sys.stderr)
-                    raise
+    async def main():
+        client = AsyncZyteAPI(api_key="YOUR_API_KEY")
+        queries = [
+            {"url": "https://toscrape.com", "httpResponseBody": True},
+            {"url": "https://books.toscrape.com", "httpResponseBody": True},
+        ]
+        for future in client.iter(queries):
+            try:
+                result = await future
+            except RequestError as e:
+                ...
 
 
-    urls = ["https://toscrape.com", "https://books.toscrape.com"]
-    asyncio.run(extract_from(urls, n_conn=15))
+    asyncio.run(main())
+
 
 ``iter`` yields results as they come, not necessarily in their original order.
 
 ``iter`` and ``get`` methods handle throttling (http 429 errors) and network
 errors, retrying a request in these cases.
+
+When using ``iter`` or multiple ``get`` calls, consider using a session:
+
+.. code-block:: python
+
+    import asyncio
+
+    from zyte_api import AsyncZyteAPI, create_session
+
+
+    async def main():
+        client = AsyncZyteAPI(api_key="YOUR_API_KEY")
+        async with create_session(client.n_conn) as session:
+            queries = [
+                {"url": "https://toscrape.com", "httpResponseBody": True},
+                {"url": "https://books.toscrape.com", "httpResponseBody": True},
+            ]
+            for future in client.iter(queries, session=session):
+                try:
+                    result = await future
+                except RequestError as e:
+                    ...
+
+
+    asyncio.run(main())
+
+Sessions improve performance through a pool of reusable connections to the Zyte
+API server.
+
+To send many queries with a concurrency limit, set ``n_conn`` in your client
+(default is ``15``):
+
+.. code-block:: python
+
+    client = AsyncZyteAPI(n_conn=30)
+
+``n_conn`` will be enforce across all your ``get`` and ``iter`` calls.

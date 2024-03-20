@@ -38,7 +38,27 @@ Make sure you have an API key for the `Zyte API`_ service.
 You can set ``ZYTE_API_KEY`` environment
 variable with the key to avoid passing it around explicitly.
 
-Read the `documentation <https://python-zyte-api.readthedocs.io>`_  for more information.
+
+Basic usage
+===========
+
+Use the ``zyte-api`` command to send Zyte API requests from the command line:
+
+.. code-block:: shell
+
+    zyte-api url-list.txt --output results.jsonl
+
+Or use the Python async API:
+
+.. code-block:: python
+
+    from zyte_api import AsyncZyteAPI
+
+    client = AsyncZyteAPI()
+    response = await client.get({"url": url, "httpResponseBody": True})
+
+Read the `documentation <https://python-zyte-api.readthedocs.io>`_  for more
+information.
 
 License is BSD 3-clause.
 

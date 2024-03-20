@@ -2,9 +2,7 @@
 python-zyte-api
 ===============
 
-Python client libraries for `Zyte API`_.
-
-Command-line utility and asyncio-based library are provided by this package.
+Command-line client and Python client library for `Zyte API`_.
 
 :ref:`license` is BSD 3-clause.
 
@@ -14,6 +12,7 @@ Command-line utility and asyncio-based library are provided by this package.
 
    install
    command_line
+   sync
    asyncio_api
 
 .. toctree::
