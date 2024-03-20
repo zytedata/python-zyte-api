@@ -4,8 +4,8 @@
 asyncio API
 ===========
 
-Create an instance of the ``AsyncZyteAPI`` to use the asyncio client API.
-You can use the method ``request_raw`` to perform individual requests:
+Create an instance of the ``AsyncZyteAPI`` to use the asyncio client API. You
+can use the method ``get`` to perform individual requests:
 
 .. code-block:: python
 
@@ -31,8 +31,7 @@ parallel, using multiple connections:
 
     import asyncio
 
-    from zyte_api import AsyncZyteAPI
-    from zyte_api.aio.errors import RequestError
+    from zyte_api import AsyncZyteAPI, RequestError, create_session
 
 
     async def main():
