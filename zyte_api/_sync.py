@@ -8,6 +8,15 @@ from ._async import AsyncZyteAPI
 from .constants import API_URL
 
 
+def _get_loop():
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError:  # pragma: no cover (tests always have a running loop)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
+
+
 class ZyteAPI:
     """Synchronous Zyte API client.
 
@@ -58,15 +67,15 @@ class ZyteAPI:
 
             result = client.get({"url": "https://toscrape.com", "httpResponseBody": True})
         """
-        return asyncio.run(
-            self._async_client.get(
-                query=query,
-                endpoint=endpoint,
-                session=session,
-                handle_retries=handle_retries,
-                retrying=retrying,
-            )
+        loop = _get_loop()
+        future = self._async_client.get(
+            query=query,
+            endpoint=endpoint,
+            session=session,
+            handle_retries=handle_retries,
+            retrying=retrying,
         )
+        return loop.run_until_complete(future)
 
     def iter(
         self,
@@ -97,11 +106,7 @@ class ZyteAPI:
 
         When exceptions occur, they are also yielded, not raised.
         """
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        loop = _get_loop()
         for future in self._async_client.iter(
             queries=queries,
             endpoint=endpoint,

@@ -1,3 +1,6 @@
+import asyncio
+from unittest.mock import AsyncMock
+
 import pytest
 from tenacity import AsyncRetrying
 
@@ -329,3 +332,30 @@ async def test_retry_stop_network_error(client_cls, get_method):
             await getattr(client, get_method)(
                 {"url": "https://example.com", "browserHtml": True},
             )
+
+
+@pytest.mark.parametrize(
+    ("client_cls", "get_method", "iter_method"),
+    (
+        (AsyncZyteAPI, "get", "iter"),
+        (AsyncClient, "request_raw", "request_parallel_as_completed"),
+    ),
+)
+@pytest.mark.asyncio
+async def test_semaphore(client_cls, get_method, iter_method, mockserver):
+    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
+    client._semaphore = AsyncMock(wraps=client._semaphore)
+    queries = [
+        {"url": "https://a.example", "httpResponseBody": True},
+        {"url": "https://b.example", "httpResponseBody": True},
+        {"url": "https://c.example", "httpResponseBody": True},
+    ]
+    futures = [
+        getattr(client, get_method)(queries[0]),
+        next(iter(getattr(client, iter_method)(queries[1:2]))),
+        getattr(client, get_method)(queries[2]),
+    ]
+    for future in asyncio.as_completed(futures):
+        await future
+    assert client._semaphore.__aenter__.call_count == len(queries)
+    assert client._semaphore.__aexit__.call_count == len(queries)
