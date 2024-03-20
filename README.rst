@@ -69,7 +69,7 @@ Use the command-line client
 Then you can use the zyte-api command-line client to send Zyte API requests.
 First create a text file with a list of URLs:
 
-.. code-block:: none
+.. code-block:: text
     :caption: url-list.txt
 
     https://books.toscrape.com
