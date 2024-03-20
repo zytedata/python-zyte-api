@@ -47,8 +47,8 @@ Basic usage
 Set your API key
 ----------------
 
-:ref:`Configure your Zyte API key <api-key>` as an environment variable in your
-current shell session:
+Configure your Zyte API key as an environment variable in your current shell
+session:
 
 -  On Windows:
 
@@ -66,8 +66,8 @@ current shell session:
 Use the command-line client
 ---------------------------
 
-Then you can :ref:`use the zyte-api command-line client <command_line>` to send
-Zyte API requests. First create a text file with a list of URLs:
+Then you can use the zyte-api command-line client to send Zyte API requests.
+First create a text file with a list of URLs:
 
 .. code-block:: none
     :caption: url-list.txt
@@ -85,7 +85,7 @@ And then call ``zyte-api`` from your shell:
 Use the Python sync API
 -----------------------
 
-For very basic Python scripts, use the :ref:`sync API <sync>`:
+For very basic Python scripts, use the sync API:
 
 .. code-block:: python
 
@@ -98,7 +98,7 @@ For very basic Python scripts, use the :ref:`sync API <sync>`:
 Use the Python async API
 ------------------------
 
-For better performance, use the :ref:`async API <asyncio_api>`:
+For better performance, use the async API:
 
 .. code-block:: python
 
