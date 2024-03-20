@@ -6,8 +6,6 @@ python-zyte-api
    :start-after: description-start
    :end-before: description-end
 
-:ref:`license` is BSD 3-clause.
-
 .. toctree::
    :caption: Getting started
    :maxdepth: 1
@@ -24,4 +22,3 @@ python-zyte-api
    api_reference
    contributing
    changelog
-   license
