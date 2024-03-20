@@ -31,7 +31,7 @@ parallel, using multiple connections:
 
     import asyncio
 
-    from zyte_api import AsyncZyteAPI, RequestError, create_session
+    from zyte_api import AsyncZyteAPI, RequestError
 
 
     async def main():
@@ -61,17 +61,17 @@ When using ``iter`` or multiple ``get`` calls, consider using a session:
 
     import asyncio
 
-    from zyte_api import AsyncZyteAPI, create_session
+    from zyte_api import AsyncZyteAPI, RequestError
 
 
     async def main():
         client = AsyncZyteAPI(api_key="YOUR_API_KEY")
-        async with create_session(client.n_conn) as session:
+        async with client.session() as session:
             queries = [
                 {"url": "https://toscrape.com", "httpResponseBody": True},
                 {"url": "https://books.toscrape.com", "httpResponseBody": True},
             ]
-            for future in client.iter(queries, session=session):
+            for future in session.iter(queries):
                 try:
                     result = await future
                 except RequestError as e:
