@@ -29,45 +29,98 @@ Command-line client and Python client library for `Zyte API`_.
 Installation
 ============
 
-::
+.. install-start
+
+.. code-block:: shell
 
     pip install zyte-api
 
-``zyte-api`` requires Python 3.8+.
+.. note:: Python 3.8+ is required.
 
-API key
-=======
-
-Make sure you have an API key for the `Zyte API`_ service.
-You can set ``ZYTE_API_KEY`` environment
-variable with the key to avoid passing it around explicitly.
-
+.. install-end
 
 Basic usage
 ===========
 
-Use the ``zyte-api`` command to send Zyte API requests from the command line:
+.. basic-start
+
+Set your API key
+----------------
+
+:ref:`Configure your Zyte API key <api-key>` as an environment variable in your
+current shell session:
+
+-  On Windows:
+
+   .. code-block:: shell
+
+        > set ZYTE_API_KEY=YOUR_API_KEY
+
+-  On macOS and Linux:
+
+   .. code-block:: shell
+
+        $ export ZYTE_API_KEY=YOUR_API_KEY
+
+
+Use the command-line client
+---------------------------
+
+Then you can :ref:`use the zyte-api command-line client <command_line>` to send
+Zyte API requests. First create a text file with a list of URLs:
+
+.. code-block:: none
+    :caption: url-list.txt
+
+    https://books.toscrape.com
+    https://quotes.toscrape.com
+
+And then call ``zyte-api`` from your shell:
 
 .. code-block:: shell
 
     zyte-api url-list.txt --output results.jsonl
 
-Or use the Python async API:
+
+Use the Python sync API
+-----------------------
+
+For very basic Python scripts, use the :ref:`sync API <sync>`:
 
 .. code-block:: python
 
+    from zyte_api import ZyteAPI
+
+    client = ZyteAPI()
+    response = client.get({"url": "https://toscrape.com", "httpResponseBody": True})
+
+
+Use the Python async API
+------------------------
+
+For better performance, use the :ref:`async API <asyncio_api>`:
+
+.. code-block:: python
+
+    import asyncio
+
     from zyte_api import AsyncZyteAPI
 
-    client = AsyncZyteAPI()
-    response = await client.get({"url": url, "httpResponseBody": True})
+
+    async def main():
+        client = AsyncZyteAPI()
+        response = await client.get(
+            {"url": "https://toscrape.com", "httpResponseBody": True}
+        )
+
+
+    asyncio.run(main())
+
+.. basic-end
 
 Read the `documentation <https://python-zyte-api.readthedocs.io>`_  for more
 information.
 
-License is BSD 3-clause.
-
 * Documentation: https://python-zyte-api.readthedocs.io
 * Source code: https://github.com/zytedata/python-zyte-api
 * Issue tracker: https://github.com/zytedata/python-zyte-api/issues
-
-.. _Zyte API: https://docs.zyte.com/zyte-api/get-started.html

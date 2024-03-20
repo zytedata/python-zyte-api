@@ -1,17 +1,6 @@
-.. _`install`:
-
-============
-Installation
-============
-
-::
-
-    pip install zyte-api
-
-``zyte-api`` requires Python 3.8+.
-
 .. _api-key:
 
+=======
 API key
 =======
 

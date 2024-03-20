@@ -1,4 +1,4 @@
-.. _`command_line`:
+.. _command_line:
 
 ======================
 Command-line interface

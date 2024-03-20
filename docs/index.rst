@@ -10,15 +10,28 @@ python-zyte-api
    :caption: Getting started
    :maxdepth: 1
 
-   install
-   command_line
-   sync
-   asyncio_api
+   intro/install
+   intro/basic
+
+.. toctree::
+   :caption: Usage
+   :maxdepth: 1
+
+   use/key
+   use/cli
+   use/sync
+   use/async
+
+.. toctree::
+   :caption: Reference
+   :maxdepth: 1
+
+   ref/cli
+   ref/api
 
 .. toctree::
    :caption: All the rest
    :maxdepth: 1
 
-   api_reference
    contributing
    changelog

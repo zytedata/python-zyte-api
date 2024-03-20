@@ -1,8 +1,8 @@
-.. _`asyncio_api`:
+.. _asyncio_api:
 
-===========
-asyncio API
-===========
+=========
+Async API
+=========
 
 Create an instance of the ``AsyncZyteAPI`` to use the asyncio client API. You
 can use the method ``get`` to perform individual requests:
