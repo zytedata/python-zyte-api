@@ -4,95 +4,113 @@
 Command-line interface
 ======================
 
-The most basic way to use the client is from a command line.
+Once you have :ref:`installed python-zyte-api <install>` and :ref:`configured
+your API key <api-key>`, you can use the ``zyte-api`` command-line client.
 
-First, create a file with urls, an URL per line (e.g. ``urls.txt``).
-
-Second, set ``ZYTE_API_KEY`` env variable with your
-API key (you can also pass API key as ``--api-key`` script
-argument).
-
-Then run a script, to get the results:
+To use ``zyte-api``, pass an :ref:`input file <input-file>` as the first
+parameter and specify an :ref:`output file <output-file>` with ``--output``.
+For example:
 
 .. code-block:: shell
 
-    zyte-api urls.txt --output res.jsonl
+    zyte-api urls.txt --output result.jsonl
 
-.. note:: You may use ``python -m zyte_api`` instead of ``zyte-api``.
+.. _input-file:
 
-Requests to get browser HTML from those input URLs will be sent to Zyte API,
-using up to 20 parallel connections, and the API responses will be stored in
-the ``res.jsonl`` `JSON Lines`_ file, 1 response per line.
+Input file
+==========
 
-.. _JSON Lines: https://jsonlines.org/
+The input file can be either of the following:
 
-The results may be stored in an order which is different from the input order.
-If you need to match the output results to the input URLs, the best way is to
-use the ``echoData`` field (see below); it is passed through, and returned
-as-is in the ``echoData`` attribute. By default it will contain the input URL
-the content belongs to.
+-   A plain-text file with a list of target URLs, one per line. For example:
 
-If you need more flexibility, you can customize the requests by creating
-a JSON Lines file with queries: a JSON object per line. You can pass any
-`Zyte API`_ options there. For example, you could create the following
-``requests.jsonl`` file:
+    .. code-block:: none
 
-.. code-block:: json
+        https://books.toscrape.com
+        https://quotes.toscrape.com
 
-    {"url": "https://example.com", "browserHtml": true, "geolocation": "GB", "echoData": "homepage"}
-    {"url": "https://example.com/foo", "browserHtml": true, "javascript": false}
-    {"url": "https://example.com/bar", "browserHtml": true, "geolocation": "US"}
+    For each URL, a Zyte API request will be sent with browserHtml_ set to
+    ``True``.
 
-See `API docs`_ for a description of all supported parameters.
+    .. _browserHtml: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/browserHtml
 
-.. _API docs: https://docs.zyte.com/zyte-api/openapi.html
-.. _Zyte API: https://docs.zyte.com/zyte-api/get-started.html
+-   A `JSON Lines <https://jsonlines.org/>`_ file with a object of `Zyte API
+    request parameters`_ per line. For example:
 
-To get results for this ``requests.jsonl`` file, run:
+    .. _Zyte API request parameters: https://docs.zyte.com/zyte-api/usage/reference.html
 
-.. code-block:: shell
+    .. code-block:: json
 
-    zyte-api requests.jsonl --output res.jsonl
+        {"url": "https://a.example", "browserHtml": true, "geolocation": "GB"}
+        {"url": "https://b.example", "httpResponseBody": true}
+        {"url": "https://books.toscrape.com", "productNavigation": true}
 
-Processing speed
-~~~~~~~~~~~~~~~~
 
-Each API key has a limit on RPS. To get your URLs processed faster you can
-increase the number concurrent connections.
+.. _output-file:
 
-Best options depend on the RPS limit and on websites you're extracting
-data from. For example, if your API key has a limit of 3RPS, and average
-response time you observe for your websites is 10s, then to get to these
-3RPS you may set the number of concurrent connections to 30.
+Output file
+===========
 
-To set these options in the CLI, use the ``--n-conn`` argument:
+You can specify the path to an output file with the ``--output``/``-o`` switch.
+If not specified, the output is printed on the standard output.
 
-.. code-block:: shell
+.. warning:: The output path is overwritten.
 
-    zyte-api urls.txt --n-conn 30 --output res.jsonl
+The output file is in `JSON Lines`_ format. Each line contains a JSON object
+with a response from Zyte API.
 
-If too many requests are being processed in parallel, you'll be getting
-throttling errors. They are handled by CLI automatically, but they make
-extraction less efficient; please tune the concurrency options to
-not hit the throttling errors (HTTP 429) often.
+By default, ``zyte-api`` uses multiple concurrent connections for
+:ref:`performance reasons <cli-optimization>` and, as a result, the order of
+responses will probably not match the order of the source requests from the
+:ref:`input file <input-file>`. If you need to match the output results to the
+input requests, the best way is to use echoData_. By default, ``zyte-api``
+fills echoData_ with the input URL.
 
-You may be also limited by the website speed. The Zyte API tries not to hit any
-individual website too hard, but it could be better to limit this on a client
-side as well. If you're extracting data from a single website, it could make
-sense to decrease the amount of parallel requests; it can ensure higher success
-ratio overall.
+.. _echoData: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/echoData
 
-If you're extracting data from multiple websites, it makes sense to spread the
-load across time: if you have websites A, B and C, don't send requests in
-AAAABBBBCCCC order, send them in ABCABCABCABC order instead.
 
-To do so, you can change the order of the queries in your input file.
-Alternatively, you can pass ``--shuffle`` options; it randomly shuffles
-input queries before sending them to the API:
+.. _cli-optimization:
+
+Optimization
+============
+
+By default, ``zyte-api`` uses 20 concurrent connections for requests. Use the
+``--n-conn`` switch yo change that:
 
 .. code-block:: shell
 
-    zyte-api urls.txt --shuffle --output res.jsonl
+    zyte-api --n-conn 40 …
 
-Run ``zyte-api --help`` to get description of all supported
-options.
+Your ideal number of concurrent connections depends on your `account rate
+limit`_ and on your target websites. For example, if your account rate limit is
+500 requests per minute, and the average response time you observe for your
+websites is 10s, then to reach your rate limit you may set the number of
+concurrent connections to 84.
+
+.. _account rate limit: https://docs.zyte.com/zyte-api/usage/errors.html#rate-limiting-responses
+
+If too many requests are being processed in parallel, you will be getting many
+`rate-limiting responses`_. ``zyte-api`` retries them automatically, but to
+maximize efficiency, please use a number of concurrent connections that
+minimizes the number of rate-limiting responses.
+
+.. _rate-limiting responses: https://docs.zyte.com/zyte-api/usage/errors.html#rate-limiting-responses
+
+For some websites, increasing concurrent connections will slow down their
+responses and/or increase the ratio of `unsuccessful responses`_. Zyte API
+does its best to prevent these issues, but if you notice this happening to you,
+please consider decreasing your concurrent connections.
+
+.. _unsuccessful responses: https://docs.zyte.com/zyte-api/usage/errors.html#unsuccessful-responses
+
+If you target multiple websites, consider sorting your :ref:`input requests
+<input-file>` to spread the load. That is, if you have websites A, B, and C, do
+not send requests in AAABBBCCC order, send them in ABCABCABC order instead.
+Alternatively, use the ``--shuffle`` option to send requests in random order:
+
+.. code-block:: shell
+
+    zyte-api urls.txt --shuffle …
+
+
+.. seealso:: :ref:`cli-ref`

@@ -47,8 +47,18 @@ Basic usage
 Set your API key
 ----------------
 
-Configure your Zyte API key as an environment variable in your current shell
-session:
+.. key-get-start
+
+After you `sign up for a Zyte API account
+<https://app.zyte.com/account/signup/zyteapi>`_, copy `your API key
+<https://app.zyte.com/o/zyte-api/api-access>`_.
+
+.. key-get-end
+
+Then configure your Zyte API key as an environment variable in your current
+shell session:
+
+.. key-env-start
 
 -  On Windows:
 
@@ -61,6 +71,8 @@ session:
    .. code-block:: shell
 
         $ export ZYTE_API_KEY=YOUR_API_KEY
+
+.. key-env-end
 
 
 Use the command-line client
