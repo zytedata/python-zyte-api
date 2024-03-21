@@ -1,4 +1,5 @@
-tenacity
 aiohttp >= 3.6.0
 Sphinx >= 4.2.0
+sphinx-argparse
 sphinx-rtd-theme >= 0.4
+tenacity

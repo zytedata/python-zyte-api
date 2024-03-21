@@ -60,7 +60,7 @@ The output file is in `JSON Lines`_ format. Each line contains a JSON object
 with a response from Zyte API.
 
 By default, ``zyte-api`` uses multiple concurrent connections for
-:ref:`performance reasons <cli-optimization>` and, as a result, the order of
+:ref:`performance reasons <cli-optimize>` and, as a result, the order of
 responses will probably not match the order of the source requests from the
 :ref:`input file <input-file>`. If you need to match the output results to the
 input requests, the best way is to use echoData_. By default, ``zyte-api``
@@ -69,7 +69,7 @@ fills echoData_ with the input URL.
 .. _echoData: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/echoData
 
 
-.. _cli-optimization:
+.. _cli-optimize:
 
 Optimization
 ============

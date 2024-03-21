@@ -13,7 +13,7 @@ from tenacity import retry_if_exception
 from zyte_api._async import AsyncZyteAPI
 from zyte_api._retry import RetryFactory, _is_throttling_error
 from zyte_api._utils import create_session
-from zyte_api.constants import API_URL, ENV_VARIABLE
+from zyte_api.constants import API_URL
 from zyte_api.utils import _guess_intype
 
 
@@ -97,76 +97,88 @@ def read_input(input_fp, intype):
     return records
 
 
-def _main(program_name="zyte-api"):
-    """Process urls from input file through Zyte API"""
+def _get_argument_parser(program_name="zyte-api"):
     p = argparse.ArgumentParser(
         prog=program_name,
-        description="""
-        Process input URLs from a file using Zyte API.
-        """,
+        description="Send Zyte API requests.",
     )
     p.add_argument(
-        "input",
+        "INPUT",
         type=argparse.FileType("r", encoding="utf8"),
-        help="Input file with urls, url per line by default. The "
-        "Format can be changed using `--intype` argument.",
+        help="Path to an :ref:`input file <input-file>`.",
     )
     p.add_argument(
         "--intype",
         default=_UNSET,
         choices=["txt", "jl"],
-        help="Type of the input file. "
-        "Allowed values are 'txt' (1 URL per line) and 'jl' "
-        "(JSON Lines file, each object describing the "
-        "parameters of a request). "
-        "If not specified, the input type is guessed based on "
-        "the input file name extension (.jl, .jsonl, .txt) or "
-        "content, and assumed to be txt if guessing fails.",
+        help=(
+            "Type of the :ref:`input file <input-file>`, either ``txt`` "
+            "(plain text) or ``jl`` (JSON Lines).\n"
+            "\n"
+            "If not specified, the input type is guessed based on the input "
+            "file extension (``.jl``, ``.jsonl``, or ``.txt``), or in its "
+            "content, with ``txt`` as fallback."
+        ),
     )
-    p.add_argument(
-        "--limit", type=int, help="Max number of URLs to take from the input"
-    )
+    p.add_argument("--limit", type=int, help="Maximum number of requests to send.")
     p.add_argument(
         "--output",
         "-o",
         default=sys.stdout,
         type=argparse.FileType("w", encoding="utf8"),
-        help=".jsonlines file to store extracted data. "
-        "By default, results are printed to stdout.",
+        help=(
+            "Path for the :ref:`output file <output-file>`.\n"
+            "\n"
+            "If not specified, results are printed to the standard output."
+        ),
     )
     p.add_argument(
         "--n-conn",
         type=int,
         default=20,
-        help="number of connections to the API server " "(default: %(default)s)",
+        help=(
+            "Number of concurrent connections to use (default: %(default)s). "
+            "See :ref:`cli-optimize`."
+        ),
     )
     p.add_argument(
         "--api-key",
-        help="Zyte API key. "
-        "You can also set %s environment variable instead "
-        "of using this option." % ENV_VARIABLE,
+        help="Zyte API key. See :ref:`api-key`.",
     )
     p.add_argument(
-        "--api-url", help="Zyte API endpoint (default: %(default)s)", default=API_URL
+        "--api-url", help="Zyte API endpoint (default: %(default)s).", default=API_URL
     )
     p.add_argument(
         "--loglevel",
         "-L",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="log level (default: %(default)s)",
+        help="Log level (default: %(default)s).",
     )
-    p.add_argument("--shuffle", help="Shuffle input URLs", action="store_true")
+    p.add_argument(
+        "--shuffle",
+        help="Shuffle request order. See :ref:`cli-optimize`.",
+        action="store_true",
+    )
     p.add_argument(
         "--dont-retry-errors",
-        help="Don't retry request and network errors",
+        help="Do not retry unsuccessful responses and network errors, only rate-limiting responses.",
         action="store_true",
     )
     p.add_argument(
         "--store-errors",
-        help="when set to true, it includes all types of responses, and when set to false,"
-        " it includes only error-free responses in the output.",
+        help=(
+            "Store error responses in the :ref:`output file <output-file>`.\n"
+            "\n"
+            "If omitted, only successful responses are stored."
+        ),
     )
+    return p
+
+
+def _main(program_name="zyte-api"):
+    """Process urls from input file through Zyte API"""
+    p = _get_argument_parser(program_name=program_name)
     args = p.parse_args()
     logging.basicConfig(stream=sys.stderr, level=getattr(logging, args.loglevel))
 
