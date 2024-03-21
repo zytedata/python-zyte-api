@@ -179,4 +179,12 @@ class ZyteAPI:
                 yield exception
 
     def session(self, **kwargs):
+        """…
+
+        Sessions improve performance through a pool of reusable connections to
+        the Zyte API server.
+
+        Alternatively, use create_session and pass that manually to get and
+        iter calls (restore that import).
+        """
         return _Session(client=self, **kwargs)

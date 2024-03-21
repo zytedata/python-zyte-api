@@ -10,7 +10,7 @@ API key
 
 It is recommended to configure your API key through an environment variable, so
 that it can be picked by both the :ref:`command-line client <command_line>` and
-the Python API (both :ref:`sync <sync>` and :ref:`async <asyncio_api>`):
+the :ref:`Python client library <api>`:
 
 .. include:: /../README.rst
    :start-after: key-env-start

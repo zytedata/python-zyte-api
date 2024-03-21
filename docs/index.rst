@@ -19,8 +19,7 @@ python-zyte-api
 
    use/key
    use/cli
-   use/sync
-   use/async
+   use/api
 
 .. toctree::
    :caption: Reference

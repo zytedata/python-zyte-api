@@ -1,8 +1,8 @@
 .. _command_line:
 
-======================
-Command-line interface
-======================
+===================
+Command-line client
+===================
 
 Once you have :ref:`installed python-zyte-api <install>` and :ref:`configured
 your API key <api-key>`, you can use the ``zyte-api`` command-line client.
@@ -75,42 +75,50 @@ Optimization
 ============
 
 By default, ``zyte-api`` uses 20 concurrent connections for requests. Use the
-``--n-conn`` switch yo change that:
+``--n-conn`` switch to change that:
 
 .. code-block:: shell
 
     zyte-api --n-conn 40 …
 
-Your ideal number of concurrent connections depends on your `account rate
-limit`_ and on your target websites. For example, if your account rate limit is
-500 requests per minute, and the average response time you observe for your
-websites is 10s, then to reach your rate limit you may set the number of
-concurrent connections to 84.
-
-.. _account rate limit: https://docs.zyte.com/zyte-api/usage/errors.html#rate-limiting-responses
-
-If too many requests are being processed in parallel, you will be getting many
-`rate-limiting responses`_. ``zyte-api`` retries them automatically, but to
-maximize efficiency, please use a number of concurrent connections that
-minimizes the number of rate-limiting responses.
-
-.. _rate-limiting responses: https://docs.zyte.com/zyte-api/usage/errors.html#rate-limiting-responses
-
-For some websites, increasing concurrent connections will slow down their
-responses and/or increase the ratio of `unsuccessful responses`_. Zyte API
-does its best to prevent these issues, but if you notice this happening to you,
-please consider decreasing your concurrent connections.
-
-.. _unsuccessful responses: https://docs.zyte.com/zyte-api/usage/errors.html#unsuccessful-responses
-
-If you target multiple websites, consider sorting your :ref:`input requests
-<input-file>` to spread the load. That is, if you have websites A, B, and C, do
-not send requests in AAABBBCCC order, send them in ABCABCABC order instead.
-Alternatively, use the ``--shuffle`` option to send requests in random order:
+The ``--shuffle`` option can be useful if you target multiple websites and your
+:ref:`input file <input-file>` is sorted by website, to randomize the request
+order and hence distribute the load somewhat evenly:
 
 .. code-block:: shell
 
     zyte-api urls.txt --shuffle …
+
+For guidelines on how to choose the optimal ``--n-conn`` value for you, and
+other optimization tips, see `Optimizing Zyte API usage`_.
+
+.. _Optimizing Zyte API usage: https://docs.zyte.com/zyte-api/usage/optimize.html
+
+
+Errors and retries
+==================
+
+``zyte-api`` automatically handles retries for `rate-limiting`_ and
+unsuccessful_ responses, as well as network errors, following the :ref:`default
+retry policy <default-retry-policy>`.
+
+.. _rate-limiting: https://docs.zyte.com/zyte-api/usage/errors.html#rate-limiting-responses
+.. _unsuccessful: https://docs.zyte.com/zyte-api/usage/errors.html#unsuccessful-responses
+
+Use ``--dont-retry-errors`` to disable the retrying of error responses, and
+retrying only `rate-limiting`_ responses:
+
+.. code-block:: shell
+
+    zyte-api --dont-retry-errors …
+
+By default, errors are only logged in the standard error output (``stderr``).
+If you want to include error responses in the output file, use
+``--store-errors``:
+
+.. code-block:: shell
+
+    zyte-api --store-errors …
 
 
 .. seealso:: :ref:`cli-ref`
