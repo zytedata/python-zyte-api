@@ -12,6 +12,7 @@
 #
 import os
 import sys
+from pathlib import Path
 
 import sphinx_rtd_theme
 
@@ -39,7 +40,9 @@ release = "0.4.8"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+sys.path.insert(0, str(Path(__file__).parent.absolute()))  # _ext
 extensions = [
+    "_ext",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx.ext.ifconfig",

@@ -9,12 +9,9 @@ logger = logging.getLogger("zyte_api")
 
 
 class RequestError(ClientResponseError):
-    """Exception raised upon receiving a `rate-limiting`_ or unsuccessful_
-    response from Zyte API.
-
-    .. _rate-limiting: https://docs.zyte.com/zyte-api/usage/errors.html#rate-limiting-responses
-    .. _unsuccessful: https://docs.zyte.com/zyte-api/usage/errors.html#unsuccessful-responses
-    """
+    """Exception raised upon receiving a :ref:`rate-limiting
+    <zyte-api-rate-limit>` or :ref:`unsuccessful
+    <zyte-api-unsuccessful-responses>` response from Zyte API."""
 
     def __init__(self, *args, **kwargs):
         #: Response body.

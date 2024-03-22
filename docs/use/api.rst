@@ -12,11 +12,10 @@ your API key <api-key>`, you can use one of its APIs from Python code:
 -   The :ref:`sync API <sync>` can be used to build simple, proof-of-concept or
     debugging Python scripts.
 
--   The :ref:`async API <asyncio_api>` can be used from `asyncio coroutines`_,
-    and is meant for production usage, as well as for asyncio environments like
-    `Jupyter notebooks`_.
+-   The :ref:`async API <asyncio_api>` can be used from :ref:`coroutines
+    <coroutine>`, and is meant for production usage, as well as for asyncio
+    environments like `Jupyter notebooks`_.
 
-    .. _asyncio coroutines: https://docs.python.org/3/library/asyncio-task.html
     .. _Jupyter notebooks: https://jupyter.org/
 
 .. _sync:
@@ -58,10 +57,8 @@ requests in parallel:
                 ...
 
 .. tip:: :meth:`~ZyteAPI.iter` yields results as they come, not
-    necessarily in their original order. Use `echoData`_ to track the source
-    request.
-
-    .. _echoData: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/echoData
+    necessarily in their original order. Use :http:`request:echoData` to track
+    the source request.
 
 .. _asyncio_api:
 
@@ -115,8 +112,8 @@ multiple requests in parallel:
     asyncio.run(main())
 
 .. tip:: :meth:`~AsyncZyteAPI.iter` yields results as they come, not
-    necessarily in their original order. Use `echoData`_ to track the source
-    request.
+    necessarily in their original order. Use :http:`request:echoData` to track
+    the source request.
 
 
 .. _api-optimize:
@@ -137,20 +134,15 @@ The number of concurrent connections if enforced across all method calls,
 including different sessions of the same client.
 
 For guidelines on how to choose the optimal value for you, and other
-optimization tips, see `Optimizing Zyte API usage`_.
-
-.. _Optimizing Zyte API usage: https://docs.zyte.com/zyte-api/usage/optimize.html
+optimization tips, see :ref:`zyte-api-optimize`.
 
 
 Errors and retries
 ==================
 
-Methods of :class:`ZyteAPI` and :class:`AsyncZyteAPI`
-automatically handle retries for `rate-limiting`_ and unsuccessful_ responses,
-as well as network errors.
-
-.. _rate-limiting: https://docs.zyte.com/zyte-api/usage/errors.html#rate-limiting-responses
-.. _unsuccessful: https://docs.zyte.com/zyte-api/usage/errors.html#unsuccessful-responses
+Methods of :class:`ZyteAPI` and :class:`AsyncZyteAPI` automatically handle
+retries for :ref:`rate-limiting <zyte-api-rate-limit>` and :ref:`unsuccessful
+<zyte-api-unsuccessful-responses>` responses, as well as network errors.
 
 .. _retry-policy:
 .. _default-retry-policy:
@@ -158,9 +150,10 @@ as well as network errors.
 The default retry policy, :data:`~zyte_api.zyte_api_retrying`, does the
 following:
 
--   Retries `rate-limiting`_ responses forever.
+-   Retries :ref:`rate-limiting responses <zyte-api-rate-limit>` forever.
 
--   Retries unsuccessful_ responses up to 3 times.
+-   Retries :ref:`unsuccessful responses <zyte-api-unsuccessful-responses>` up
+    to 3 times.
 
 -   Retries network errors for up to 15 minutes.
 
@@ -180,11 +173,9 @@ yields exceptions instead of raising them, to prevent exceptions from
 interrupting the entire iteration.
 
 The type of exception depends on the issue that caused the final request
-attempt to fail. Unsuccessful responses trigger a
-:exc:`~zyte_api.RequestError` and network errors trigger `aiohttp exceptions`_.
+attempt to fail. Unsuccessful responses trigger a :exc:`RequestError` and
+network errors trigger :ref:`aiohttp exceptions <aiohttp-client-reference>`.
 Other exceptions could be raised; for example, from a custom retry policy.
-
-.. _aiohttp exceptions: https://docs.aiohttp.org/en/stable/client_reference.html#client-exceptions
 
 
 .. seealso:: :ref:`api-ref`

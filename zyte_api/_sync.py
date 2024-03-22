@@ -94,9 +94,7 @@ class ZyteAPI:
     ``python-zyte-api/<VERSION>``.
 
     .. tip:: To change the ``User-Agent`` header sent to a target website, use
-             customHttpRequestHeaders_ instead.
-
-             .. _customHttpRequestHeaders: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/customHttpRequestHeaders
+             :http:`request:customHttpRequestHeaders` instead.
     """
 
     def __init__(
@@ -167,10 +165,8 @@ class ZyteAPI:
         *n_conn* requests being processed in parallel at a time.
 
         Results may come an a different order from the original list of
-        *queries*. You can use echoData_ to attach metadata to queries, and
-        later use that metadata to restore their original order.
-
-        .. _echoData: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/echoData
+        *queries*. You can use :http:`request:echoData` to attach metadata to
+        queries, and later use that metadata to restore their original order.
 
         When exceptions occur, they are yielded, not raised.
 

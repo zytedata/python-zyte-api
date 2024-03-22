@@ -29,15 +29,11 @@ The input file can be either of the following:
         https://books.toscrape.com
         https://quotes.toscrape.com
 
-    For each URL, a Zyte API request will be sent with browserHtml_ set to
-    ``True``.
+    For each URL, a Zyte API request will be sent with
+    :http:`request:browserHtml` set to ``True``.
 
-    .. _browserHtml: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/browserHtml
-
--   A `JSON Lines <https://jsonlines.org/>`_ file with a object of `Zyte API
-    request parameters`_ per line. For example:
-
-    .. _Zyte API request parameters: https://docs.zyte.com/zyte-api/usage/reference.html
+-   A `JSON Lines <https://jsonlines.org/>`_ file with a object of :ref:`Zyte
+    API request parameters <zyte-api-reference>` per line. For example:
 
     .. code-block:: json
 
@@ -63,10 +59,8 @@ By default, ``zyte-api`` uses multiple concurrent connections for
 :ref:`performance reasons <cli-optimize>` and, as a result, the order of
 responses will probably not match the order of the source requests from the
 :ref:`input file <input-file>`. If you need to match the output results to the
-input requests, the best way is to use echoData_. By default, ``zyte-api``
-fills echoData_ with the input URL.
-
-.. _echoData: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/echoData
+input requests, the best way is to use :http:`request:echoData`. By default,
+``zyte-api`` fills :http:`request:echoData` with the input URL.
 
 
 .. _cli-optimize:
@@ -90,23 +84,19 @@ order and hence distribute the load somewhat evenly:
     zyte-api urls.txt --shuffle …
 
 For guidelines on how to choose the optimal ``--n-conn`` value for you, and
-other optimization tips, see `Optimizing Zyte API usage`_.
-
-.. _Optimizing Zyte API usage: https://docs.zyte.com/zyte-api/usage/optimize.html
+other optimization tips, see :ref:`zyte-api-optimize`.
 
 
 Errors and retries
 ==================
 
-``zyte-api`` automatically handles retries for `rate-limiting`_ and
-unsuccessful_ responses, as well as network errors, following the :ref:`default
-retry policy <default-retry-policy>`.
-
-.. _rate-limiting: https://docs.zyte.com/zyte-api/usage/errors.html#rate-limiting-responses
-.. _unsuccessful: https://docs.zyte.com/zyte-api/usage/errors.html#unsuccessful-responses
+``zyte-api`` automatically handles retries for :ref:`rate-limiting
+<zyte-api-rate-limit>` and :ref:`unsuccessful
+<zyte-api-unsuccessful-responses>` responses, as well as network errors,
+following the :ref:`default retry policy <default-retry-policy>`.
 
 Use ``--dont-retry-errors`` to disable the retrying of error responses, and
-retrying only `rate-limiting`_ responses:
+retrying only :ref:`rate-limiting responses <zyte-api-rate-limit>`:
 
 .. code-block:: shell
 
