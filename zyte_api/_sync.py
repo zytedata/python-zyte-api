@@ -17,6 +17,65 @@ def _get_loop():
         return loop
 
 
+class _Session:
+    def __init__(self, client, **session_kwargs):
+        self._client = client
+        self._session = client._async_client.session(**session_kwargs)
+        self._context = None
+
+    def __enter__(self):
+        loop = _get_loop()
+        self._context = loop.run_until_complete(self._session.__aenter__())._context
+        return self
+
+    def __exit__(self, *exc_info):
+        loop = _get_loop()
+        result = loop.run_until_complete(self._context.__aexit__(*exc_info))
+        self._context = None
+        return result
+
+    def _check_context(self):
+        if self._context is None:
+            raise RuntimeError(
+                "Attempt to use session method on a session either not opened "
+                "or already closed."
+            )
+
+    def get(
+        self,
+        query: dict,
+        *,
+        endpoint: str = "extract",
+        handle_retries=True,
+        retrying: Optional[AsyncRetrying] = None,
+    ):
+        self._check_context()
+        return self._client.get(
+            query=query,
+            endpoint=endpoint,
+            handle_retries=handle_retries,
+            retrying=retrying,
+            session=self._context,
+        )
+
+    def iter(
+        self,
+        queries: List[dict],
+        *,
+        endpoint: str = "extract",
+        handle_retries=True,
+        retrying: Optional[AsyncRetrying] = None,
+    ) -> Generator[Union[dict, Exception], None, None]:
+        self._check_context()
+        return self._client.iter(
+            queries=queries,
+            endpoint=endpoint,
+            session=self._context,
+            handle_retries=handle_retries,
+            retrying=retrying,
+        )
+
+
 class ZyteAPI:
     """Synchronous Zyte API client.
 
@@ -118,3 +177,6 @@ class ZyteAPI:
                 yield loop.run_until_complete(future)
             except Exception as exception:
                 yield exception
+
+    def session(self, **kwargs):
+        return _Session(client=self, **kwargs)

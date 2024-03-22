@@ -2,7 +2,7 @@ import pytest
 from aiohttp import TCPConnector
 from pytest import raises
 
-from zyte_api import create_session
+from zyte_api._utils import create_session
 from zyte_api.utils import _guess_intype, _process_query
 
 
@@ -112,3 +112,13 @@ def test_process_query(input, output):
 def test_process_query_bytes():
     with raises(ValueError):
         _process_query({"url": b"https://example.com"})
+
+
+def test_deprecated_create_session():
+    from zyte_api.aio.client import create_session as _create_session
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"^zyte_api\.aio\.client\.create_session is deprecated",
+    ):
+        _create_session()

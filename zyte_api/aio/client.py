@@ -1,5 +1,5 @@
 from .._async import AsyncZyteAPI
-from .._utils import create_session  # noqa: F401
+from .._utils import deprecated_create_session as create_session  # noqa: F401
 
 
 class AsyncClient(AsyncZyteAPI):
