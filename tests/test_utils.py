@@ -1,7 +1,18 @@
 import pytest
+from aiohttp import TCPConnector
 from pytest import raises
 
+from zyte_api._utils import create_session
 from zyte_api.utils import _guess_intype, _process_query
+
+
+@pytest.mark.asyncio
+async def test_create_session_custom_connector():
+    # Declare a connector with a random parameter to avoid it matching the
+    # default one.
+    custom_connector = TCPConnector(limit=1850)
+    session = create_session(connector=custom_connector)
+    assert session.connector == custom_connector
 
 
 @pytest.mark.parametrize(
@@ -85,6 +96,11 @@ def test_guess_intype(file_name, first_line, expected):
             {"url": "https://example.com#a"},
             {"url": "https://example.com#a"},
         ),
+        # If no URL is passed, nothing is done.
+        (
+            {"a": "b"},
+            {"a": "b"},
+        ),
         # NOTE: We use w3lib.url.safe_url_string for escaping. Tests covering
         # the URL escaping logic exist upstream.
     ),
@@ -96,3 +112,13 @@ def test_process_query(input, output):
 def test_process_query_bytes():
     with raises(ValueError):
         _process_query({"url": b"https://example.com"})
+
+
+def test_deprecated_create_session():
+    from zyte_api.aio.client import create_session as _create_session
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"^zyte_api\.aio\.client\.create_session is deprecated",
+    ):
+        _create_session()

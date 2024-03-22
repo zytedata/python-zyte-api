@@ -6,6 +6,7 @@ import json
 import logging
 import random
 import sys
+from warnings import warn
 
 import tqdm
 from tenacity import retry_if_exception
@@ -31,12 +32,21 @@ async def run(
     out,
     *,
     n_conn,
-    stop_on_errors,
+    stop_on_errors=_UNSET,
     api_url,
     api_key=None,
     retry_errors=True,
     store_errors=None,
 ):
+    if stop_on_errors is not _UNSET:
+        warn(
+            "The stop_on_errors parameter is deprecated.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    else:
+        stop_on_errors = False
+
     def write_output(content):
         json.dump(content, out, ensure_ascii=False)
         out.write("\n")
@@ -83,6 +93,8 @@ async def run(
 def read_input(input_fp, intype):
     assert intype in {"txt", "jl", _UNSET}
     lines = input_fp.readlines()
+    if not lines:
+        return []
     if intype is _UNSET:
         intype = _guess_intype(input_fp.name, lines)
     if intype == "txt":
@@ -171,6 +183,10 @@ def _main(program_name="zyte-api"):
     logging.basicConfig(stream=sys.stderr, level=getattr(logging, args.loglevel))
 
     queries = read_input(args.input, args.intype)
+    if not queries:
+        print("No input queries found. Is the input file empty?", file=sys.stderr)
+        sys.exit(-1)
+
     if args.shuffle:
         random.shuffle(queries)
     if args.limit:
@@ -186,7 +202,6 @@ def _main(program_name="zyte-api"):
         queries,
         out=args.output,
         n_conn=args.n_conn,
-        stop_on_errors=False,
         api_url=args.api_url,
         api_key=args.api_key,
         retry_errors=not args.dont_retry_errors,

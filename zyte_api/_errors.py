@@ -15,9 +15,7 @@ class RequestError(ClientResponseError):
 
     def __init__(self, *args, **kwargs):
         self.response_content = kwargs.pop("response_content")
-        self.request_id = kwargs.pop("request_id", None)
-        if self.request_id is None:
-            self.request_id = kwargs.get("headers", {}).get("request-id")
+        self.request_id = kwargs.get("headers", {}).get("request-id")
         super().__init__(*args, **kwargs)
 
     @property
