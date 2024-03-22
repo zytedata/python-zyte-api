@@ -77,21 +77,24 @@ class _Session:
 
 
 class ZyteAPI:
-    """Synchronous Zyte API client.
+    """:ref:`Synchronous Zyte API client <sync>`.
 
-    To create an instance, pass your API key:
+    *api_key* is your Zyte API key. If not specified, it is read from the
+    ``ZYTE_API_KEY`` environment variable. See :ref:`api-key`.
 
-    .. code-block:: python
+    *api_url* is the Zyte API base URL.
 
-        client = ZyteAPI(api_key="YOUR_API_KEY")
+    *n_conn* is the maximum number of concurrent requests to use. See
+    :ref:`api-optimize`.
 
-    Or :ref:`use an environment variable <api-key>` and omit your API key:
+    *retrying* is the retry policy for requests. Defaults to
+    :data:`~zyte_api.zyte_api_retrying`.
 
-    .. code-block:: python
+    *user_agent* is the user agent string reported to Zyte API. Defaults to
+    ``python-zyte-api/<VERSION>``.
 
-        client = ZyteAPI()
-
-    Use :meth:`get` and :meth:`iter` to send queries to Zyte API.
+    .. tip:: To change the ``User-Agent`` header sent to a target website, use
+             :http:`request:customHttpRequestHeaders` instead.
     """
 
     def __init__(
@@ -120,11 +123,20 @@ class ZyteAPI:
         handle_retries: bool = True,
         retrying: Optional[AsyncRetrying] = None,
     ) -> dict:
-        """Send a query to Zyte API and get the result.
+        """Send *query* to Zyte API and return the result.
 
-        .. code-block:: python
+        *endpoint* is the Zyte API endpoint path relative to the client object
+        *api_url*.
 
-            result = client.get({"url": "https://toscrape.com", "httpResponseBody": True})
+        *session* is the network session to use. Consider using
+        :meth:`session` instead of this parameter.
+
+        *handle_retries* determines whether or not a :ref:`retry policy
+        <retry-policy>` should be used.
+
+        *retrying* is the :ref:`retry policy <retry-policy>` to use, provided
+        *handle_retries* is ``True``. If not specified, the :ref:`default retry
+        policy <default-retry-policy>` is used.
         """
         loop = _get_loop()
         future = self._async_client.get(
@@ -145,25 +157,20 @@ class ZyteAPI:
         handle_retries: bool = True,
         retrying: Optional[AsyncRetrying] = None,
     ) -> Generator[Union[dict, Exception], None, None]:
-        """Send multiple queries to Zyte API in parallel and iterate over their
-        results as they come.
+        """Send multiple *queries* to Zyte API in parallel and iterate over
+        their results as they come.
 
-        .. code-block:: python
-
-            queries = [
-                {"url": "https://books.toscrape.com", "httpResponseBody": True},
-                {"url": "https://quotes.toscrape.com", "httpResponseBody": True},
-            ]
-            for result in client.iter(queries):
-                print(result)
+        The number of *queries* can exceed the *n_conn* parameter set on the
+        client object. Extra queries will be queued, there will be only up to
+        *n_conn* requests being processed in parallel at a time.
 
         Results may come an a different order from the original list of
-        *queries*. You can use echoData_ to attach metadata to queries that you
-        can later use to restore their original order.
+        *queries*. You can use :http:`request:echoData` to attach metadata to
+        queries, and later use that metadata to restore their original order.
 
-        .. _echoData: https://docs.zyte.com/zyte-api/usage/reference.html#operation/extract/request/echoData
+        When exceptions occur, they are yielded, not raised.
 
-        When exceptions occur, they are also yielded, not raised.
+        The remaining parameters work the same as in :meth:`get`.
         """
         loop = _get_loop()
         for future in self._async_client.iter(
@@ -179,4 +186,24 @@ class ZyteAPI:
                 yield exception
 
     def session(self, **kwargs):
+        """:ref:`Context manager <context-managers>` to create a contextual
+        session.
+
+        A contextual session is an object that has the same API as the client
+        object, except:
+
+        -   :meth:`get` and :meth:`iter` do not have a *session* parameter,
+            the contextual session creates an :class:`aiohttp.ClientSession`
+            object and passes it to :meth:`get` and :meth:`iter` automatically.
+
+        -   It does not have a :meth:`session` method.
+
+        Using the same :class:`aiohttp.ClientSession` object for all Zyte API
+        requests improves performance by keeping a pool of reusable connections
+        to Zyte API.
+
+        The :class:`aiohttp.ClientSession` object is created with sane defaults
+        for Zyte API, but you can use *kwargs* to pass additional parameters to
+        :class:`aiohttp.ClientSession` and even override those sane defaults.
+        """
         return _Session(client=self, **kwargs)

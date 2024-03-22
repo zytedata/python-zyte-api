@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from aiohttp import ClientResponseError
 
@@ -8,18 +9,20 @@ logger = logging.getLogger("zyte_api")
 
 
 class RequestError(ClientResponseError):
-    """Exception which is raised when Request-level error is returned.
-    In contrast with ClientResponseError, it allows to inspect response
-    content.
-    """
+    """Exception raised upon receiving a :ref:`rate-limiting
+    <zyte-api-rate-limit>` or :ref:`unsuccessful
+    <zyte-api-unsuccessful-responses>` response from Zyte API."""
 
     def __init__(self, *args, **kwargs):
-        self.response_content = kwargs.pop("response_content")
-        self.request_id = kwargs.get("headers", {}).get("request-id")
+        #: Response body.
+        self.response_content: Optional[bytes] = kwargs.pop("response_content")
+        #: Request ID.
+        self.request_id: Optional[str] = kwargs.get("headers", {}).get("request-id")
         super().__init__(*args, **kwargs)
 
     @property
     def parsed(self):
+        """Response as a :class:`ParsedError` object."""
         return ParsedError.from_body(self.response_content)
 
     def __str__(self):
