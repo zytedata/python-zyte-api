@@ -15,7 +15,10 @@ def deprecated_create_session(
     connection_pool_size=100, **kwargs
 ) -> aiohttp.ClientSession:
     warn(
-        "zyte_api.create_session is deprecated, use AsyncZyteAPI.session instead.",
+        (
+            "zyte_api.aio.client.create_session is deprecated, use "
+            "ZyteAPI.session or AsyncZyteAPI.session instead."
+        ),
         DeprecationWarning,
     )
     return create_session(connection_pool_size=connection_pool_size, **kwargs)

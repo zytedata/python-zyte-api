@@ -20,9 +20,7 @@ class RequestError(ClientResponseError):
         #: Response body.
         self.response_content: Optional[bytes] = kwargs.pop("response_content")
         #: Request ID.
-        self.request_id: Optional[str] = kwargs.pop("request_id", None)
-        if self.request_id is None:
-            self.request_id = kwargs.get("headers", {}).get("request-id")
+        self.request_id: Optional[str] = kwargs.get("headers", {}).get("request-id")
         super().__init__(*args, **kwargs)
 
     @property

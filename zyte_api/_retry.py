@@ -145,12 +145,10 @@ class RetryFactory:
         assert exc, "Unexpected empty exception"
         if _is_throttling_error(exc):
             return self.throttling_wait(retry_state=retry_state)
-        elif _is_network_error(exc):
+        if _is_network_error(exc):
             return self.network_error_wait(retry_state=retry_state)
-        elif _is_temporary_download_error(exc):
-            return self.temporary_download_error_wait(retry_state=retry_state)
-        else:
-            raise RuntimeError("Invalid retry state exception: %s" % exc)
+        assert _is_temporary_download_error(exc)  # See retry_condition
+        return self.temporary_download_error_wait(retry_state=retry_state)
 
     def stop(self, retry_state: RetryCallState) -> bool:
         assert retry_state.outcome, "Unexpected empty outcome"
@@ -158,12 +156,10 @@ class RetryFactory:
         assert exc, "Unexpected empty exception"
         if _is_throttling_error(exc):
             return self.throttling_stop(retry_state)
-        elif _is_network_error(exc):
+        if _is_network_error(exc):
             return self.network_error_stop(retry_state)
-        elif _is_temporary_download_error(exc):
-            return self.temporary_download_error_stop(retry_state)
-        else:
-            raise RuntimeError("Invalid retry state exception: %s" % exc)
+        assert _is_temporary_download_error(exc)  # See retry_condition
+        return self.temporary_download_error_stop(retry_state)
 
     def reraise(self) -> bool:
         return True

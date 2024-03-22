@@ -11,7 +11,7 @@ from .constants import API_URL
 def _get_loop():
     try:
         return asyncio.get_event_loop()
-    except RuntimeError:
+    except RuntimeError:  # pragma: no cover (tests always have a running loop)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         return loop
