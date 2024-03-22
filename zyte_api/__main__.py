@@ -117,19 +117,22 @@ def _get_argument_parser(program_name="zyte-api"):
     p.add_argument(
         "INPUT",
         type=argparse.FileType("r", encoding="utf8"),
-        help="Path to an :ref:`input file <input-file>`.",
+        help=(
+            "Path to an input file (see 'Command-line client > Input file' in "
+            "the docs for details)."
+        ),
     )
     p.add_argument(
         "--intype",
         default=_UNSET,
         choices=["txt", "jl"],
         help=(
-            "Type of the :ref:`input file <input-file>`, either ``txt`` "
-            "(plain text) or ``jl`` (JSON Lines).\n"
+            "Type of the input file, either 'txt' (plain text) or 'jl' (JSON "
+            "Lines).\n"
             "\n"
             "If not specified, the input type is guessed based on the input "
-            "file extension (``.jl``, ``.jsonl``, or ``.txt``), or in its "
-            "content, with ``txt`` as fallback."
+            "file extension ('.jl', '.jsonl', or '.txt'), or in its content, "
+            "with 'txt' as fallback."
         ),
     )
     p.add_argument("--limit", type=int, help="Maximum number of requests to send.")
@@ -139,7 +142,8 @@ def _get_argument_parser(program_name="zyte-api"):
         default=sys.stdout,
         type=argparse.FileType("w", encoding="utf8"),
         help=(
-            "Path for the :ref:`output file <output-file>`.\n"
+            "Path for the output file. Results are written into the output "
+            "file in JSON Lines format.\n"
             "\n"
             "If not specified, results are printed to the standard output."
         ),
@@ -148,14 +152,11 @@ def _get_argument_parser(program_name="zyte-api"):
         "--n-conn",
         type=int,
         default=20,
-        help=(
-            "Number of concurrent connections to use (default: %(default)s). "
-            "See :ref:`cli-optimize`."
-        ),
+        help=("Number of concurrent connections to use (default: %(default)s)."),
     )
     p.add_argument(
         "--api-key",
-        help="Zyte API key. See :ref:`api-key`.",
+        help="Zyte API key.",
     )
     p.add_argument(
         "--api-url", help="Zyte API endpoint (default: %(default)s).", default=API_URL
@@ -169,7 +170,7 @@ def _get_argument_parser(program_name="zyte-api"):
     )
     p.add_argument(
         "--shuffle",
-        help="Shuffle request order. See :ref:`cli-optimize`.",
+        help="Shuffle request order.",
         action="store_true",
     )
     p.add_argument(
@@ -180,10 +181,11 @@ def _get_argument_parser(program_name="zyte-api"):
     p.add_argument(
         "--store-errors",
         help=(
-            "Store error responses in the :ref:`output file <output-file>`.\n"
+            "Store error responses in the output file.\n"
             "\n"
             "If omitted, only successful responses are stored."
         ),
+        action="store_true",
     )
     return p
 
