@@ -119,6 +119,8 @@ multiple requests in parallel:
     request.
 
 
+.. _api-optimize:
+
 Optimization
 ============
 
@@ -150,6 +152,7 @@ as well as network errors.
 .. _rate-limiting: https://docs.zyte.com/zyte-api/usage/errors.html#rate-limiting-responses
 .. _unsuccessful: https://docs.zyte.com/zyte-api/usage/errors.html#unsuccessful-responses
 
+.. _retry-policy:
 .. _default-retry-policy:
 
 The default retry policy, :data:`~zyte_api.zyte_api_retrying`, does the

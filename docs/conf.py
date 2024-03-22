@@ -208,6 +208,10 @@ intersphinx_mapping = {
         "https://tenacity.readthedocs.io/en/latest/",
         None,
     ),
+    "zyte": (
+        "https://docs.zyte.com",
+        None,
+    ),
 }
 
 autodoc_default_options = {

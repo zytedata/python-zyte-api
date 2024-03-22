@@ -55,8 +55,61 @@ def _is_temporary_download_error(exc: BaseException) -> bool:
 
 
 class RetryFactory:
-    """
-    Build custom retry configuration
+    """Factory class that builds the :class:`tenacity.AsyncRetrying` object
+    that defines the :ref:`default retry policy <default-retry-policy>`.
+
+    To create a custom retry policy, you can subclass this factory class,
+    modify it as needed, and then call :meth:`build` on your subclass to get
+    the corresponding :class:`tenacity.AsyncRetrying` object.
+
+    For example, to increase the maximum number of attempts for :ref:`temporary
+    download errors <zyte-api-temporary-download-errors>` from 4 (i.e. 3
+    retries) to 10 (i.e. 9 retries):
+
+    .. code-block:: python
+
+        from tenacity import stop_after_attempt
+        from zyte_api import RetryFactory
+
+
+        class CustomRetryFactory(RetryFactory):
+            temporary_download_error_stop = stop_after_attempt(10)
+
+
+        CUSTOM_RETRY_POLICY = CustomRetryFactory().build()
+
+    To retry :ref:`permanent download errors
+    <zyte-api-permanent-download-errors>`, treating them the same as
+    :ref:`temporary download errors <zyte-api-temporary-download-errors>`:
+
+    .. code-block:: python
+
+        from tenacity import RetryCallState, retry_if_exception, stop_after_attempt
+        from zyte_api import RequestError, RetryFactory
+
+
+        def is_permanent_download_error(exc: BaseException) -> bool:
+            return isinstance(exc, RequestError) and exc.status == 521
+
+
+        class CustomRetryFactory(RetryFactory):
+
+            retry_condition = RetryFactory.retry_condition | retry_if_exception(
+                is_permanent_download_error
+            )
+
+            def wait(self, retry_state: RetryCallState) -> float:
+                if is_permanent_download_error(retry_state.outcome.exception()):
+                    return self.temporary_download_error_wait(retry_state=retry_state)
+                return super().wait(retry_state)
+
+            def stop(self, retry_state: RetryCallState) -> bool:
+                if is_permanent_download_error(retry_state.outcome.exception()):
+                    return self.temporary_download_error_stop(retry_state)
+                return super().stop(retry_state)
+
+
+        CUSTOM_RETRY_POLICY = CustomRetryFactory().build()
     """
 
     retry_condition: retry_base = (

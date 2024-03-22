@@ -24,6 +24,7 @@ Retries
 =======
 
 .. autodata:: zyte_api_retrying
+    :no-value:
 
 .. autoclass:: RetryFactory
 
@@ -32,3 +33,7 @@ Errors
 ======
 
 .. autoexception:: RequestError
+    :members:
+
+.. autoclass:: ParsedError
+    :members:
