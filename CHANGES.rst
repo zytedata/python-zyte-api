@@ -14,7 +14,7 @@ Changes
   * Replace ``zyte_api.aio.client.AsyncClient`` with the new
     :class:`~zyte_api.AsyncZyteAPI` class.
 
-  * Replace ``zyte_api.aio.client.create_session`` with
+  * Replace ``zyte_api.aio.client.create_session`` with the new
     :meth:`AsyncZyteAPI.session <zyte_api.AsyncZyteAPI.session>` method.
 
   * Import ``zyte_api.aio.errors.RequestError``,
