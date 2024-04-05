@@ -55,25 +55,6 @@ After you `sign up for a Zyte API account
 
 .. key-get-end
 
-Then configure your Zyte API key as an environment variable in your current
-shell session:
-
-.. key-env-start
-
--  On Windows:
-
-   .. code-block:: shell
-
-        > set ZYTE_API_KEY=YOUR_API_KEY
-
--  On macOS and Linux:
-
-   .. code-block:: shell
-
-        $ export ZYTE_API_KEY=YOUR_API_KEY
-
-.. key-env-end
-
 
 Use the command-line client
 ---------------------------
@@ -90,7 +71,7 @@ And then call ``zyte-api`` from your shell:
 
 .. code-block:: shell
 
-    zyte-api url-list.txt --output results.jsonl
+    zyte-api url-list.txt --api-key YOUR_API_KEY --output results.jsonl
 
 
 Use the Python sync API
@@ -102,14 +83,14 @@ For very basic Python scripts, use the sync API:
 
     from zyte_api import ZyteAPI
 
-    client = ZyteAPI()
+    client = ZyteAPI(api_key="YOUR_API_KEY")
     response = client.get({"url": "https://toscrape.com", "httpResponseBody": True})
 
 
 Use the Python async API
 ------------------------
 
-For better performance, use the async API:
+For asyncio code, use the async API:
 
 .. code-block:: python
 
@@ -119,7 +100,7 @@ For better performance, use the async API:
 
 
     async def main():
-        client = AsyncZyteAPI()
+        client = AsyncZyteAPI(api_key="YOUR_API_KEY")
         response = await client.get(
             {"url": "https://toscrape.com", "httpResponseBody": True}
         )

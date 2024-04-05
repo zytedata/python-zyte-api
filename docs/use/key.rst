@@ -12,9 +12,17 @@ It is recommended to configure your API key through an environment variable, so
 that it can be picked by both the :ref:`command-line client <command_line>` and
 the :ref:`Python client library <api>`:
 
-.. include:: /../README.rst
-   :start-after: key-env-start
-   :end-before: key-env-end
+-  On Windows:
+
+   .. code-block:: shell
+
+        > set ZYTE_API_KEY=YOUR_API_KEY
+
+-  On macOS and Linux:
+
+   .. code-block:: shell
+
+        $ export ZYTE_API_KEY=YOUR_API_KEY
 
 Alternatively, you may pass your API key to the clients directly:
 
