@@ -1,5 +1,6 @@
 import asyncio
 import time
+from asyncio import Future
 from functools import partial
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
@@ -15,9 +16,9 @@ from .stats import AggStats, ResponseStats
 from .utils import USER_AGENT, _process_query
 
 if TYPE_CHECKING:
-    _ResponseFuture = asyncio.Future[Dict[str, Any]]
+    _ResponseFuture = Future[Dict[str, Any]]
 else:
-    _ResponseFuture = asyncio.Future  # Python 3.8 support
+    _ResponseFuture = Future  # Python 3.8 support
 
 
 def _post_func(session):
@@ -74,7 +75,7 @@ class _AsyncSession:
         endpoint: str = "extract",
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
-    ) -> Iterator[asyncio.Future]:
+    ) -> Iterator[Future]:
         self._check_context()
         return self._client.iter(
             queries=queries,
@@ -86,6 +87,11 @@ class _AsyncSession:
 
 
 class AsyncZyteAPI:
+    """:ref:`Asynchronous Zyte API client <asyncio_api>`.
+
+    Parameters work the same as for :class:`ZyteAPI`.
+    """
+
     def __init__(
         self,
         *,
@@ -111,7 +117,8 @@ class AsyncZyteAPI:
         session=None,
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
-    ):
+    ) -> _ResponseFuture:
+        """Asynchronous equivalent to :meth:`ZyteAPI.get`."""
         retrying = retrying or self.retrying
         post = _post_func(session)
         auth = aiohttp.BasicAuth(self.api_key)
@@ -183,18 +190,10 @@ class AsyncZyteAPI:
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
     ) -> Iterator[_ResponseFuture]:
-        """Send multiple requests to Zyte API in parallel, and return an
-        iterator of futures for responses.
+        """Asynchronous equivalent to :meth:`ZyteAPI.iter`.
 
-        `Responses are iterated in arrival order
-        <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.as_completed>`__,
-        i.e. response order may not match the order in the original query.
-
-        ``queries`` is a list of requests to process (dicts).
-
-        ``session`` is an optional aiohttp.ClientSession object.
-        Set the session TCPConnector limit to a value greater than
-        the number of connections.
+        .. note:: Yielded futures, when awaited, do raise their exceptions,
+                  instead of only returning them.
         """
 
         def _request(query):
