@@ -16,7 +16,7 @@ setup(
     name="zyte-api",
     version=get_version(),
     description="Python interface to Zyte API",
-    long_description=open("README.rst").read() + "\n\n" + open("CHANGES.rst").read(),
+    long_description=open("README.rst").read(),
     long_description_content_type="text/x-rst",
     author="Zyte Group Ltd",
     author_email="opensource@zyte.com",
