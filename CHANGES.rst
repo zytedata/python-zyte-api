@@ -12,10 +12,10 @@ Changes
 * Deprecated ``zyte_api.aio``:
 
   * Replace ``zyte_api.aio.client.AsyncClient`` with the new
-    :class:`~zyte_api.AsyncZyteAPI`.
+    :class:`~zyte_api.AsyncZyteAPI` class.
 
-  * Replace ``zyte_api.aio.client.AsyncClient`` with
-    :meth:`AsyncZyteAPI.session <zyte_api.AsyncZyteAPI.session>`.
+  * Replace ``zyte_api.aio.client.create_session`` with
+    :meth:`AsyncZyteAPI.session <zyte_api.AsyncZyteAPI.session>` method.
 
   * Import ``zyte_api.aio.errors.RequestError``,
     ``zyte_api.aio.retry.RetryFactory`` and
