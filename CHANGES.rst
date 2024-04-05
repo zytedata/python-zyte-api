@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.5.0 (unreleased)
+0.5.0 (2024-04-05)
 ------------------
 
 * Removed Python 3.7 support.
