@@ -1,6 +1,31 @@
 Changes
 =======
 
+0.5.0 (unreleased)
+------------------
+
+* Removed Python 3.7 support.
+
+* Added :class:`~zyte_api.ZyteAPI` and :class:`~zyte_api.AsyncZyteAPI` to
+  provide both sync and async Python interfaces with a cleaner API.
+
+* Deprecated ``zyte_api.aio``:
+
+  * Replace ``zyte_api.aio.client.AsyncClient`` with the new
+    :class:`~zyte_api.AsyncZyteAPI` class.
+
+  * Replace ``zyte_api.aio.client.create_session`` with the new
+    :meth:`AsyncZyteAPI.session <zyte_api.AsyncZyteAPI.session>` method.
+
+  * Import ``zyte_api.aio.errors.RequestError``,
+    ``zyte_api.aio.retry.RetryFactory`` and
+    ``zyte_api.aio.retry.zyte_api_retrying`` directly from ``zyte_api`` now.
+
+* When using the command-line interface, you can now use ``--store-errors`` to
+  have error responses be stored alongside successful responses.
+
+* Improved the documentation.
+
 0.4.8 (2023-11-02)
 ------------------
 
