@@ -20,26 +20,24 @@ def _get_loop():
 class _Session:
     def __init__(self, client, **session_kwargs):
         self._client = client
-        self._session = client._async_client.session(**session_kwargs)
-        self._context = None
+
+        # https://github.com/aio-libs/aiohttp/pull/1468
+        async def create_session():
+            return client._async_client.session(**session_kwargs)._session
+
+        loop = _get_loop()
+        self._session = loop.run_until_complete(create_session())
 
     def __enter__(self):
-        loop = _get_loop()
-        self._context = loop.run_until_complete(self._session.__aenter__())._context
         return self
 
     def __exit__(self, *exc_info):
         loop = _get_loop()
-        result = loop.run_until_complete(self._context.__aexit__(*exc_info))
-        self._context = None
-        return result
+        loop.run_until_complete(self._session.close())
 
-    def _check_context(self):
-        if self._context is None:
-            raise RuntimeError(
-                "Attempt to use session method on a session either not opened "
-                "or already closed."
-            )
+    def close(self):
+        loop = _get_loop()
+        loop.run_until_complete(self._session.close())
 
     def get(
         self,
@@ -49,13 +47,12 @@ class _Session:
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
     ):
-        self._check_context()
         return self._client.get(
             query=query,
             endpoint=endpoint,
             handle_retries=handle_retries,
             retrying=retrying,
-            session=self._context,
+            session=self._session,
         )
 
     def iter(
@@ -66,11 +63,10 @@ class _Session:
         handle_retries=True,
         retrying: Optional[AsyncRetrying] = None,
     ) -> Generator[Union[dict, Exception], None, None]:
-        self._check_context()
         return self._client.iter(
             queries=queries,
             endpoint=endpoint,
-            session=self._context,
+            session=self._session,
             handle_retries=handle_retries,
             retrying=retrying,
         )
@@ -186,15 +182,14 @@ class ZyteAPI:
                 yield exception
 
     def session(self, **kwargs):
-        """:ref:`Context manager <context-managers>` to create a contextual
-        session.
+        """:ref:`Context manager <context-managers>` to create a session.
 
-        A contextual session is an object that has the same API as the client
-        object, except:
+        A session is an object that has the same API as the client object,
+        except:
 
         -   :meth:`get` and :meth:`iter` do not have a *session* parameter,
-            the contextual session creates an :class:`aiohttp.ClientSession`
-            object and passes it to :meth:`get` and :meth:`iter` automatically.
+            the session creates an :class:`aiohttp.ClientSession` object and
+            passes it to :meth:`get` and :meth:`iter` automatically.
 
         -   It does not have a :meth:`session` method.
 
@@ -205,5 +200,16 @@ class ZyteAPI:
         The :class:`aiohttp.ClientSession` object is created with sane defaults
         for Zyte API, but you can use *kwargs* to pass additional parameters to
         :class:`aiohttp.ClientSession` and even override those sane defaults.
+
+        You do not need to use :meth:`session` as a context manager as long as
+        you call ``close()`` on the object it returns when you are done:
+
+        .. code-block:: python
+
+            session = client.session()
+            try:
+                ...
+            finally:
+                session.close()
         """
         return _Session(client=self, **kwargs)
