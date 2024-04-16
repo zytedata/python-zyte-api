@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.5.1 (unreleased)
+------------------
+
+* :class:`~zyte_api.ZyteAPI` and :class:`~zyte_api.AsyncZyteAPI` sessions no
+  longer need to be used as context managers, and can instead be closed with a
+  ``close()`` method.
+
 0.5.0 (2024-04-05)
 ------------------
 
