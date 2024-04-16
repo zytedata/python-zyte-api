@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.5.1 (unreleased)
+0.5.1 (2024-04-16)
 ------------------
 
 * :class:`~zyte_api.ZyteAPI` and :class:`~zyte_api.AsyncZyteAPI` sessions no
