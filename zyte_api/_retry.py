@@ -219,12 +219,18 @@ class ConservativeRetryFactory(RetryFactory):
     temporary_download_error_stop = stop_after_attempt(16)
 
     def stop(self, retry_state: RetryCallState) -> bool:
-        if is_maybe_temporary_error(retry_state.outcome.exception()):
+        assert retry_state.outcome, "Unexpected empty outcome"
+        exc = retry_state.outcome.exception()
+        assert exc, "Unexpected empty exception"
+        if is_maybe_temporary_error(exc):
             return self.temporary_download_error_stop(retry_state)
         return super().stop(retry_state)
 
     def wait(self, retry_state: RetryCallState) -> float:
-        if is_maybe_temporary_error(retry_state.outcome.exception()):
+        assert retry_state.outcome, "Unexpected empty outcome"
+        exc = retry_state.outcome.exception()
+        assert exc, "Unexpected empty exception"
+        if is_maybe_temporary_error(exc):
             return self.temporary_download_error_wait(retry_state=retry_state)
         return super().wait(retry_state)
 
