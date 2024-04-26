@@ -159,13 +159,19 @@ following:
 
 All retries are done with an exponential backoff algorithm.
 
-To customize the retry policy, create your own :class:`~tenacity.AsyncRetrying`
-object, e.g. using a custom subclass of :data:`~zyte_api.RetryFactory`, and
-pass it when creating your client object:
+If some :ref:`unsuccessful responses <zyte-api-unsuccessful-responses>` exceed
+maximum retries with the default retry policy, try using
+:data:`~zyte_api.conservative_retrying` instead. Alternatively, the reference
+documentation of :class:`~zyte_api.RetryFactory` and
+:class:`~zyte_api.ConvervativeRetryFactory` features some examples of custom
+retry policies, and you can always build your own
+:class:`~tenacity.AsyncRetrying` object from scratch.
+
+To use a custom retry policy, pass it when creating your client object:
 
 .. code-block:: python
 
-    client = ZyteAPI(retrying=custom_retry_policy)
+    client = ZyteAPI(retrying=custom_retrying)
 
 When retries are exceeded for a given request, an exception is raised. Except
 for the :meth:`~ZyteAPI.iter` method of the :ref:`sync API <sync>`, which
