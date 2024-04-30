@@ -179,7 +179,7 @@ class RetryFactory:
 zyte_api_retrying: AsyncRetrying = RetryFactory().build()
 
 
-def is_maybe_temporary_error(exc: BaseException) -> bool:
+def _maybe_temporary_error(exc: BaseException) -> bool:
     return (
         isinstance(exc, RequestError)
         and exc.status >= 500
@@ -213,7 +213,7 @@ class AggresiveRetryFactory(RetryFactory):
     """
 
     retry_condition = RetryFactory.retry_condition | retry_if_exception(
-        is_maybe_temporary_error
+        _maybe_temporary_error
     )
 
     temporary_download_error_stop = stop_after_attempt(16)
@@ -222,7 +222,7 @@ class AggresiveRetryFactory(RetryFactory):
         assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
         assert exc, "Unexpected empty exception"
-        if is_maybe_temporary_error(exc):
+        if _maybe_temporary_error(exc):
             return self.temporary_download_error_stop(retry_state)
         return super().stop(retry_state)
 
@@ -230,7 +230,7 @@ class AggresiveRetryFactory(RetryFactory):
         assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
         assert exc, "Unexpected empty exception"
-        if is_maybe_temporary_error(exc):
+        if _maybe_temporary_error(exc):
             return self.temporary_download_error_wait(retry_state=retry_state)
         return super().wait(retry_state)
 
