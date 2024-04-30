@@ -187,25 +187,25 @@ def is_maybe_temporary_error(exc: BaseException) -> bool:
     )
 
 
-class ConservativeRetryFactory(RetryFactory):
-    """Alternative factory class that builds :data:`conservative_retrying`.
+class AggresiveRetryFactory(RetryFactory):
+    """Alternative factory class that builds :data:`aggresive_retrying`.
 
-    To create a custom retry policy based on :data:`conservative_retrying`, you
+    To create a custom retry policy based on :data:`aggresive_retrying`, you
     can subclass this factory class, modify it as needed, and then call
     :meth:`build` on your subclass to get the corresponding
     :class:`tenacity.AsyncRetrying` object.
 
     For example, to increase the maximum number of attempts for errors treated
-    as temporary download errors by :data:`conservative_retrying` from 16 (i.e.
+    as temporary download errors by :data:`aggresive_retrying` from 16 (i.e.
     15 retries) to 32 (i.e. 31 retries):
 
     .. code-block:: python
 
         from tenacity import stop_after_attempt
-        from zyte_api import ConservativeRetryFactory
+        from zyte_api import AggresiveRetryFactory
 
 
-        class CustomRetryFactory(ConservativeRetryFactory):
+        class CustomRetryFactory(AggresiveRetryFactory):
             temporary_download_error_stop = stop_after_attempt(32)
 
 
@@ -235,4 +235,4 @@ class ConservativeRetryFactory(RetryFactory):
         return super().wait(retry_state)
 
 
-conservative_retrying = ConservativeRetryFactory().build()
+aggresive_retrying = AggresiveRetryFactory().build()

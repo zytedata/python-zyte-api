@@ -161,7 +161,7 @@ All retries are done with an exponential backoff algorithm.
 
 If some :ref:`unsuccessful responses <zyte-api-unsuccessful-responses>` exceed
 maximum retries with the default retry policy, try using
-:data:`~zyte_api.conservative_retrying` instead. Alternatively, the reference
+:data:`~zyte_api.aggresive_retrying` instead. Alternatively, the reference
 documentation of :class:`~zyte_api.RetryFactory` and
 :class:`~zyte_api.ConvervativeRetryFactory` features some examples of custom
 retry policies, and you can always build your own
