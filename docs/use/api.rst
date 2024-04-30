@@ -152,8 +152,8 @@ following:
 
 -   Retries :ref:`rate-limiting responses <zyte-api-rate-limit>` forever.
 
--   Retries :ref:`unsuccessful responses <zyte-api-unsuccessful-responses>` up
-    to 3 times.
+-   Retries :ref:`temporary download errors
+    <zyte-api-temporary-download-errors>` up to 3 times.
 
 -   Retries network errors for up to 15 minutes.
 
