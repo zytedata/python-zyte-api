@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections import Counter
 
 from aiohttp import client_exceptions
 from tenacity import (
@@ -10,14 +11,13 @@ from tenacity import (
     before_sleep_log,
     retry_base,
     retry_if_exception,
-    stop_after_attempt,
     stop_after_delay,
     wait_chain,
     wait_fixed,
     wait_random,
     wait_random_exponential,
 )
-from tenacity.stop import stop_never
+from tenacity.stop import stop_base, stop_never
 
 from ._errors import RequestError
 
@@ -52,6 +52,27 @@ def _is_throttling_error(exc: BaseException) -> bool:
 
 def _is_temporary_download_error(exc: BaseException) -> bool:
     return isinstance(exc, RequestError) and exc.status == 520
+
+
+class stop_on_count(stop_base):
+    """Keep a call count with the specified counter name, and stop after the
+    specified number os calls.
+
+    Unlike stop_after_attempt, this callable does not take into account
+    attempts for which a different stop callable was used.
+    """
+
+    def __init__(self, max_count: int, counter_name: str) -> None:
+        self._max_count = max_count - 1
+        self._counter_name = counter_name
+
+    def __call__(self, retry_state: "RetryCallState") -> bool:
+        if not hasattr(retry_state, "counter"):
+            retry_state.counter = Counter()
+        if retry_state.counter[self._counter_name] >= self._max_count:
+            return True
+        retry_state.counter[self._counter_name] += 1
+        return False
 
 
 class RetryFactory:
@@ -137,7 +158,7 @@ class RetryFactory:
     temporary_download_error_wait = network_error_wait
     throttling_stop = stop_never
     network_error_stop = stop_after_delay(15 * 60)
-    temporary_download_error_stop = stop_after_attempt(4)
+    temporary_download_error_stop = stop_on_count(4, "temporary_download_error")
 
     def wait(self, retry_state: RetryCallState) -> float:
         assert retry_state.outcome, "Unexpected empty outcome"
@@ -216,7 +237,7 @@ class AggresiveRetryFactory(RetryFactory):
         _maybe_temporary_error
     )
 
-    temporary_download_error_stop = stop_after_attempt(8)
+    temporary_download_error_stop = stop_on_count(8, "temporary_download_error")
 
     def stop(self, retry_state: RetryCallState) -> bool:
         assert retry_state.outcome, "Unexpected empty outcome"

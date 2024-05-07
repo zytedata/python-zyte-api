@@ -52,18 +52,35 @@ FOREVER_TIMES = 100
                 ),
                 (
                     (
-                        mock_request_error(status=429),
-                        mock_request_error(status=429),
+                        *(mock_request_error(status=429),) * 2,
                         mock_request_error(status=520),
                     ),
                     False,
                 ),
                 (
                     (
-                        mock_request_error(status=429),
-                        mock_request_error(status=429),
-                        mock_request_error(status=429),
+                        *(mock_request_error(status=429),) * 3,
                         mock_request_error(status=520),
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        *(
+                            mock_request_error(status=429),
+                            mock_request_error(status=520),
+                        )
+                        * 3,
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        *(
+                            mock_request_error(status=429),
+                            mock_request_error(status=520),
+                        )
+                        * 4,
                     ),
                     True,
                 ),
@@ -99,6 +116,26 @@ FOREVER_TIMES = 100
                     (
                         *(mock_request_error(status=429),) * 7,
                         mock_request_error(status=520),
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        *(
+                            mock_request_error(status=429),
+                            mock_request_error(status=520),
+                        )
+                        * 7,
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        *(
+                            mock_request_error(status=429),
+                            mock_request_error(status=520),
+                        )
+                        * 8,
                     ),
                     True,
                 ),
