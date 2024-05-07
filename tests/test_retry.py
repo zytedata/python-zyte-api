@@ -3,7 +3,7 @@ from copy import copy
 
 import pytest
 
-from zyte_api import RequestError, zyte_api_retrying
+from zyte_api import RequestError, aggresive_retrying, zyte_api_retrying
 
 
 def test_deprecated_imports():
@@ -63,6 +63,41 @@ FOREVER_TIMES = 100
                         mock_request_error(status=429),
                         mock_request_error(status=429),
                         mock_request_error(status=429),
+                        mock_request_error(status=520),
+                    ),
+                    True,
+                ),
+            )
+        ),
+        *(
+            (aggresive_retrying, exceptions, exhausted)
+            for exceptions, exhausted in (
+                (
+                    (mock_request_error(status=429),) * FOREVER_TIMES,
+                    False,
+                ),
+                (
+                    (mock_request_error(status=503),) * FOREVER_TIMES,
+                    False,
+                ),
+                (
+                    (mock_request_error(status=520),) * 7,
+                    False,
+                ),
+                (
+                    (mock_request_error(status=520),) * 8,
+                    True,
+                ),
+                (
+                    (
+                        *(mock_request_error(status=429),) * 6,
+                        mock_request_error(status=520),
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        *(mock_request_error(status=429),) * 7,
                         mock_request_error(status=520),
                     ),
                     True,

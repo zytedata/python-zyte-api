@@ -216,7 +216,7 @@ class AggresiveRetryFactory(RetryFactory):
         _maybe_temporary_error
     )
 
-    temporary_download_error_stop = stop_after_attempt(16)
+    temporary_download_error_stop = stop_after_attempt(8)
 
     def stop(self, retry_state: RetryCallState) -> bool:
         assert retry_state.outcome, "Unexpected empty outcome"
