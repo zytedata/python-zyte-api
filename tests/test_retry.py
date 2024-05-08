@@ -187,7 +187,8 @@ class fast_forward:
             (aggressive_retrying, outcomes, exhausted)
             for outcomes, exhausted in (
                 # Temporary download errors are retried until they have
-                # happened 8 times in total.
+                # happened 8 times in total. Permanent download errors also
+                # count towards that limit.
                 (
                     (mock_request_error(status=520),) * 7,
                     False,
@@ -230,6 +231,46 @@ class fast_forward:
                     ),
                     True,
                 ),
+                (
+                    (
+                        *(mock_request_error(status=520),) * 5,
+                        *(mock_request_error(status=521),) * 1,
+                        *(mock_request_error(status=520),) * 1,
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        *(mock_request_error(status=520),) * 6,
+                        *(mock_request_error(status=521),) * 1,
+                        *(mock_request_error(status=520),) * 1,
+                    ),
+                    True,
+                ),
+                (
+                    (
+                        *(mock_request_error(status=520),) * 6,
+                        *(mock_request_error(status=521),) * 1,
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        *(mock_request_error(status=520),) * 7,
+                        *(mock_request_error(status=521),) * 1,
+                    ),
+                    True,
+                ),
+                # Permanent download errors are retried until they have
+                # happened 4 times in total.
+                (
+                    (*(mock_request_error(status=521),) * 3,),
+                    False,
+                ),
+                (
+                    (*(mock_request_error(status=521),) * 4,),
+                    True,
+                ),
             )
         ),
     ),
@@ -266,6 +307,6 @@ async def test_retrying(monotonic_mock, retrying, outcomes, exhausted):
         await run()
     except Exception as outcome:
         assert exhausted
-        assert outcome == last_outcome
+        assert outcome is last_outcome
     else:
         assert not exhausted
