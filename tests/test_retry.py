@@ -1,9 +1,11 @@
 from collections import deque
 from copy import copy
+from unittest.mock import patch
 
 import pytest
+from aiohttp.client_exceptions import ServerConnectionError
 
-from zyte_api import RequestError, aggresive_retrying, zyte_api_retrying
+from zyte_api import RequestError, aggressive_retrying, zyte_api_retrying
 
 
 def test_deprecated_imports():
@@ -28,12 +30,20 @@ def mock_request_error(*, status=200):
 FOREVER_TIMES = 100
 
 
+class fast_forward:
+    def __init__(self, time):
+        self.time = time
+
+
 @pytest.mark.parametrize(
-    ("retrying", "exceptions", "exhausted"),
+    ("retrying", "outcomes", "exhausted"),
     (
+        # Shared behaviors of all retry policies
         *(
-            (zyte_api_retrying, exceptions, exhausted)
-            for exceptions, exhausted in (
+            (retrying, outcomes, exhausted)
+            for retrying in (zyte_api_retrying, aggressive_retrying)
+            for outcomes, exhausted in (
+                # Rate limiting is retried forever.
                 (
                     (mock_request_error(status=429),) * FOREVER_TIMES,
                     False,
@@ -42,6 +52,92 @@ FOREVER_TIMES = 100
                     (mock_request_error(status=503),) * FOREVER_TIMES,
                     False,
                 ),
+                # Network errors are retried until there have only been network
+                # errors (of any kind) for 15 minutes straight or more.
+                (
+                    (
+                        ServerConnectionError(),
+                        fast_forward(15 * 60 - 1),
+                        ServerConnectionError(),
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        ServerConnectionError(),
+                        fast_forward(15 * 60),
+                        ServerConnectionError(),
+                    ),
+                    True,
+                ),
+                (
+                    (
+                        mock_request_error(status=429),
+                        fast_forward(15 * 60 - 1),
+                        ServerConnectionError(),
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        mock_request_error(status=429),
+                        fast_forward(15 * 60),
+                        ServerConnectionError(),
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        ServerConnectionError(),
+                        fast_forward(7 * 60),
+                        mock_request_error(status=429),
+                        fast_forward(8 * 60 - 1),
+                        ServerConnectionError(),
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        ServerConnectionError(),
+                        fast_forward(7 * 60),
+                        mock_request_error(status=429),
+                        fast_forward(8 * 60),
+                        ServerConnectionError(),
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        ServerConnectionError(),
+                        fast_forward(7 * 60),
+                        mock_request_error(status=429),
+                        fast_forward(8 * 60),
+                        ServerConnectionError(),
+                        fast_forward(15 * 60 - 1),
+                        ServerConnectionError(),
+                    ),
+                    False,
+                ),
+                (
+                    (
+                        ServerConnectionError(),
+                        fast_forward(7 * 60),
+                        mock_request_error(status=429),
+                        fast_forward(8 * 60),
+                        ServerConnectionError(),
+                        fast_forward(15 * 60),
+                        ServerConnectionError(),
+                    ),
+                    True,
+                ),
+            )
+        ),
+        # Behaviors specific to the default retry policy
+        *(
+            (zyte_api_retrying, outcomes, exhausted)
+            for outcomes, exhausted in (
+                # Temporary download errors are retried until they have
+                # happened 4 times in total.
                 (
                     (mock_request_error(status=520),) * 3,
                     False,
@@ -86,17 +182,12 @@ FOREVER_TIMES = 100
                 ),
             )
         ),
+        # Behaviors specific to the aggressive retry policy
         *(
-            (aggresive_retrying, exceptions, exhausted)
-            for exceptions, exhausted in (
-                (
-                    (mock_request_error(status=429),) * FOREVER_TIMES,
-                    False,
-                ),
-                (
-                    (mock_request_error(status=503),) * FOREVER_TIMES,
-                    False,
-                ),
+            (aggressive_retrying, outcomes, exhausted)
+            for outcomes, exhausted in (
+                # Temporary download errors are retried until they have
+                # happened 8 times in total.
                 (
                     (mock_request_error(status=520),) * 7,
                     False,
@@ -144,11 +235,13 @@ FOREVER_TIMES = 100
     ),
 )
 @pytest.mark.asyncio
-async def test_retrying_attempt_based_stop(retrying, exceptions, exhausted):
+@patch("time.monotonic")
+async def test_retrying(monotonic_mock, retrying, outcomes, exhausted):
     """Test retry stops based on a number of attempts (as opposed to those
     based on time passed)."""
-    last_exception = exceptions[-1]
-    exceptions = deque(exceptions)
+    monotonic_mock.return_value = 0
+    last_outcome = outcomes[-1]
+    outcomes = deque(outcomes)
 
     def wait(retry_state):
         return 0.0
@@ -157,18 +250,22 @@ async def test_retrying_attempt_based_stop(retrying, exceptions, exhausted):
     retrying.wait = wait
 
     async def run():
-        try:
-            exception = exceptions.popleft()
-        except IndexError:
-            return
-        else:
-            raise exception
+        while True:
+            try:
+                outcome = outcomes.popleft()
+            except IndexError:
+                return
+            else:
+                if isinstance(outcome, fast_forward):
+                    monotonic_mock.return_value += outcome.time
+                    continue
+                raise outcome
 
     run = retrying.wraps(run)
     try:
         await run()
-    except Exception as exception:
+    except Exception as outcome:
         assert exhausted
-        assert exception == last_exception
+        assert outcome == last_outcome
     else:
         assert not exhausted

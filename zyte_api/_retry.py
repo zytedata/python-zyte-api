@@ -1,6 +1,8 @@
 import asyncio
 import logging
 from collections import Counter
+from datetime import timedelta
+from typing import Union
 
 from aiohttp import client_exceptions
 from tenacity import (
@@ -11,7 +13,6 @@ from tenacity import (
     before_sleep_log,
     retry_base,
     retry_if_exception,
-    stop_after_delay,
     wait_chain,
     wait_fixed,
     wait_random,
@@ -73,6 +74,55 @@ class stop_on_count(stop_base):
             return True
         retry_state.counter[self._counter_name] += 1
         return False
+
+
+time_unit_type = Union[int, float, timedelta]
+
+
+def to_seconds(time_unit: time_unit_type) -> float:
+    return float(
+        time_unit.total_seconds() if isinstance(time_unit, timedelta) else time_unit
+    )
+
+
+class stop_after_uninterrumpted_delay(stop_base):
+    """Stop when this stop callable has been called for the specified time
+    uninterrupted, i.e. without calls to different stop callables.
+
+    Unlike stop_after_delay, this callable resets its timer after any attempt
+    for which a different stop callable was used.
+    """
+
+    def __init__(self, max_delay: time_unit_type, timer_name: str) -> None:
+        self._max_delay = to_seconds(max_delay)
+        self._timer_name = timer_name
+
+    def __call__(self, retry_state: "RetryCallState") -> bool:
+        if not hasattr(retry_state, "uninterrupted_start_times"):
+            retry_state.uninterrupted_start_times = {}
+        if self._timer_name not in retry_state.uninterrupted_start_times:
+            # First time.
+            retry_state.uninterrupted_start_times[self._timer_name] = [
+                retry_state.attempt_number,
+                retry_state.outcome_timestamp,
+            ]
+            return False
+        attempt_number, start_time = retry_state.uninterrupted_start_times[
+            self._timer_name
+        ]
+        if retry_state.attempt_number - attempt_number > 1:
+            # There was a different stop reason since the last attempt,
+            # resetting the timer.
+            retry_state.uninterrupted_start_times[self._timer_name] = [
+                retry_state.attempt_number,
+                retry_state.outcome_timestamp,
+            ]
+            return False
+        if retry_state.outcome_timestamp - start_time < self._max_delay:
+            # Within time, do not stop, only increase the attempt count.
+            retry_state.uninterrupted_start_times[self._timer_name][0] += 1
+            return False
+        return True
 
 
 class RetryFactory:
@@ -157,7 +207,7 @@ class RetryFactory:
     )
     temporary_download_error_wait = network_error_wait
     throttling_stop = stop_never
-    network_error_stop = stop_after_delay(15 * 60)
+    network_error_stop = stop_after_uninterrumpted_delay(15 * 60, "network_error")
     temporary_download_error_stop = stop_on_count(4, "temporary_download_error")
 
     def wait(self, retry_state: RetryCallState) -> float:
@@ -208,25 +258,25 @@ def _maybe_temporary_error(exc: BaseException) -> bool:
     )
 
 
-class AggresiveRetryFactory(RetryFactory):
-    """Alternative factory class that builds :data:`aggresive_retrying`.
+class AggressiveRetryFactory(RetryFactory):
+    """Alternative factory class that builds :data:`aggressive_retrying`.
 
-    To create a custom retry policy based on :data:`aggresive_retrying`, you
+    To create a custom retry policy based on :data:`aggressive_retrying`, you
     can subclass this factory class, modify it as needed, and then call
     :meth:`build` on your subclass to get the corresponding
     :class:`tenacity.AsyncRetrying` object.
 
     For example, to increase the maximum number of attempts for errors treated
-    as temporary download errors by :data:`aggresive_retrying` from 16 (i.e.
+    as temporary download errors by :data:`aggressive_retrying` from 16 (i.e.
     15 retries) to 32 (i.e. 31 retries):
 
     .. code-block:: python
 
         from tenacity import stop_after_attempt
-        from zyte_api import AggresiveRetryFactory
+        from zyte_api import AggressiveRetryFactory
 
 
-        class CustomRetryFactory(AggresiveRetryFactory):
+        class CustomRetryFactory(AggressiveRetryFactory):
             temporary_download_error_stop = stop_after_attempt(32)
 
 
@@ -256,4 +306,4 @@ class AggresiveRetryFactory(RetryFactory):
         return super().wait(retry_state)
 
 
-aggresive_retrying = AggresiveRetryFactory().build()
+aggressive_retrying = AggressiveRetryFactory().build()
