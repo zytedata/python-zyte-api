@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections import Counter
 from datetime import timedelta
-from typing import Union
+from typing import Set, Union
 
 from aiohttp import client_exceptions
 from tenacity import (
@@ -286,6 +286,29 @@ class stop_on_download_error(stop_base):
         return False
 
 
+class stop_on_uninterrupted_status(stop_base):
+    """Stop after the specified max number of error responses with the same
+    status code in a row."""
+
+    def __init__(self, _max: int, ignore_status: Set[int]) -> None:
+        self._max = _max
+        self._ignore_status = ignore_status
+
+    def __call__(self, retry_state: "RetryCallState") -> bool:
+        assert retry_state.outcome, "Unexpected empty outcome"
+        exc = retry_state.outcome.exception()
+        assert exc, "Unexpected empty exception"
+        count = 0
+        for status in reversed(retry_state.status_history):
+            if status == exc.status:
+                count += 1
+                if count >= self._max:
+                    return True
+            elif status not in self._ignore_status:
+                return False
+        return False
+
+
 class AggressiveRetryFactory(RetryFactory):
     """Alternative factory class that builds :data:`aggressive_retrying`.
 
@@ -320,14 +343,22 @@ class AggressiveRetryFactory(RetryFactory):
     download_error_stop = stop_on_download_error(max_total=8, max_permanent=4)
     download_error_wait = RetryFactory.temporary_download_error_wait
 
+    undocumented_error_stop = stop_on_uninterrupted_status(
+        4, ignore_status={-1, 429, 503}
+    )
+    undocumented_error_wait = RetryFactory.temporary_download_error_wait
+
     def stop(self, retry_state: RetryCallState) -> bool:
         assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
         assert exc, "Unexpected empty exception"
+        if not hasattr(retry_state, "status_history"):
+            retry_state.status_history = []
+        retry_state.status_history.append(getattr(exc, "status", -1))
         if _download_error(exc):
             return self.download_error_stop(retry_state)
         if _undocumented_error(exc):
-            return self.temporary_download_error_stop(retry_state)
+            return self.undocumented_error_stop(retry_state)
         return super().stop(retry_state)
 
     def wait(self, retry_state: RetryCallState) -> float:
@@ -337,7 +368,7 @@ class AggressiveRetryFactory(RetryFactory):
         if _download_error(exc):
             return self.download_error_wait(retry_state)
         if _undocumented_error(exc):
-            return self.temporary_download_error_wait(retry_state=retry_state)
+            return self.undocumented_error_wait(retry_state=retry_state)
         return super().wait(retry_state)
 
 

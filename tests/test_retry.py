@@ -271,6 +271,63 @@ class fast_forward:
                     (*(mock_request_error(status=521),) * 4,),
                     True,
                 ),
+                # Undocumented 5xx errors are retried until they have happened
+                # 4 times in a row, not counting rate-limiting responses or
+                # network errors.
+                *(
+                    scenario
+                    for status in (
+                        500,
+                        502,
+                        504,
+                    )
+                    for scenario in (
+                        (
+                            (*(mock_request_error(status=status),) * 3,),
+                            False,
+                        ),
+                        (
+                            (*(mock_request_error(status=status),) * 4,),
+                            True,
+                        ),
+                        (
+                            (
+                                *(mock_request_error(status=status),) * 2,
+                                mock_request_error(status=429),
+                                mock_request_error(status=503),
+                                ServerConnectionError(),
+                                mock_request_error(status=status),
+                            ),
+                            False,
+                        ),
+                        (
+                            (
+                                *(mock_request_error(status=status),) * 3,
+                                mock_request_error(status=429),
+                                mock_request_error(status=503),
+                                ServerConnectionError(),
+                                mock_request_error(status=status),
+                            ),
+                            True,
+                        ),
+                        (
+                            (
+                                mock_request_error(status=status),
+                                mock_request_error(status=555),
+                                *(mock_request_error(status=status),) * 3,
+                            ),
+                            False,
+                        ),
+                        (
+                            (
+                                mock_request_error(status=status),
+                                mock_request_error(status=555),
+                                *(mock_request_error(status=status),) * 4,
+                            ),
+                            True,
+                        ),
+                    )
+                ),
             )
         ),
     ),
