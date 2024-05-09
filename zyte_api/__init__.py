@@ -6,6 +6,12 @@ from ._async import AsyncZyteAPI
 from ._errors import RequestError
 from ._retry import AggressiveRetryFactory, RetryFactory
 from ._retry import aggressive_retrying as _aggressive_retrying
+from ._retry import (
+    stop_after_uninterrumpted_delay,
+    stop_on_count,
+    stop_on_download_error,
+    stop_on_uninterrupted_status,
+)
 from ._retry import zyte_api_retrying as _zyte_api_retrying
 from ._sync import ZyteAPI
 from .errors import ParsedError

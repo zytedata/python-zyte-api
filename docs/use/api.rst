@@ -155,23 +155,41 @@ following:
 -   Retries :ref:`temporary download errors
     <zyte-api-temporary-download-errors>` up to 3 times.
 
--   Retries network errors for up to 15 minutes.
+-   Retries network errors until they have happened for 15 minutes straight.
 
 All retries are done with an exponential backoff algorithm.
 
+.. _aggressive-retry-policy:
+
 If some :ref:`unsuccessful responses <zyte-api-unsuccessful-responses>` exceed
 maximum retries with the default retry policy, try using
-:data:`~zyte_api.aggressive_retrying` instead. Alternatively, the reference
-documentation of :class:`~zyte_api.RetryFactory` and
-:class:`~zyte_api.ConvervativeRetryFactory` features some examples of custom
+:data:`~zyte_api.aggressive_retrying` instead, which modifies the default retry
+policy as follows:
+
+-   Temporary download error are retried 7 times. :ref:`Permanent download
+    errors <zyte-api-permanent-download-errors>` also count towards this retry
+    limit.
+
+-   Retries permanent download errors up to 3 times.
+
+-   Retries error responses with an HTTP status code in the 500-599 range (503,
+    520 and 521 excluded) until they have happened 4 times in a row, not
+    counting rate-limiting responses or network errors that may happen in
+    between.
+
+Alternatively, the reference documentation of :class:`~zyte_api.RetryFactory`
+and :class:`~zyte_api.AggressiveRetryFactory` features some examples of custom
 retry policies, and you can always build your own
 :class:`~tenacity.AsyncRetrying` object from scratch.
 
-To use a custom retry policy, pass it when creating your client object:
+To use :data:`~zyte_api.aggressive_retrying` or a custom retry policy, pass it
+when creating your client object:
 
 .. code-block:: python
 
-    client = ZyteAPI(retrying=custom_retrying)
+    from zyte_api import ZyteAPI, aggressive_retrying
+
+    client = ZyteAPI(retrying=aggressive_retrying)
 
 When retries are exceeded for a given request, an exception is raised. Except
 for the :meth:`~ZyteAPI.iter` method of the :ref:`sync API <sync>`, which
