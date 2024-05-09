@@ -69,9 +69,9 @@ class stop_on_count(stop_base):
 
     def __call__(self, retry_state: "RetryCallState") -> bool:
         if not hasattr(retry_state, "counter"):
-            retry_state.counter = Counter()
-        retry_state.counter[self._counter_name] += 1
-        if retry_state.counter[self._counter_name] >= self._max_count:
+            retry_state.counter = Counter()  # type: ignore
+        retry_state.counter[self._counter_name] += 1  # type: ignore
+        if retry_state.counter[self._counter_name] >= self._max_count:  # type: ignore
             return True
         return False
 
@@ -99,28 +99,28 @@ class stop_after_uninterrumpted_delay(stop_base):
 
     def __call__(self, retry_state: "RetryCallState") -> bool:
         if not hasattr(retry_state, "uninterrupted_start_times"):
-            retry_state.uninterrupted_start_times = {}
-        if self._timer_name not in retry_state.uninterrupted_start_times:
+            retry_state.uninterrupted_start_times = {}  # type: ignore
+        if self._timer_name not in retry_state.uninterrupted_start_times:  # type: ignore
             # First time.
-            retry_state.uninterrupted_start_times[self._timer_name] = [
+            retry_state.uninterrupted_start_times[self._timer_name] = [  # type: ignore
                 retry_state.attempt_number,
                 retry_state.outcome_timestamp,
             ]
             return False
-        attempt_number, start_time = retry_state.uninterrupted_start_times[
+        attempt_number, start_time = retry_state.uninterrupted_start_times[  # type: ignore
             self._timer_name
         ]
         if retry_state.attempt_number - attempt_number > 1:
             # There was a different stop reason since the last attempt,
             # resetting the timer.
-            retry_state.uninterrupted_start_times[self._timer_name] = [
+            retry_state.uninterrupted_start_times[self._timer_name] = [  # type: ignore
                 retry_state.attempt_number,
                 retry_state.outcome_timestamp,
             ]
             return False
         if retry_state.outcome_timestamp - start_time < self._max_delay:
             # Within time, do not stop, only increase the attempt count.
-            retry_state.uninterrupted_start_times[self._timer_name][0] += 1
+            retry_state.uninterrupted_start_times[self._timer_name][0] += 1  # type: ignore
             return False
         return True
 
@@ -272,16 +272,16 @@ class stop_on_download_error(stop_base):
 
     def __call__(self, retry_state: "RetryCallState") -> bool:
         if not hasattr(retry_state, "counter"):
-            retry_state.counter = Counter()
+            retry_state.counter = Counter()  # type: ignore
         assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
         assert exc, "Unexpected empty exception"
-        if exc.status == 521:
-            retry_state.counter["permanent_download_error"] += 1
-            if retry_state.counter["permanent_download_error"] >= self._max_permanent:
+        if exc.status == 521:  # type: ignore
+            retry_state.counter["permanent_download_error"] += 1  # type: ignore
+            if retry_state.counter["permanent_download_error"] >= self._max_permanent:  # type: ignore
                 return True
-        retry_state.counter["download_error"] += 1
-        if retry_state.counter["download_error"] >= self._max_total:
+        retry_state.counter["download_error"] += 1  # type: ignore
+        if retry_state.counter["download_error"] >= self._max_total:  # type: ignore
             return True
         return False
 
@@ -299,8 +299,8 @@ class stop_on_uninterrupted_status(stop_base):
         exc = retry_state.outcome.exception()
         assert exc, "Unexpected empty exception"
         count = 0
-        for status in reversed(retry_state.status_history):
-            if status == exc.status:
+        for status in reversed(retry_state.status_history):  # type: ignore
+            if status == exc.status:  # type: ignore
                 count += 1
                 if count >= self._max:
                     return True
@@ -353,8 +353,8 @@ class AggressiveRetryFactory(RetryFactory):
         exc = retry_state.outcome.exception()
         assert exc, "Unexpected empty exception"
         if not hasattr(retry_state, "status_history"):
-            retry_state.status_history = []
-        retry_state.status_history.append(getattr(exc, "status", -1))
+            retry_state.status_history = []  # type: ignore
+        retry_state.status_history.append(getattr(exc, "status", -1))  # type: ignore
         if _download_error(exc):
             return self.download_error_stop(retry_state)
         if _undocumented_error(exc):
