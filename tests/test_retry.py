@@ -23,6 +23,7 @@ def mock_request_error(*, status=200):
         request_info=None,
         response_content=None,
         status=status,
+        query={},
     )
 
 
