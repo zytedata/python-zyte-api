@@ -2,6 +2,7 @@ import asyncio
 import logging
 from collections import Counter
 from datetime import timedelta
+from itertools import count
 from typing import Union
 
 from aiohttp import client_exceptions
@@ -23,6 +24,8 @@ from tenacity.stop import stop_base, stop_never
 from ._errors import RequestError
 
 logger = logging.getLogger(__name__)
+
+_IDS = count()
 
 
 _NETWORK_ERRORS = (
@@ -65,13 +68,13 @@ class stop_on_count(stop_base):
 
     def __init__(self, max_count: int) -> None:
         self._max_count = max_count
-        self._counter_name = id(self)
+        self._counter_id = next(_IDS)
 
     def __call__(self, retry_state: "RetryCallState") -> bool:
         if not hasattr(retry_state, "counter"):
             retry_state.counter = Counter()  # type: ignore
-        retry_state.counter[self._counter_name] += 1  # type: ignore
-        if retry_state.counter[self._counter_name] >= self._max_count:  # type: ignore
+        retry_state.counter[self._counter_id] += 1  # type: ignore
+        if retry_state.counter[self._counter_id] >= self._max_count:  # type: ignore
             return True
         return False
 
@@ -95,32 +98,32 @@ class stop_after_uninterrupted_delay(stop_base):
 
     def __init__(self, max_delay: time_unit_type) -> None:
         self._max_delay = to_seconds(max_delay)
-        self._timer_name = id(self)
+        self._timer_id = next(_IDS)
 
     def __call__(self, retry_state: "RetryCallState") -> bool:
         if not hasattr(retry_state, "uninterrupted_start_times"):
             retry_state.uninterrupted_start_times = {}  # type: ignore
-        if self._timer_name not in retry_state.uninterrupted_start_times:  # type: ignore
+        if self._timer_id not in retry_state.uninterrupted_start_times:  # type: ignore
             # First time.
-            retry_state.uninterrupted_start_times[self._timer_name] = [  # type: ignore
+            retry_state.uninterrupted_start_times[self._timer_id] = [  # type: ignore
                 retry_state.attempt_number,
                 retry_state.outcome_timestamp,
             ]
             return False
         attempt_number, start_time = retry_state.uninterrupted_start_times[  # type: ignore
-            self._timer_name
+            self._timer_id
         ]
         if retry_state.attempt_number - attempt_number > 1:
             # There was a different stop reason since the last attempt,
             # resetting the timer.
-            retry_state.uninterrupted_start_times[self._timer_name] = [  # type: ignore
+            retry_state.uninterrupted_start_times[self._timer_id] = [  # type: ignore
                 retry_state.attempt_number,
                 retry_state.outcome_timestamp,
             ]
             return False
         if retry_state.outcome_timestamp - start_time < self._max_delay:
             # Within time, do not stop, only increase the attempt count.
-            retry_state.uninterrupted_start_times[self._timer_name][0] += 1  # type: ignore
+            retry_state.uninterrupted_start_times[self._timer_id][0] += 1  # type: ignore
             return False
         return True
 
