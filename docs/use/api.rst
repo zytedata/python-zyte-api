@@ -182,8 +182,9 @@ and :class:`~zyte_api.AggressiveRetryFactory` features some examples of custom
 retry policies, and you can always build your own
 :class:`~tenacity.AsyncRetrying` object from scratch.
 
-To use :data:`~zyte_api.aggressive_retrying` or a custom retry policy, pass it
-when creating your client object:
+To use :data:`~zyte_api.aggressive_retrying` or a custom retry policy, pass an
+instance of your :class:`~tenacity.AsyncRetrying` subclass when creating your
+client object:
 
 .. code-block:: python
 
