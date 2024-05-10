@@ -85,7 +85,7 @@ def to_seconds(time_unit: time_unit_type) -> float:
     )
 
 
-class stop_after_uninterrumpted_delay(stop_base):
+class stop_after_uninterrupted_delay(stop_base):
     """Stop when this stop callable has been called for the specified time
     uninterrupted, i.e. without calls to different stop callables.
 
@@ -141,13 +141,13 @@ class RetryFactory:
 
         from zyte_api import (
             RetryFactory,
-            stop_after_uninterrumpted_delay,
+            stop_after_uninterrupted_delay,
             stop_on_count,
         )
 
 
         class CustomRetryFactory(RetryFactory):
-            network_error_stop = stop_after_uninterrumpted_delay(30 * 60)
+            network_error_stop = stop_after_uninterrupted_delay(30 * 60)
             temporary_download_error_stop = stop_on_count(8)
 
 
@@ -178,7 +178,7 @@ class RetryFactory:
     )
     temporary_download_error_wait = network_error_wait
     throttling_stop = stop_never
-    network_error_stop = stop_after_uninterrumpted_delay(15 * 60)
+    network_error_stop = stop_after_uninterrupted_delay(15 * 60)
     temporary_download_error_stop = stop_on_count(4)
 
     def wait(self, retry_state: RetryCallState) -> float:
@@ -294,7 +294,7 @@ class AggressiveRetryFactory(RetryFactory):
 
         from zyte_api import (
             AggressiveRetryFactory,
-            stop_after_uninterrumpted_delay,
+            stop_after_uninterrupted_delay,
             stop_on_download_error,
             stop_on_uninterrupted_status,
         )
@@ -302,7 +302,7 @@ class AggressiveRetryFactory(RetryFactory):
 
         class CustomRetryFactory(AggressiveRetryFactory):
             download_error_stop = stop_on_download_error(max_total=16, max_permanent=8)
-            network_error_stop = stop_after_uninterrumpted_delay(30 * 60)
+            network_error_stop = stop_after_uninterrupted_delay(30 * 60)
             undocumented_error_stop = stop_on_uninterrupted_status(8)
 
 
