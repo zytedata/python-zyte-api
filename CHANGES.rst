@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.5.2 (2024-05-DD)
+------------------
+
+* :class:`~zyte_api.RequestError` now as a :data:`~zyte_api.RequestError.query`
+  attribute with the Zyte API request parameters that caused the error.
+
 0.5.1 (2024-04-16)
 ------------------
 
