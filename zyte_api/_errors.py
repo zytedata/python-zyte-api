@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from aiohttp import ClientResponseError
 
@@ -14,10 +14,18 @@ class RequestError(ClientResponseError):
     <zyte-api-unsuccessful-responses>` response from Zyte API."""
 
     def __init__(self, *args, **kwargs):
-        #: Response body.
-        self.response_content: Optional[bytes] = kwargs.pop("response_content")
+        #: Query sent to Zyte API.
+        #:
+        #: May be slightly different from the input query due to
+        #: pre-processing logic on the client side.
+        self.query: Dict[str, Any] = kwargs.pop("query")
+
         #: Request ID.
         self.request_id: Optional[str] = kwargs.get("headers", {}).get("request-id")
+
+        #: Response body.
+        self.response_content: Optional[bytes] = kwargs.pop("response_content")
+
         super().__init__(*args, **kwargs)
 
     @property

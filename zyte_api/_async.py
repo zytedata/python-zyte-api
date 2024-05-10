@@ -121,9 +121,10 @@ class AsyncZyteAPI:
             stats = ResponseStats.create(start_global)
             self.agg_stats.n_attempts += 1
 
+            safe_query = _process_query(query)
             post_kwargs = dict(
                 url=self.api_url + endpoint,
-                json=_process_query(query),
+                json=safe_query,
                 auth=auth,
                 headers=headers,
             )
@@ -145,6 +146,7 @@ class AsyncZyteAPI:
                                 message=resp.reason,
                                 headers=resp.headers,
                                 response_content=content,
+                                query=safe_query,
                             )
 
                         response = await resp.json()

@@ -154,12 +154,13 @@ async def test_run_stop_on_errors_false(mockserver):
 
 @pytest.mark.asyncio
 async def test_run_stop_on_errors_true(mockserver):
-    queries = [{"url": "https://exception.example", "httpResponseBody": True}]
+    query = {"url": "https://exception.example", "httpResponseBody": True}
+    queries = [query]
     with NamedTemporaryFile("w") as output_file:
         with pytest.warns(
             DeprecationWarning, match=r"^The stop_on_errors parameter is deprecated\.$"
         ):
-            with pytest.raises(RequestError):
+            with pytest.raises(RequestError) as exc_info:
                 await run(
                     queries=queries,
                     out=output_file,
@@ -168,6 +169,7 @@ async def test_run_stop_on_errors_true(mockserver):
                     api_key="a",
                     stop_on_errors=True,
                 )
+            assert exc_info.value.query == query
 
 
 def _run(*, input, mockserver, cli_params=None):
