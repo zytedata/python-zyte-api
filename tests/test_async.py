@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 import pytest
 from tenacity import AsyncRetrying
 
-from zyte_api import AsyncZyteAPI, RequestError
+from zyte_api import AggressiveRetryFactory, AsyncZyteAPI, RequestError
 from zyte_api._retry import RetryFactory
 from zyte_api.aio.client import AsyncClient
 from zyte_api.apikey import NoApiKey
@@ -482,3 +482,10 @@ async def test_session_no_context_manager(mockserver):
             assert Exception in expected_results
         else:
             assert actual_result in expected_results
+
+
+def test_retrying_class():
+    """A descriptive exception is raised when creating a client with an
+    AsyncRetrying subclass or similar instead of an instance of it."""
+    with pytest.raises(ValueError):
+        AsyncZyteAPI(api_key="foo", retrying=AggressiveRetryFactory)
