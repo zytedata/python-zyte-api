@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.5.2 (2024-05-DD)
+0.5.2 (2024-05-10)
 ------------------
 
 * :class:`~zyte_api.RequestError` now has a :data:`~zyte_api.RequestError.query`
