@@ -86,6 +86,9 @@ class DefaultResource(Resource):
             request.setResponseCode(429)
             response_data = {"status": 429, "type": "/limits/over-user-limit"}
             return json.dumps(response_data).encode()
+        if domain == "e500.example":
+            request.setResponseCode(500)
+            return ""
         if domain == "e520.example":
             request.setResponseCode(520)
             response_data = {"status": 520, "type": "/download/temporary-error"}

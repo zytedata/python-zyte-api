@@ -4,8 +4,18 @@ from unittest.mock import patch
 
 import pytest
 from aiohttp.client_exceptions import ServerConnectionError
+from tenacity import AsyncRetrying
 
-from zyte_api import RequestError, aggressive_retrying, zyte_api_retrying
+from zyte_api import (
+    AggressiveRetryFactory,
+    AsyncZyteAPI,
+    RequestError,
+    RetryFactory,
+    aggressive_retrying,
+    zyte_api_retrying,
+)
+
+from .mockserver import DropResource, MockServer
 
 
 def test_deprecated_imports():
@@ -15,6 +25,100 @@ def test_deprecated_imports():
 
     assert RetryFactory is DeprecatedRetryFactory
     assert zyte_api_retrying is deprecated_zyte_api_retrying
+
+
+UNSET = object()
+
+
+class OutlierException(RuntimeError):
+    pass
+
+
+@pytest.mark.parametrize(
+    ("value", "exception"),
+    (
+        (UNSET, OutlierException),
+        (True, OutlierException),
+        (False, RequestError),
+    ),
+)
+@pytest.mark.asyncio
+async def test_get_handle_retries(value, exception, mockserver):
+    kwargs = {}
+    if value is not UNSET:
+        kwargs["handle_retries"] = value
+
+    def broken_stop(_):
+        raise OutlierException
+
+    retrying = AsyncRetrying(stop=broken_stop)
+    client = AsyncZyteAPI(
+        api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
+    )
+    with pytest.raises(exception):
+        await client.get(
+            {"url": "https://exception.example", "browserHtml": True},
+            **kwargs,
+        )
+
+
+@pytest.mark.parametrize(
+    ("retry_factory", "status", "waiter"),
+    (
+        (RetryFactory, 429, "throttling"),
+        (RetryFactory, 520, "temporary_download_error"),
+        (AggressiveRetryFactory, 429, "throttling"),
+        (AggressiveRetryFactory, 500, "undocumented_error"),
+        (AggressiveRetryFactory, 520, "download_error"),
+    ),
+)
+@pytest.mark.asyncio
+async def test_retry_wait(retry_factory, status, waiter, mockserver):
+    def broken_wait(self, retry_state):
+        raise OutlierException
+
+    class CustomRetryFactory(retry_factory):
+        pass
+
+    setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
+    retrying = CustomRetryFactory().build()
+    client = AsyncZyteAPI(
+        api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
+    )
+    with pytest.raises(OutlierException):
+        await client.get(
+            {"url": f"https://e{status}.example", "browserHtml": True},
+        )
+
+
+@pytest.mark.parametrize(
+    ("retry_factory",),
+    (
+        (RetryFactory,),
+        (AggressiveRetryFactory,),
+    ),
+)
+@pytest.mark.asyncio
+async def test_retry_wait_network_error(retry_factory):
+    waiter = "network_error"
+
+    def broken_wait(self, retry_state):
+        raise OutlierException
+
+    class CustomRetryFactory(retry_factory):
+        pass
+
+    setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
+
+    retrying = CustomRetryFactory().build()
+    with MockServer(resource=DropResource) as mockserver:
+        client = AsyncZyteAPI(
+            api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
+        )
+        with pytest.raises(OutlierException):
+            await client.get(
+                {"url": "https://example.com", "browserHtml": True},
+            )
 
 
 def mock_request_error(*, status=200):
@@ -335,9 +439,7 @@ class fast_forward:
 )
 @pytest.mark.asyncio
 @patch("time.monotonic")
-async def test_retrying(monotonic_mock, retrying, outcomes, exhausted):
-    """Test retry stops based on a number of attempts (as opposed to those
-    based on time passed)."""
+async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
     monotonic_mock.return_value = 0
     last_outcome = outcomes[-1]
     outcomes = deque(outcomes)
