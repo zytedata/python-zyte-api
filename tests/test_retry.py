@@ -376,9 +376,7 @@ class fast_forward:
                     (*(mock_request_error(status=521),) * 4,),
                     True,
                 ),
-                # Undocumented 5xx errors are retried until they have happened
-                # 4 times in a row, not counting rate-limiting responses or
-                # network errors.
+                # Undocumented 5xx errors are retried up to 3 times.
                 *(
                     scenario
                     for status in (
@@ -419,7 +417,7 @@ class fast_forward:
                             (
                                 mock_request_error(status=status),
                                 mock_request_error(status=555),
-                                *(mock_request_error(status=status),) * 3,
+                                mock_request_error(status=status),
                             ),
                             False,
                         ),
@@ -427,7 +425,7 @@ class fast_forward:
                             (
                                 mock_request_error(status=status),
                                 mock_request_error(status=555),
-                                *(mock_request_error(status=status),) * 4,
+                                *(mock_request_error(status=status),) * 2,
                             ),
                             True,
                         ),
