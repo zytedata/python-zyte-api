@@ -260,28 +260,6 @@ class stop_on_download_error(stop_base):
         return False
 
 
-class stop_on_uninterrupted_status(stop_base):
-    """Stop after the specified max number of error responses with the same
-    status code in a row."""
-
-    def __init__(self, _max: int) -> None:
-        self._max = _max
-
-    def __call__(self, retry_state: "RetryCallState") -> bool:
-        assert retry_state.outcome, "Unexpected empty outcome"
-        exc = retry_state.outcome.exception()
-        assert exc, "Unexpected empty exception"
-        count = 0
-        for status in reversed(retry_state.status_history):  # type: ignore
-            if status == exc.status:  # type: ignore
-                count += 1
-                if count >= self._max:
-                    return True
-            elif status not in {-1, 429, 503}:
-                return False
-        return False
-
-
 class AggressiveRetryFactory(RetryFactory):
     """Factory class that builds the :class:`tenacity.AsyncRetrying` object
     that defines the :ref:`aggressive retry policy <aggressive-retry-policy>`.
@@ -298,15 +276,15 @@ class AggressiveRetryFactory(RetryFactory):
         from zyte_api import (
             AggressiveRetryFactory,
             stop_after_uninterrupted_delay,
+            stop_on_count,
             stop_on_download_error,
-            stop_on_uninterrupted_status,
         )
 
 
         class CustomRetryFactory(AggressiveRetryFactory):
             download_error_stop = stop_on_download_error(max_total=16, max_permanent=8)
             network_error_stop = stop_after_uninterrupted_delay(30 * 60)
-            undocumented_error_stop = stop_on_uninterrupted_status(8)
+            undocumented_error_stop = stop_on_count(8)
 
 
         CUSTOM_RETRY_POLICY = CustomRetryFactory().build()
@@ -321,7 +299,7 @@ class AggressiveRetryFactory(RetryFactory):
     download_error_stop = stop_on_download_error(max_total=8, max_permanent=4)
     download_error_wait = RetryFactory.temporary_download_error_wait
 
-    undocumented_error_stop = stop_on_uninterrupted_status(4)
+    undocumented_error_stop = stop_on_count(4)
     undocumented_error_wait = RetryFactory.temporary_download_error_wait
 
     def stop(self, retry_state: RetryCallState) -> bool:

@@ -10,7 +10,6 @@ from ._retry import (
     stop_after_uninterrupted_delay,
     stop_on_count,
     stop_on_download_error,
-    stop_on_uninterrupted_status,
 )
 from ._retry import zyte_api_retrying as _zyte_api_retrying
 from ._sync import ZyteAPI
