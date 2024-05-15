@@ -173,9 +173,7 @@ policy as follows:
 -   Retries permanent download errors up to 3 times.
 
 -   Retries error responses with an HTTP status code in the 500-599 range (503,
-    520 and 521 excluded) until they have happened 4 times in a row, not
-    counting rate-limiting responses or network errors that may happen in
-    between.
+    520 and 521 excluded) up to 3 times.
 
 Alternatively, the reference documentation of :class:`~zyte_api.RetryFactory`
 and :class:`~zyte_api.AggressiveRetryFactory` features some examples of custom

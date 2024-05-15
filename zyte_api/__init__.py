@@ -20,8 +20,5 @@ from .errors import ParsedError
 #: :ref:`Default retry policy <default-retry-policy>`.
 zyte_api_retrying = _zyte_api_retrying
 
-#: Alternative :ref:`retry policy <retry-policy>` that builds on top of
-#: :data:`zyte_api_retrying`, but increases the number of attempts for
-#: temporary download errors from 4 to 16, and retries as temporary download
-#: errors any 5xx HTTP status code other than 503 (retried as rate-limiting).
+#: :ref:`Aggresive retry policy <aggressive-retry-policy>`.
 aggressive_retrying = _aggressive_retrying
