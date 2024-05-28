@@ -306,9 +306,6 @@ class AggressiveRetryFactory(RetryFactory):
         assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
         assert exc, "Unexpected empty exception"
-        if not hasattr(retry_state, "status_history"):
-            retry_state.status_history = []  # type: ignore
-        retry_state.status_history.append(getattr(exc, "status", -1))  # type: ignore
         if _download_error(exc):
             return self.download_error_stop(retry_state)
         if _undocumented_error(exc):
