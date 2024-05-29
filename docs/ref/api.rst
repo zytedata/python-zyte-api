@@ -26,7 +26,12 @@ Retries
 .. autodata:: zyte_api_retrying
     :no-value:
 
+.. autodata:: aggressive_retrying
+    :no-value:
+
 .. autoclass:: RetryFactory
+
+.. autoclass:: AggressiveRetryFactory
 
 
 Errors

@@ -2,16 +2,12 @@ import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
-from tenacity import AsyncRetrying
 
-from zyte_api import AsyncZyteAPI, RequestError
-from zyte_api._retry import RetryFactory
+from zyte_api import AggressiveRetryFactory, AsyncZyteAPI, RequestError
 from zyte_api.aio.client import AsyncClient
 from zyte_api.apikey import NoApiKey
 from zyte_api.errors import ParsedError
 from zyte_api.utils import USER_AGENT
-
-from .mockserver import DropResource, MockServer
 
 
 @pytest.mark.parametrize(
@@ -70,46 +66,6 @@ async def test_get(client_cls, get_method, mockserver):
         {"url": "https://a.example", "httpResponseBody": True}
     )
     assert actual_result == expected_result
-
-
-UNSET = object()
-
-
-class OutlierException(RuntimeError):
-    pass
-
-
-@pytest.mark.parametrize(
-    ("client_cls", "get_method"),
-    (
-        (AsyncZyteAPI, "get"),
-        (AsyncClient, "request_raw"),
-    ),
-)
-@pytest.mark.parametrize(
-    ("value", "exception"),
-    (
-        (UNSET, OutlierException),
-        (True, OutlierException),
-        (False, RequestError),
-    ),
-)
-@pytest.mark.asyncio
-async def test_get_handle_retries(client_cls, get_method, value, exception, mockserver):
-    kwargs = {}
-    if value is not UNSET:
-        kwargs["handle_retries"] = value
-
-    def broken_stop(_):
-        raise OutlierException
-
-    retrying = AsyncRetrying(stop=broken_stop)
-    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying)
-    with pytest.raises(exception):
-        await getattr(client, get_method)(
-            {"url": "https://exception.example", "browserHtml": True},
-            **kwargs,
-        )
 
 
 @pytest.mark.parametrize(
@@ -235,132 +191,6 @@ async def test_iter(client_cls, iter_method, mockserver):
 
 
 @pytest.mark.parametrize(
-    ("client_cls", "get_method"),
-    (
-        (AsyncZyteAPI, "get"),
-        (AsyncClient, "request_raw"),
-    ),
-)
-@pytest.mark.parametrize(
-    ("subdomain", "waiter"),
-    (
-        ("e429", "throttling"),
-        ("e520", "temporary_download_error"),
-    ),
-)
-@pytest.mark.asyncio
-async def test_retry_wait(client_cls, get_method, subdomain, waiter, mockserver):
-    def broken_wait(self, retry_state):
-        raise OutlierException
-
-    class CustomRetryFactory(RetryFactory):
-        pass
-
-    setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
-
-    retrying = CustomRetryFactory().build()
-    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying)
-    with pytest.raises(OutlierException):
-        await getattr(client, get_method)(
-            {"url": f"https://{subdomain}.example", "browserHtml": True},
-        )
-
-
-@pytest.mark.parametrize(
-    ("client_cls", "get_method"),
-    (
-        (AsyncZyteAPI, "get"),
-        (AsyncClient, "request_raw"),
-    ),
-)
-@pytest.mark.asyncio
-async def test_retry_wait_network_error(client_cls, get_method):
-    waiter = "network_error"
-
-    def broken_wait(self, retry_state):
-        raise OutlierException
-
-    class CustomRetryFactory(RetryFactory):
-        pass
-
-    setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
-
-    retrying = CustomRetryFactory().build()
-    with MockServer(resource=DropResource) as mockserver:
-        client = client_cls(
-            api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
-        )
-        with pytest.raises(OutlierException):
-            await getattr(client, get_method)(
-                {"url": "https://example.com", "browserHtml": True},
-            )
-
-
-@pytest.mark.parametrize(
-    ("client_cls", "get_method"),
-    (
-        (AsyncZyteAPI, "get"),
-        (AsyncClient, "request_raw"),
-    ),
-)
-@pytest.mark.parametrize(
-    ("subdomain", "stopper"),
-    (
-        ("e429", "throttling"),
-        ("e520", "temporary_download_error"),
-    ),
-)
-@pytest.mark.asyncio
-async def test_retry_stop(client_cls, get_method, subdomain, stopper, mockserver):
-    def broken_stop(self, retry_state):
-        raise OutlierException
-
-    class CustomRetryFactory(RetryFactory):
-        def wait(self, retry_state):
-            return None
-
-    setattr(CustomRetryFactory, f"{stopper}_stop", broken_stop)
-
-    retrying = CustomRetryFactory().build()
-    client = client_cls(api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying)
-    with pytest.raises(OutlierException):
-        await getattr(client, get_method)(
-            {"url": f"https://{subdomain}.example", "browserHtml": True},
-        )
-
-
-@pytest.mark.parametrize(
-    ("client_cls", "get_method"),
-    (
-        (AsyncZyteAPI, "get"),
-        (AsyncClient, "request_raw"),
-    ),
-)
-@pytest.mark.asyncio
-async def test_retry_stop_network_error(client_cls, get_method):
-    stopper = "network_error"
-
-    def broken_stop(self, retry_state):
-        raise OutlierException
-
-    class CustomRetryFactory(RetryFactory):
-        def wait(self, retry_state):
-            return None
-
-    setattr(CustomRetryFactory, f"{stopper}_stop", broken_stop)
-
-    retrying = CustomRetryFactory().build()
-    with MockServer(resource=DropResource) as mockserver:
-        client = client_cls(
-            api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
-        )
-        with pytest.raises(OutlierException):
-            await getattr(client, get_method)(
-                {"url": "https://example.com", "browserHtml": True},
-            )
-
-
-@pytest.mark.parametrize(
     ("client_cls", "get_method", "iter_method"),
     (
         (AsyncZyteAPI, "get", "iter"),
@@ -482,3 +312,10 @@ async def test_session_no_context_manager(mockserver):
             assert Exception in expected_results
         else:
             assert actual_result in expected_results
+
+
+def test_retrying_class():
+    """A descriptive exception is raised when creating a client with an
+    AsyncRetrying subclass or similar instead of an instance of it."""
+    with pytest.raises(ValueError):
+        AsyncZyteAPI(api_key="foo", retrying=AggressiveRetryFactory)

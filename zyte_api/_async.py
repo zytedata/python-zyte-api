@@ -91,6 +91,11 @@ class AsyncZyteAPI:
         retrying: Optional[AsyncRetrying] = None,
         user_agent: Optional[str] = None,
     ):
+        if retrying is not None and not isinstance(retrying, AsyncRetrying):
+            raise ValueError(
+                "The retrying parameter, if defined, must be an instance of "
+                "AsyncRetrying."
+            )
         self.api_key = get_apikey(api_key)
         self.api_url = api_url
         self.n_conn = n_conn
