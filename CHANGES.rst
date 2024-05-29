@@ -1,6 +1,27 @@
 Changes
 =======
 
+0.5.3 (2024-MM-DD)
+------------------
+
+* Improved how the :ref:`default retry policy <default-retry-policy>` handles
+  :ref:`temporary download errors <zyte-api-temporary-download-errors>`.
+  Before, 3 HTTP 429 responses followed by a single HTTP 520 response would
+  have prevented a retry. Now, unrelated responses and errors do not count
+  towards the HTTP 520 retry limit.
+
+* Improved how the :ref:`default retry policy <default-retry-policy>` handles
+  network errors. Before, after 15 minutes of unsuccessful responses (e.g. HTTP
+  429), any network error would prevent a retry. Now, network errors must happen
+  15 minutes in a row, without different errors in between, to stop retries.
+
+* Implemented an optional :ref:`aggressive retry policy
+  <aggressive-retry-policy>`, which retries more errors more often, and could
+  be useful for long crawls or websites with a low success rate.
+
+* Improved the exception that is raised when passing an invalid retrying policy
+  object to a :ref:`Python client <api>`.
+
 0.5.2 (2024-05-10)
 ------------------
 
