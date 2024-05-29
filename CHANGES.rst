@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.5.3 (2024-MM-DD)
+0.6.0 (2024-MM-DD)
 ------------------
 
 * Improved how the :ref:`default retry policy <default-retry-policy>` handles
