@@ -35,7 +35,7 @@ Installation
 
     pip install zyte-api
 
-.. note:: Python 3.8+ is required.
+.. note:: Python 3.9+ is required.
 
 .. install-end
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import time
 from asyncio import Future
@@ -17,8 +19,6 @@ from .utils import USER_AGENT, _process_query
 
 if TYPE_CHECKING:
     _ResponseFuture = Future[Dict[str, Any]]
-else:
-    _ResponseFuture = Future  # Python 3.8 support
 
 
 def _post_func(session):
