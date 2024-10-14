@@ -109,9 +109,10 @@ async def test_run(queries, expected_response, store_errors, exception):
     async_client_mock.return_value.iter = request_parallel_mock
 
     # Patch the AsyncZyteAPI class in __main__ with the mock
-    with patch("zyte_api.__main__.AsyncZyteAPI", async_client_mock), patch(
-        "zyte_api.__main__.create_session"
-    ) as create_session_mock:
+    with (
+        patch("zyte_api.__main__.AsyncZyteAPI", async_client_mock),
+        patch("zyte_api.__main__.create_session") as create_session_mock,
+    ):
         # Mock create_session to return an AsyncMock
         create_session_mock.return_value = AsyncMock()
 
