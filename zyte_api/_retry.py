@@ -137,7 +137,7 @@ class RetryFactory:
     the corresponding :class:`tenacity.AsyncRetrying` object.
 
     For example, to double the number of attempts for :ref:`temporary
-    download errors <zyte-api-temporary-download-errors>` and the time network
+    download errors <zapi-temporary-download-errors>` and the time network
     errors are retried:
 
     .. code-block:: python

@@ -134,15 +134,15 @@ The number of concurrent connections if enforced across all method calls,
 including different sessions of the same client.
 
 For guidelines on how to choose the optimal value for you, and other
-optimization tips, see :ref:`zyte-api-optimize`.
+optimization tips, see :ref:`zapi-optimize`.
 
 
 Errors and retries
 ==================
 
 Methods of :class:`ZyteAPI` and :class:`AsyncZyteAPI` automatically handle
-retries for :ref:`rate-limiting <zyte-api-rate-limit>` and :ref:`unsuccessful
-<zyte-api-unsuccessful-responses>` responses, as well as network errors.
+retries for :ref:`rate-limiting <zapi-rate-limit>` and :ref:`unsuccessful
+<zapi-unsuccessful-responses>` responses, as well as network errors.
 
 .. _retry-policy:
 .. _default-retry-policy:
@@ -150,10 +150,10 @@ retries for :ref:`rate-limiting <zyte-api-rate-limit>` and :ref:`unsuccessful
 The default retry policy, :data:`~zyte_api.zyte_api_retrying`, does the
 following:
 
--   Retries :ref:`rate-limiting responses <zyte-api-rate-limit>` forever.
+-   Retries :ref:`rate-limiting responses <zapi-rate-limit>` forever.
 
 -   Retries :ref:`temporary download errors
-    <zyte-api-temporary-download-errors>` up to 3 times.
+    <zapi-temporary-download-errors>` up to 3 times.
 
 -   Retries network errors until they have happened for 15 minutes straight.
 
@@ -161,13 +161,13 @@ All retries are done with an exponential backoff algorithm.
 
 .. _aggressive-retry-policy:
 
-If some :ref:`unsuccessful responses <zyte-api-unsuccessful-responses>` exceed
+If some :ref:`unsuccessful responses <zapi-unsuccessful-responses>` exceed
 maximum retries with the default retry policy, try using
 :data:`~zyte_api.aggressive_retrying` instead, which modifies the default retry
 policy as follows:
 
 -   Temporary download error are retried 7 times. :ref:`Permanent download
-    errors <zyte-api-permanent-download-errors>` also count towards this retry
+    errors <zapi-permanent-download-errors>` also count towards this retry
     limit.
 
 -   Retries permanent download errors up to 3 times.
