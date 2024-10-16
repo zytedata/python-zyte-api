@@ -33,7 +33,7 @@ The input file can be either of the following:
     :http:`request:browserHtml` set to ``True``.
 
 -   A `JSON Lines <https://jsonlines.org/>`_ file with a object of :ref:`Zyte
-    API request parameters <zyte-api-reference>` per line. For example:
+    API request parameters <zapi-reference>` per line. For example:
 
     .. code-block:: json
 
@@ -84,19 +84,19 @@ order and hence distribute the load somewhat evenly:
     zyte-api urls.txt --shuffle …
 
 For guidelines on how to choose the optimal ``--n-conn`` value for you, and
-other optimization tips, see :ref:`zyte-api-optimize`.
+other optimization tips, see :ref:`zapi-optimize`.
 
 
 Errors and retries
 ==================
 
 ``zyte-api`` automatically handles retries for :ref:`rate-limiting
-<zyte-api-rate-limit>` and :ref:`unsuccessful
-<zyte-api-unsuccessful-responses>` responses, as well as network errors,
+<zapi-rate-limit>` and :ref:`unsuccessful
+<zapi-unsuccessful-responses>` responses, as well as network errors,
 following the :ref:`default retry policy <default-retry-policy>`.
 
 Use ``--dont-retry-errors`` to disable the retrying of error responses, and
-retrying only :ref:`rate-limiting responses <zyte-api-rate-limit>`:
+retrying only :ref:`rate-limiting responses <zapi-rate-limit>`:
 
 .. code-block:: shell
 

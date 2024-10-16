@@ -5,7 +5,7 @@ Changes
 ------------------
 
 * Improved how the :ref:`default retry policy <default-retry-policy>` handles
-  :ref:`temporary download errors <zyte-api-temporary-download-errors>`.
+  :ref:`temporary download errors <zapi-temporary-download-errors>`.
   Before, 3 HTTP 429 responses followed by a single HTTP 520 response would
   have prevented a retry. Now, unrelated responses and errors do not count
   towards the HTTP 520 retry limit.

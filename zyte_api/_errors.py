@@ -10,8 +10,8 @@ logger = logging.getLogger("zyte_api")
 
 class RequestError(ClientResponseError):
     """Exception raised upon receiving a :ref:`rate-limiting
-    <zyte-api-rate-limit>` or :ref:`unsuccessful
-    <zyte-api-unsuccessful-responses>` response from Zyte API."""
+    <zapi-rate-limit>` or :ref:`unsuccessful
+    <zapi-unsuccessful-responses>` response from Zyte API."""
 
     def __init__(self, *args, **kwargs):
         #: Query sent to Zyte API.
