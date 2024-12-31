@@ -156,7 +156,7 @@ following for each request:
     up to 3 times. :ref:`Permanent download errors
     <zapi-permanent-download-errors>` also count towards this retry limit.
 
--   Retries permanent download errors once per request.
+-   Retries permanent download errors once.
 
 -   Retries network errors until they have happened for 15 minutes straight.
 
