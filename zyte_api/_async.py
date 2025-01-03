@@ -10,7 +10,7 @@ import aiohttp
 from tenacity import AsyncRetrying
 
 from ._errors import RequestError
-from ._retry import zyte_api_retrying
+from ._retry import TooManyUndocumentedErrors, zyte_api_retrying
 from ._utils import _AIO_API_TIMEOUT, create_session
 from .apikey import get_apikey
 from .constants import API_URL
@@ -103,6 +103,7 @@ class AsyncZyteAPI:
         self.retrying = retrying or zyte_api_retrying
         self.user_agent = user_agent or USER_AGENT
         self._semaphore = asyncio.Semaphore(n_conn)
+        self._disabling_exception: TooManyUndocumentedErrors | None = None
 
     async def get(
         self,
@@ -114,6 +115,9 @@ class AsyncZyteAPI:
         retrying: Optional[AsyncRetrying] = None,
     ) -> _ResponseFuture:
         """Asynchronous equivalent to :meth:`ZyteAPI.get`."""
+        if self._disabling_exception is not None:
+            raise self._disabling_exception
+
         retrying = retrying or self.retrying
         post = _post_func(session)
         auth = aiohttp.BasicAuth(self.api_key)
@@ -172,7 +176,9 @@ class AsyncZyteAPI:
             # Try to make a request
             result = await request()
             self.agg_stats.n_success += 1
-        except Exception:
+        except Exception as exc:
+            if isinstance(exc, TooManyUndocumentedErrors):
+                self._disabling_exception = exc
             self.agg_stats.n_fatal_errors += 1
             raise
 

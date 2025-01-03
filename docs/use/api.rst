@@ -163,6 +163,9 @@ following for each request:
 -   Retries error responses with an HTTP status code in the 500-599 range (503,
     520 and 521 excluded) up to 3 times.
 
+-   Disallows new requests if undocumented error responses are more than 10
+    *and* more than 1% of all responses.
+
 All retries are done with an exponential backoff algorithm.
 
 .. _aggressive-retry-policy:

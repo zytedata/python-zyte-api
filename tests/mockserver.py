@@ -6,10 +6,12 @@ import time
 from base64 import b64encode
 from importlib import import_module
 from subprocess import PIPE, Popen
-from typing import Any, Dict
+from typing import Any, Dict, cast
 from urllib.parse import urlparse
 
 from twisted.internet import reactor
+from twisted.internet.defer import Deferred
+from twisted.internet.interfaces import IReactorTime
 from twisted.internet.task import deferLater
 from twisted.web.resource import Resource
 from twisted.web.server import NOT_DONE_YET, Site
@@ -40,7 +42,7 @@ class DropResource(Resource):
             d.addErrback(lambda _: None)
             d.cancel()
 
-        d = deferLater(reactor, delay, f, *a, **kw)
+        d: Deferred = deferLater(cast(IReactorTime, reactor), delay, f, *a, **kw)
         request.notifyFinish().addErrback(_cancelrequest)
         return d
 
@@ -82,6 +84,7 @@ class DefaultResource(Resource):
 
         url = request_data["url"]
         domain = urlparse(url).netloc
+        response_data: Dict[str, Any]
         if domain == "e429.example":
             request.setResponseCode(429)
             response_data = {"status": 429, "type": "/limits/over-user-limit"}
@@ -119,7 +122,7 @@ class DefaultResource(Resource):
             request.setResponseCode(500)
             return b'["foo"]'
 
-        response_data: Dict[str, Any] = {
+        response_data = {
             "url": url,
         }
 

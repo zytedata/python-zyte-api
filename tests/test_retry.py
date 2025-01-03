@@ -11,11 +11,18 @@ from zyte_api import (
     AsyncZyteAPI,
     RequestError,
     RetryFactory,
+    TooManyUndocumentedErrors,
     aggressive_retrying,
     zyte_api_retrying,
 )
+from zyte_api._retry import ZyteAsyncRetrying
 
 from .mockserver import DropResource, MockServer
+
+
+def reset_totals():
+    ZyteAsyncRetrying._total_outcomes = 0
+    ZyteAsyncRetrying._total_undocumented_errors = 0
 
 
 def test_deprecated_imports():
@@ -74,10 +81,11 @@ async def test_get_handle_retries(value, exception, mockserver):
 )
 @pytest.mark.asyncio
 async def test_retry_wait(retry_factory, status, waiter, mockserver):
+
     def broken_wait(self, retry_state):
         raise OutlierException
 
-    class CustomRetryFactory(retry_factory):
+    class CustomRetryFactory(retry_factory):  # type: ignore[valid-type, misc]
         pass
 
     setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
@@ -105,7 +113,7 @@ async def test_retry_wait_network_error(retry_factory):
     def broken_wait(self, retry_state):
         raise OutlierException
 
-    class CustomRetryFactory(retry_factory):
+    class CustomRetryFactory(retry_factory):  # type: ignore[valid-type, misc]
         pass
 
     setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
@@ -401,6 +409,7 @@ class scale:
 @pytest.mark.asyncio
 @patch("time.monotonic")
 async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
+    reset_totals()
     monotonic_mock.return_value = 0
     last_outcome = outcomes[-1]
     outcomes = deque(outcomes)
@@ -429,5 +438,87 @@ async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
     except Exception as outcome:
         assert exhausted, outcome
         assert outcome is last_outcome
+    else:
+        assert not exhausted
+
+
+mock_good_response = object()
+
+
+@pytest.mark.parametrize(
+    ("retrying", "outcome_sequences", "exhausted"),
+    (
+        # A ZyteAPIError exception is raised when, of all responses,
+        # undocumented 5xx responses are at least 10 and at least 1%.
+        #
+        # 9, 100%:
+        (
+            zyte_api_retrying,
+            ((mock_request_error(status=500),),) * 9,
+            False,
+        ),
+        # 10, 100%:
+        (
+            zyte_api_retrying,
+            ((mock_request_error(status=500),),) * 10,
+            True,
+        ),
+        # 10, <1%:
+        (
+            zyte_api_retrying,
+            ((mock_request_error(status=500),),) * 9  # 9 / 18 (50%)
+            + ((mock_good_response,),) * (982)  # + 0 / 982 = 9 / 1000 (0.9%)
+            + ((mock_request_error(status=500),),) * 1,  # + 1 / 1 = 10 / 1001 (0.999…%)
+            False,
+        ),
+        # 10, ≥1%:
+        (
+            zyte_api_retrying,
+            ((mock_request_error(status=500),),) * 9  # 9 / 18 (50%)
+            + ((mock_good_response,),) * (981)  # + 0 / 981 = 9 / 999 (0.9%)
+            + ((mock_request_error(status=500),),) * 1,  # + 1 / 1 = 10 / 1000 (1%)
+            True,
+        ),
+    ),
+)
+@pytest.mark.asyncio
+@patch("time.monotonic")
+async def test_retry_stop_global_parallel(
+    monotonic_mock, retrying, outcome_sequences, exhausted
+):
+    reset_totals()
+    monotonic_mock.return_value = 0
+    last_outcome = outcome_sequences[-1][-1]
+    outcome_sequences = tuple(deque(outcomes) for outcomes in outcome_sequences)
+
+    def wait(retry_state):
+        return 0.0
+
+    retrying = copy(retrying)
+    retrying.wait = wait
+
+    async def run(outcomes):
+        while True:
+            try:
+                outcome = outcomes.popleft()
+            except IndexError:
+                return
+            else:
+                if isinstance(outcome, fast_forward):
+                    monotonic_mock.return_value += outcome.time
+                    continue
+                if outcome is mock_good_response:
+                    continue
+                raise outcome
+
+    run = retrying.wraps(run)
+
+    try:
+        for outcomes in outcome_sequences:
+            await run(outcomes)
+    except Exception as exc:
+        assert exhausted, exc
+        assert isinstance(exc, TooManyUndocumentedErrors)
+        assert exc.outcome is last_outcome
     else:
         assert not exhausted

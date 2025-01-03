@@ -31,11 +31,11 @@ class RequestError(ClientResponseError):
     @property
     def parsed(self):
         """Response as a :class:`ParsedError` object."""
-        return ParsedError.from_body(self.response_content)
+        return ParsedError.from_body(self.response_content or b"")
 
     def __str__(self):
         return (
             f"RequestError: {self.status}, message={self.message}, "
-            f"headers={self.headers}, body={self.response_content}, "
+            f"headers={self.headers}, body={self.response_content!r}, "
             f"request_id={self.request_id}"
         )

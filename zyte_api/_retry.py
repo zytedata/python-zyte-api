@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 from collections import Counter
 from datetime import timedelta
 from itertools import count
-from typing import Union
+from typing import TYPE_CHECKING, Any, Union
 
 from aiohttp import client_exceptions
 from tenacity import (
     AsyncRetrying,
+    DoAttempt,
+    DoSleep,
     RetryCallState,
     after_log,
     before_log,
@@ -22,6 +26,12 @@ from tenacity import (
 from tenacity.stop import stop_base, stop_never
 
 from ._errors import RequestError
+
+if TYPE_CHECKING:
+    from tenacity import RetryBaseT as SyncRetryBaseT
+    from tenacity.asyncio import RetryBaseT
+    from tenacity.stop import StopBaseT
+    from tenacity.wait import WaitBaseT
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +170,66 @@ def _undocumented_error(exc: BaseException) -> bool:
     )
 
 
+class TooManyUndocumentedErrors(RuntimeError):
+    def __init__(self, outcome, errors, total):
+        msg = (
+            f"Too many undocumented error responses received from Zyte API "
+            f"({errors} out of {total}, {errors / total:.2%}). This process "
+            f"will no longer be able to send Zyte API requests. Please, "
+            f"monitor https://status.zyte.com/ or contact support "
+            f"(https://support.zyte.com/support/tickets/new) before sending "
+            f"more requests like the ones causing these error responses.\n"
+            f"Last offending query: {outcome.query}\n"
+            f"Last offending response: {outcome}"
+        )
+        self.outcome = outcome
+        super().__init__(msg)
+
+
+class ZyteAsyncRetrying(AsyncRetrying):
+    _total_outcomes = 0
+    _total_undocumented_errors = 0
+
+    def __init__(
+        self,
+        stop: "StopBaseT",
+        wait: "WaitBaseT",
+        retry: "SyncRetryBaseT | RetryBaseT",
+        reraise: bool,
+        **kwargs,
+    ):
+        kwargs.setdefault("before", before_log(logger, logging.DEBUG))
+        kwargs.setdefault("after", after_log(logger, logging.DEBUG))
+        kwargs.setdefault("before_sleep", before_sleep_log(logger, logging.DEBUG))
+        super().__init__(
+            stop=stop,
+            wait=wait,
+            retry=retry,
+            reraise=reraise,
+            **kwargs,
+        )
+
+    async def iter(self, retry_state: RetryCallState) -> DoAttempt | DoSleep | Any:
+        do = await super().iter(retry_state)
+        retry_cls = retry_state.retry_object.__class__
+        if retry_state.outcome is not None:
+            retry_cls._total_outcomes += 1  # type: ignore[attr-defined]
+            try:
+                retry_state.outcome.result()
+            except Exception as exc:
+                if _undocumented_error(exc):
+                    retry_cls._total_undocumented_errors += 1  # type: ignore[attr-defined]
+                    errors = retry_cls._total_undocumented_errors  # type: ignore[attr-defined]
+                    total = retry_cls._total_outcomes  # type: ignore[attr-defined]
+                    if errors >= 10 and errors / total >= 0.01:
+                        raise TooManyUndocumentedErrors(
+                            outcome=exc,
+                            errors=errors,  # type: ignore[attr-defined]
+                            total=total,  # type: ignore[attr-defined]
+                        )
+        return do
+
+
 class RetryFactory:
     """Factory class that builds the :class:`tenacity.AsyncRetrying` object
     that defines the :ref:`default retry policy <default-retry-policy>`.
@@ -250,14 +320,11 @@ class RetryFactory:
         return True
 
     def build(self) -> AsyncRetrying:
-        return AsyncRetrying(
+        return ZyteAsyncRetrying(
             wait=self.wait,
             retry=self.retry_condition,
             stop=self.stop,
             reraise=self.reraise(),
-            before=before_log(logger, logging.DEBUG),
-            after=after_log(logger, logging.DEBUG),
-            before_sleep=before_sleep_log(logger, logging.DEBUG),
         )
 
 

@@ -3,7 +3,13 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from zyte_api import AggressiveRetryFactory, AsyncZyteAPI, RequestError
+from zyte_api import (
+    AggressiveRetryFactory,
+    AsyncZyteAPI,
+    RequestError,
+    TooManyUndocumentedErrors,
+)
+from zyte_api._retry import ZyteAsyncRetrying
 from zyte_api.aio.client import AsyncClient
 from zyte_api.apikey import NoApiKey
 from zyte_api.errors import ParsedError
@@ -318,4 +324,18 @@ def test_retrying_class():
     """A descriptive exception is raised when creating a client with an
     AsyncRetrying subclass or similar instead of an instance of it."""
     with pytest.raises(ValueError):
-        AsyncZyteAPI(api_key="foo", retrying=AggressiveRetryFactory)
+        AsyncZyteAPI(api_key="foo", retrying=AggressiveRetryFactory)  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_too_many_undocumented_errors(mockserver):
+    ZyteAsyncRetrying._total_outcomes = 9
+    ZyteAsyncRetrying._total_undocumented_errors = 9
+
+    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+
+    await client.get({"url": "https://a.example", "httpResponseBody": True})
+    with pytest.raises(TooManyUndocumentedErrors):
+        await client.get({"url": "https://e500.example", "httpResponseBody": True})
+    with pytest.raises(TooManyUndocumentedErrors):
+        await client.get({"url": "https://a.example", "httpResponseBody": True})

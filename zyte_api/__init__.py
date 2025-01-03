@@ -4,7 +4,7 @@ Python client libraries and command line utilities for Zyte API
 
 from ._async import AsyncZyteAPI
 from ._errors import RequestError
-from ._retry import AggressiveRetryFactory, RetryFactory
+from ._retry import AggressiveRetryFactory, RetryFactory, TooManyUndocumentedErrors
 from ._retry import aggressive_retrying as _aggressive_retrying
 from ._retry import (
     stop_after_uninterrupted_delay,

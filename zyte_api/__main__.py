@@ -11,6 +11,7 @@ from warnings import warn
 import tqdm
 from tenacity import retry_if_exception
 
+from zyte_api import RequestError
 from zyte_api._async import AsyncZyteAPI
 from zyte_api._retry import RetryFactory, _is_throttling_error
 from zyte_api._utils import create_session
@@ -71,13 +72,13 @@ async def run(
                 try:
                     result = await fut
                 except Exception as e:
-                    if store_errors:
-                        write_output(e.parsed.response_body.decode())
+                    if store_errors and isinstance(e, RequestError):
+                        write_output(e.parsed.data)
 
                     if stop_on_errors:
                         raise
 
-                    logger.error(str(e))
+                    logger.exception("Exception raised during response handling")
                 else:
                     write_output(result)
                 finally:

@@ -37,9 +37,9 @@ class AggStats:
         self.n_429 = 0  # number of 429 (throttling) responses
         self.n_errors = 0  # number of errors, including errors which were retried
 
-        self.status_codes = Counter()
-        self.exception_types = Counter()
-        self.api_error_types = Counter()
+        self.status_codes: Counter = Counter()
+        self.exception_types: Counter = Counter()
+        self.api_error_types: Counter = Counter()
 
     def __str__(self):
         return "conn:{:0.2f}s, resp:{:0.2f}s, throttle:{:.1%}, err:{}+{}({:.1%}) | success:{}/{}({:.1%})".format(

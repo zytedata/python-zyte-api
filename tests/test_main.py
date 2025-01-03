@@ -11,15 +11,6 @@ from zyte_api.__main__ import run
 from zyte_api.aio.errors import RequestError
 
 
-class MockRequestError(Exception):
-    @property
-    def parsed(self):
-        mock = Mock(
-            response_body=Mock(decode=Mock(return_value=forbidden_domain_response()))
-        )
-        return mock
-
-
 def get_json_content(file_object):
     if not file_object:
         return
@@ -53,7 +44,12 @@ def forbidden_domain_response():
 async def fake_exception(value=True):
     # Simulating an error condition
     if value:
-        raise MockRequestError()
+        raise RequestError(
+            query={"url": "https://example.com", "httpResponseBody": True},
+            response_content=json.dumps(forbidden_domain_response()).encode(),
+            request_info=None,
+            history=None,
+        )
 
     create_session_mock = AsyncMock()
     return await create_session_mock.coroutine()
