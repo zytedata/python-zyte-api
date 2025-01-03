@@ -224,8 +224,8 @@ class ZyteAsyncRetrying(AsyncRetrying):
                     if errors >= 10 and errors / total >= 0.01:
                         raise TooManyUndocumentedErrors(
                             outcome=exc,
-                            errors=errors,  # type: ignore[attr-defined]
-                            total=total,  # type: ignore[attr-defined]
+                            errors=errors,
+                            total=total,
                         )
         return do
 
