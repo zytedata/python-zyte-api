@@ -192,9 +192,9 @@ class ZyteAsyncRetrying(AsyncRetrying):
 
     def __init__(
         self,
-        stop: "StopBaseT",
-        wait: "WaitBaseT",
-        retry: "SyncRetryBaseT | RetryBaseT",
+        stop: StopBaseT,
+        wait: WaitBaseT,
+        retry: SyncRetryBaseT | RetryBaseT,
         reraise: bool,
         **kwargs,
     ):
