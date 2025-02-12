@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from aiohttp import ClientResponseError
 
@@ -18,13 +20,13 @@ class RequestError(ClientResponseError):
         #:
         #: May be slightly different from the input query due to
         #: pre-processing logic on the client side.
-        self.query: Dict[str, Any] = kwargs.pop("query")
+        self.query: dict[str, Any] = kwargs.pop("query")
 
         #: Request ID.
-        self.request_id: Optional[str] = kwargs.get("headers", {}).get("request-id")
+        self.request_id: str | None = kwargs.get("headers", {}).get("request-id")
 
         #: Response body.
-        self.response_content: Optional[bytes] = kwargs.pop("response_content")
+        self.response_content: bytes | None = kwargs.pop("response_content")
 
         super().__init__(*args, **kwargs)
 

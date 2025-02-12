@@ -89,8 +89,7 @@ def test_session_context_manager(mockserver):
     with client.session() as session:
         assert session._session.connector.limit == client._async_client.n_conn
         actual_results.append(session.get(queries[0]))
-        for result in session.iter(queries[1:]):
-            actual_results.append(result)
+        actual_results.extend(session.iter(queries[1:]))
         aiohttp_session = session._session
         assert not aiohttp_session.closed
     assert aiohttp_session.closed
@@ -130,8 +129,7 @@ def test_session_no_context_manager(mockserver):
     session = client.session()
     assert session._session.connector.limit == client._async_client.n_conn
     actual_results.append(session.get(queries[0]))
-    for result in session.iter(queries[1:]):
-        actual_results.append(result)
+    actual_results.extend(session.iter(queries[1:]))
     aiohttp_session = session._session
     assert not aiohttp_session.closed
     session.close()

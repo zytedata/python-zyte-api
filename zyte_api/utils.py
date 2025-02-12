@@ -1,5 +1,5 @@
 import re
-from os.path import splitext
+from pathlib import Path
 
 from w3lib.url import safe_url_string
 
@@ -9,8 +9,7 @@ USER_AGENT = f"python-zyte-api/{__version__}"
 
 
 def _guess_intype(file_name, lines):
-    _, dot_extension = splitext(file_name)
-    extension = dot_extension[1:]
+    extension = Path(file_name).suffix[1:]
     if extension in {"jl", "jsonl"}:
         return "jl"
     if extension == "txt":

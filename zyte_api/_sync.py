@@ -1,11 +1,16 @@
-import asyncio
-from typing import Generator, List, Optional, Union
+from __future__ import annotations
 
-from aiohttp import ClientSession
-from tenacity import AsyncRetrying
+import asyncio
+from typing import TYPE_CHECKING
 
 from ._async import AsyncZyteAPI
 from .constants import API_URL
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from aiohttp import ClientSession
+    from tenacity import AsyncRetrying
 
 
 def _get_loop():
@@ -45,7 +50,7 @@ class _Session:
         *,
         endpoint: str = "extract",
         handle_retries=True,
-        retrying: Optional[AsyncRetrying] = None,
+        retrying: AsyncRetrying | None = None,
     ):
         return self._client.get(
             query=query,
@@ -57,12 +62,12 @@ class _Session:
 
     def iter(
         self,
-        queries: List[dict],
+        queries: list[dict],
         *,
         endpoint: str = "extract",
         handle_retries=True,
-        retrying: Optional[AsyncRetrying] = None,
-    ) -> Generator[Union[dict, Exception], None, None]:
+        retrying: AsyncRetrying | None = None,
+    ) -> Generator[dict | Exception, None, None]:
         return self._client.iter(
             queries=queries,
             endpoint=endpoint,
@@ -99,8 +104,8 @@ class ZyteAPI:
         api_key=None,
         api_url=API_URL,
         n_conn=15,
-        retrying: Optional[AsyncRetrying] = None,
-        user_agent: Optional[str] = None,
+        retrying: AsyncRetrying | None = None,
+        user_agent: str | None = None,
     ):
         self._async_client = AsyncZyteAPI(
             api_key=api_key,
@@ -115,9 +120,9 @@ class ZyteAPI:
         query: dict,
         *,
         endpoint: str = "extract",
-        session: Optional[ClientSession] = None,
+        session: ClientSession | None = None,
         handle_retries: bool = True,
-        retrying: Optional[AsyncRetrying] = None,
+        retrying: AsyncRetrying | None = None,
     ) -> dict:
         """Send *query* to Zyte API and return the result.
 
@@ -146,13 +151,13 @@ class ZyteAPI:
 
     def iter(
         self,
-        queries: List[dict],
+        queries: list[dict],
         *,
         endpoint: str = "extract",
-        session: Optional[ClientSession] = None,
+        session: ClientSession | None = None,
         handle_retries: bool = True,
-        retrying: Optional[AsyncRetrying] = None,
-    ) -> Generator[Union[dict, Exception], None, None]:
+        retrying: AsyncRetrying | None = None,
+    ) -> Generator[dict | Exception, None, None]:
         """Send multiple *queries* to Zyte API in parallel and iterate over
         their results as they come.
 

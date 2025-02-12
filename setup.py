@@ -1,21 +1,12 @@
-import os
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
-
-def get_version():
-    about = {}
-    here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, "zyte_api/__version__.py")) as f:
-        exec(f.read(), about)
-    return about["__version__"]
-
-
 setup(
     name="zyte-api",
-    version=get_version(),
+    version="0.6.0",
     description="Python interface to Zyte API",
-    long_description=open("README.rst").read(),
+    long_description=Path("README.rst").read_text(encoding="utf-8"),
     long_description_content_type="text/x-rst",
     author="Zyte Group Ltd",
     author_email="opensource@zyte.com",

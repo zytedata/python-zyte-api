@@ -1,4 +1,4 @@
-""" Basic command-line interface for Zyte API. """
+"""Basic command-line interface for Zyte API."""
 
 import argparse
 import asyncio

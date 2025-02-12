@@ -20,6 +20,7 @@ def deprecated_create_session(
             "ZyteAPI.session or AsyncZyteAPI.session instead."
         ),
         DeprecationWarning,
+        stacklevel=2,
     )
     return create_session(connection_pool_size=connection_pool_size, **kwargs)
 
