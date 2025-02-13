@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import functools
 import time
 from collections import Counter
@@ -42,38 +43,26 @@ class AggStats:
         self.api_error_types = Counter()
 
     def __str__(self):
-        return "conn:{:0.2f}s, resp:{:0.2f}s, throttle:{:.1%}, err:{}+{}({:.1%}) | success:{}/{}({:.1%})".format(
-            self.time_connect_stats.mean(),
-            self.time_total_stats.mean(),
-            self.throttle_ratio(),
-            self.n_errors - self.n_fatal_errors,
-            self.n_fatal_errors,
-            self.error_ratio(),
-            self.n_success,
-            self.n_processed,
-            self.success_ratio(),
+        return (
+            f"conn:{self.time_connect_stats.mean():0.2f}s, "
+            f"resp:{self.time_total_stats.mean():0.2f}s, "
+            f"throttle:{self.throttle_ratio():.1%}, "
+            f"err:{self.n_errors - self.n_fatal_errors}+{self.n_fatal_errors}({self.error_ratio():.1%}) | "
+            f"success:{self.n_success}/{self.n_processed}({self.success_ratio():.1%})"
         )
 
     def summary(self):
         return (
             "\n"
-            + "Summary\n"
-            + "-------\n"
-            + "Mean connection time:     {:0.2f}\n".format(
-                self.time_connect_stats.mean()
-            )
-            + "Mean response time:       {:0.2f}\n".format(self.time_total_stats.mean())
-            + "Throttle ratio:           {:0.1%}\n".format(self.throttle_ratio())
-            + "Attempts:                 {}\n".format(self.n_attempts)
-            + "Errors:                   {:0.1%}, fatal: {}, non fatal: {}\n".format(
-                self.error_ratio(),
-                self.n_fatal_errors,
-                self.n_errors - self.n_fatal_errors,
-            )
-            + "Successful URLs:          {} of {}\n".format(
-                self.n_success, self.n_processed
-            )
-            + "Success ratio:            {:0.1%}\n".format(self.success_ratio())
+            "Summary\n"
+            "-------\n"
+            f"Mean connection time:     {self.time_connect_stats.mean():0.2f}\n"
+            f"Mean response time:       {self.time_total_stats.mean():0.2f}\n"
+            f"Throttle ratio:           {self.throttle_ratio():0.1%}\n"
+            f"Attempts:                 {self.n_attempts}\n"
+            f"Errors:                   {self.error_ratio():0.1%}, fatal: {self.n_fatal_errors}, non fatal: {self.n_errors - self.n_fatal_errors}\n"
+            f"Successful URLs:          {self.n_success} of {self.n_processed}\n"
+            f"Success ratio:            {self.success_ratio():0.1%}\n"
         )
 
     @zero_on_division_error
@@ -96,32 +85,32 @@ class AggStats:
 
 @attr.s
 class ResponseStats:
-    _start = attr.ib(repr=False)  # type: float
+    _start: float = attr.ib(repr=False)
 
     # Wait time, before this request is sent. Can be large in case of retries.
-    time_delayed = attr.ib(default=None)  # type: Optional[float]
+    time_delayed: Optional[float] = attr.ib(default=None)
 
     # Time between sending a request and having a connection established
-    time_connect = attr.ib(default=None)  # type: Optional[float]
+    time_connect: Optional[float] = attr.ib(default=None)
 
     # Time to read & decode the response
-    time_read = attr.ib(default=None)  # type: Optional[float]
+    time_read: Optional[float] = attr.ib(default=None)
 
     # time to get an exception (usually, a network error)
-    time_exception = attr.ib(default=None)  # type: Optional[float]
+    time_exception: Optional[float] = attr.ib(default=None)
 
     # Total time to process the response, excluding the wait time caused
     # by retries.
-    time_total = attr.ib(default=None)  # type: Optional[float]
+    time_total: Optional[float] = attr.ib(default=None)
 
     # HTTP status code
-    status = attr.ib(default=None)  # type: Optional[int]
+    status: Optional[int] = attr.ib(default=None)
 
     # error (parsed), in case of error response
-    error = attr.ib(default=None)  # type: Optional[ParsedError]
+    error: Optional[ParsedError] = attr.ib(default=None)
 
     # exception raised
-    exception = attr.ib(default=None)  # type: Optional[Exception]
+    exception: Optional[Exception] = attr.ib(default=None)
 
     @classmethod
     def create(cls, start_global):
@@ -137,7 +126,7 @@ class ResponseStats:
         agg_stats.time_connect_stats.push(self.time_connect)
         agg_stats.status_codes[self.status] += 1
 
-    def record_read(self, agg_stats: Optional[AggStats] = None):
+    def record_read(self, agg_stats: AggStats | None = None):
         now = time.perf_counter()
         self.time_total = now - self._start
         self.time_read = self.time_total - (self.time_connect or 0)

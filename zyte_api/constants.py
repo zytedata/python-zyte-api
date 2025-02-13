@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Name of the environment variable with the API key
 ENV_VARIABLE = "ZYTE_API_KEY"
 

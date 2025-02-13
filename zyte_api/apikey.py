@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import os
-from typing import Optional
 
 from .constants import ENV_VARIABLE
 
@@ -9,7 +9,7 @@ class NoApiKey(Exception):
     pass
 
 
-def get_apikey(key: Optional[str] = None) -> str:
+def get_apikey(key: str | None = None) -> str:
     """Return API key, probably loading it from an environment variable"""
     if key is not None:
         return key
@@ -17,6 +17,5 @@ def get_apikey(key: Optional[str] = None) -> str:
         return os.environ[ENV_VARIABLE]
     except KeyError:
         raise NoApiKey(
-            "API key not found. Please set {} "
-            "environment variable.".format(ENV_VARIABLE)
-        )
+            f"API key not found. Please set {ENV_VARIABLE} environment variable."
+        ) from None

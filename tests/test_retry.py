@@ -36,11 +36,11 @@ class OutlierException(RuntimeError):
 
 @pytest.mark.parametrize(
     ("value", "exception"),
-    (
+    [
         (UNSET, OutlierException),
         (True, OutlierException),
         (False, RequestError),
-    ),
+    ],
 )
 @pytest.mark.asyncio
 async def test_get_handle_retries(value, exception, mockserver):
@@ -64,13 +64,13 @@ async def test_get_handle_retries(value, exception, mockserver):
 
 @pytest.mark.parametrize(
     ("retry_factory", "status", "waiter"),
-    (
+    [
         (RetryFactory, 429, "throttling"),
         (RetryFactory, 520, "temporary_download_error"),
         (AggressiveRetryFactory, 429, "throttling"),
         (AggressiveRetryFactory, 500, "undocumented_error"),
         (AggressiveRetryFactory, 520, "download_error"),
-    ),
+    ],
 )
 @pytest.mark.asyncio
 async def test_retry_wait(retry_factory, status, waiter, mockserver):
@@ -92,11 +92,11 @@ async def test_retry_wait(retry_factory, status, waiter, mockserver):
 
 
 @pytest.mark.parametrize(
-    ("retry_factory",),
-    (
-        (RetryFactory,),
-        (AggressiveRetryFactory,),
-    ),
+    "retry_factory",
+    [
+        RetryFactory,
+        AggressiveRetryFactory,
+    ],
 )
 @pytest.mark.asyncio
 async def test_retry_wait_network_error(retry_factory):
@@ -142,7 +142,7 @@ class fast_forward:
 
 @pytest.mark.parametrize(
     ("retrying", "outcomes", "exhausted"),
-    (
+    [
         # Shared behaviors of all retry policies
         *(
             (retrying, outcomes, exhausted)
@@ -433,7 +433,7 @@ class fast_forward:
                 ),
             )
         ),
-    ),
+    ],
 )
 @pytest.mark.asyncio
 @patch("time.monotonic")
@@ -465,6 +465,6 @@ async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
         await run()
     except Exception as outcome:
         assert exhausted
-        assert outcome is last_outcome
+        assert outcome is last_outcome  # noqa: PT017
     else:
         assert not exhausted

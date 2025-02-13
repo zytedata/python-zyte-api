@@ -1,7 +1,7 @@
 import json
-import os
 import subprocess
 from json import JSONDecodeError
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -14,55 +14,45 @@ from zyte_api.aio.errors import RequestError
 class MockRequestError(Exception):
     @property
     def parsed(self):
-        mock = Mock(
+        return Mock(
             response_body=Mock(decode=Mock(return_value=forbidden_domain_response()))
         )
-        return mock
 
 
 def get_json_content(file_object):
     if not file_object:
-        return
+        return None
 
     file_path = file_object.name
     try:
-        with open(file_path, "r") as file:
+        with Path(file_path).open() as file:
             return json.load(file)
     except JSONDecodeError:
         pass
 
 
-def delete_file(file_path):
-    try:
-        os.remove(file_path)
-        print(f"File '{file_path}' has been deleted successfully.")
-    except FileNotFoundError:
-        print(f"File '{file_path}' not found. Unable to delete.")
-
-
 def forbidden_domain_response():
-    response_str = {
+    return {
         "type": "/download/temporary-error",
         "title": "Temporary Downloading Error",
         "status": 520,
         "detail": "There is a downloading problem which might be temporary. Retry in N seconds from 'Retry-After' header or open a support ticket from https://support.zyte.com/support/tickets/new if it fails consistently.",
     }
-    return response_str
 
 
 async def fake_exception(value=True):
     # Simulating an error condition
     if value:
-        raise MockRequestError()
+        raise MockRequestError
 
     create_session_mock = AsyncMock()
     return await create_session_mock.coroutine()
 
 
 @pytest.mark.parametrize(
-    "queries,expected_response,store_errors,exception",
+    ("queries", "expected_response", "store_errors", "exception"),
     (
-        (
+        [
             # test if it stores the error(s) also by adding flag
             (
                 [
@@ -89,13 +79,13 @@ async def fake_exception(value=True):
                 False,
                 fake_exception,
             ),
-        )
+        ]
     ),
 )
 @pytest.mark.asyncio
 async def test_run(queries, expected_response, store_errors, exception):
-    tmp_path = "temporary_file.jsonl"
-    temporary_file = open(tmp_path, "w")
+    tmp_path = Path("temporary_file.jsonl")
+    temporary_file = tmp_path.open("w")
     n_conn = 5
     api_url = "https://example.com"
     api_key = "fake_key"
@@ -133,54 +123,58 @@ async def test_run(queries, expected_response, store_errors, exception):
         )
 
     assert get_json_content(temporary_file) == expected_response
-    os.unlink(tmp_path)
+    tmp_path.unlink()
 
 
 @pytest.mark.asyncio
 async def test_run_stop_on_errors_false(mockserver):
     queries = [{"url": "https://exception.example", "httpResponseBody": True}]
-    with NamedTemporaryFile("w") as output_file:
-        with pytest.warns(
+    with (
+        NamedTemporaryFile("w") as output_file,
+        pytest.warns(
             DeprecationWarning, match=r"^The stop_on_errors parameter is deprecated\.$"
-        ):
-            await run(
-                queries=queries,
-                out=output_file,
-                n_conn=1,
-                api_url=mockserver.urljoin("/"),
-                api_key="a",
-                stop_on_errors=False,
-            )
+        ),
+    ):
+        await run(
+            queries=queries,
+            out=output_file,
+            n_conn=1,
+            api_url=mockserver.urljoin("/"),
+            api_key="a",
+            stop_on_errors=False,
+        )
 
 
 @pytest.mark.asyncio
 async def test_run_stop_on_errors_true(mockserver):
     query = {"url": "https://exception.example", "httpResponseBody": True}
     queries = [query]
-    with NamedTemporaryFile("w") as output_file:
-        with pytest.warns(
+    with (
+        NamedTemporaryFile("w") as output_file,
+        pytest.warns(
             DeprecationWarning, match=r"^The stop_on_errors parameter is deprecated\.$"
-        ):
-            with pytest.raises(RequestError) as exc_info:
-                await run(
-                    queries=queries,
-                    out=output_file,
-                    n_conn=1,
-                    api_url=mockserver.urljoin("/"),
-                    api_key="a",
-                    stop_on_errors=True,
-                )
-            assert exc_info.value.query == query
+        ),
+        pytest.raises(RequestError) as exc_info,
+    ):
+        await run(
+            queries=queries,
+            out=output_file,
+            n_conn=1,
+            api_url=mockserver.urljoin("/"),
+            api_key="a",
+            stop_on_errors=True,
+        )
+    assert exc_info.value.query == query
 
 
 def _run(*, input, mockserver, cli_params=None):
-    cli_params = cli_params or tuple()
+    cli_params = cli_params or ()
     with NamedTemporaryFile("w") as url_list:
         url_list.write(input)
         url_list.flush()
         # Note: Using “python -m zyte_api” instead of “zyte-api” enables
         # coverage tracking to work.
-        result = subprocess.run(
+        return subprocess.run(
             [
                 "python",
                 "-m",
@@ -192,10 +186,9 @@ def _run(*, input, mockserver, cli_params=None):
                 url_list.name,
                 *cli_params,
             ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
+            check=False,
         )
-    return result
 
 
 def test_empty_input(mockserver):
