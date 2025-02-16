@@ -56,10 +56,6 @@ def _is_throttling_error(exc: BaseException) -> bool:
     return isinstance(exc, RequestError) and exc.status in (429, 503)
 
 
-def _is_temporary_download_error(exc: BaseException) -> bool:
-    return isinstance(exc, RequestError) and exc.status == 520
-
-
 class stop_on_count(stop_base):
     """Keep a call count with the specified counter name, and stop after the
     specified number os calls.
@@ -128,113 +124,6 @@ class stop_after_uninterrupted_delay(stop_base):
         return True
 
 
-class RetryFactory:
-    """Factory class that builds the :class:`tenacity.AsyncRetrying` object
-    that defines the :ref:`default retry policy <default-retry-policy>`.
-
-    To create a custom retry policy, you can subclass this factory class,
-    modify it as needed, and then call :meth:`build` on your subclass to get
-    the corresponding :class:`tenacity.AsyncRetrying` object.
-
-    For example, to double the number of attempts for :ref:`temporary
-    download errors <zapi-temporary-download-errors>` and the time network
-    errors are retried:
-
-    .. code-block:: python
-
-        from zyte_api import (
-            RetryFactory,
-            stop_after_uninterrupted_delay,
-            stop_on_count,
-        )
-
-
-        class CustomRetryFactory(RetryFactory):
-            network_error_stop = stop_after_uninterrupted_delay(30 * 60)
-            temporary_download_error_stop = stop_on_count(8)
-
-
-        CUSTOM_RETRY_POLICY = CustomRetryFactory().build()
-    """
-
-    retry_condition: retry_base = (
-        retry_if_exception(_is_throttling_error)
-        | retry_if_exception(_is_network_error)
-        | retry_if_exception(_is_temporary_download_error)
-    )
-    # throttling
-    throttling_wait = wait_chain(
-        # always wait 20-40s first
-        wait_fixed(20) + wait_random(0, 20),
-        # wait 20-40s again
-        wait_fixed(20) + wait_random(0, 20),
-        # wait from 30 to 630s, with full jitter and exponentially
-        # increasing max wait time
-        wait_fixed(30) + wait_random_exponential(multiplier=1, max=600),
-    )
-
-    # connection errors, other client and server failures
-    network_error_wait = (
-        # wait from 3s to ~1m
-        wait_random(3, 7) + wait_random_exponential(multiplier=1, max=55)
-    )
-    temporary_download_error_wait = network_error_wait
-    throttling_stop = stop_never
-    network_error_stop = stop_after_uninterrupted_delay(15 * 60)
-    temporary_download_error_stop = stop_on_count(4)
-
-    def wait(self, retry_state: RetryCallState) -> float:
-        assert retry_state.outcome, "Unexpected empty outcome"
-        exc = retry_state.outcome.exception()
-        assert exc, "Unexpected empty exception"
-        if _is_throttling_error(exc):
-            return self.throttling_wait(retry_state=retry_state)
-        if _is_network_error(exc):
-            return self.network_error_wait(retry_state=retry_state)
-        assert _is_temporary_download_error(exc)  # See retry_condition
-        return self.temporary_download_error_wait(retry_state=retry_state)
-
-    def stop(self, retry_state: RetryCallState) -> bool:
-        assert retry_state.outcome, "Unexpected empty outcome"
-        exc = retry_state.outcome.exception()
-        assert exc, "Unexpected empty exception"
-        if _is_throttling_error(exc):
-            return self.throttling_stop(retry_state)
-        if _is_network_error(exc):
-            return self.network_error_stop(retry_state)
-        assert _is_temporary_download_error(exc)  # See retry_condition
-        return self.temporary_download_error_stop(retry_state)
-
-    def reraise(self) -> bool:
-        return True
-
-    def build(self) -> AsyncRetrying:
-        return AsyncRetrying(
-            wait=self.wait,
-            retry=self.retry_condition,
-            stop=self.stop,
-            reraise=self.reraise(),
-            before=before_log(logger, logging.DEBUG),
-            after=after_log(logger, logging.DEBUG),
-            before_sleep=before_sleep_log(logger, logging.DEBUG),
-        )
-
-
-zyte_api_retrying: AsyncRetrying = RetryFactory().build()
-
-
-def _download_error(exc: BaseException) -> bool:
-    return isinstance(exc, RequestError) and exc.status in {520, 521}
-
-
-def _undocumented_error(exc: BaseException) -> bool:
-    return (
-        isinstance(exc, RequestError)
-        and exc.status >= 500
-        and exc.status not in {503, 520, 521}
-    )
-
-
 class stop_on_download_error(stop_base):
     """Stop after the specified max numbers of total or permanent download
     errors."""
@@ -255,6 +144,120 @@ class stop_on_download_error(stop_base):
                 return True
         retry_state.counter["download_error"] += 1  # type: ignore[attr-defined]
         return retry_state.counter["download_error"] >= self._max_total  # type: ignore[attr-defined]
+
+
+def _download_error(exc: BaseException) -> bool:
+    return isinstance(exc, RequestError) and exc.status in {520, 521}
+
+
+def _undocumented_error(exc: BaseException) -> bool:
+    return (
+        isinstance(exc, RequestError)
+        and exc.status >= 500
+        and exc.status not in {503, 520, 521}
+    )
+
+
+class RetryFactory:
+    """Factory class that builds the :class:`tenacity.AsyncRetrying` object
+    that defines the :ref:`default retry policy <default-retry-policy>`.
+
+    To create a custom retry policy, you can subclass this factory class,
+    modify it as needed, and then call :meth:`build` on your subclass to get
+    the corresponding :class:`tenacity.AsyncRetrying` object.
+
+    For example, to double the number of attempts for download errors and the
+    time network errors are retried:
+
+    .. code-block:: python
+
+        from zyte_api import (
+            RetryFactory,
+            stop_after_uninterrupted_delay,
+            stop_on_download_error,
+        )
+
+
+        class CustomRetryFactory(RetryFactory):
+            network_error_stop = stop_after_uninterrupted_delay(30 * 60)
+            download_error_stop = stop_on_download_error(max_total=8, max_permanent=4)
+
+
+        CUSTOM_RETRY_POLICY = CustomRetryFactory().build()
+    """
+
+    retry_condition: retry_base = (
+        retry_if_exception(_is_throttling_error)
+        | retry_if_exception(_is_network_error)
+        | retry_if_exception(_download_error)
+        | retry_if_exception(_undocumented_error)
+    )
+    # throttling
+    throttling_wait = wait_chain(
+        # always wait 20-40s first
+        wait_fixed(20) + wait_random(0, 20),
+        # wait 20-40s again
+        wait_fixed(20) + wait_random(0, 20),
+        # wait from 30 to 630s, with full jitter and exponentially
+        # increasing max wait time
+        wait_fixed(30) + wait_random_exponential(multiplier=1, max=600),
+    )
+
+    # connection errors, other client and server failures
+    network_error_wait = (
+        # wait from 3s to ~1m
+        wait_random(3, 7) + wait_random_exponential(multiplier=1, max=55)
+    )
+    download_error_wait = network_error_wait
+    throttling_stop = stop_never
+    network_error_stop = stop_after_uninterrupted_delay(15 * 60)
+    download_error_stop = stop_on_download_error(max_total=4, max_permanent=2)
+
+    undocumented_error_stop = stop_on_count(2)
+    undocumented_error_wait = network_error_wait
+
+    def wait(self, retry_state: RetryCallState) -> float:
+        assert retry_state.outcome, "Unexpected empty outcome"
+        exc = retry_state.outcome.exception()
+        assert exc, "Unexpected empty exception"
+        if _is_throttling_error(exc):
+            return self.throttling_wait(retry_state=retry_state)
+        if _is_network_error(exc):
+            return self.network_error_wait(retry_state=retry_state)
+        if _undocumented_error(exc):
+            return self.undocumented_error_wait(retry_state=retry_state)
+        assert _download_error(exc)  # See retry_condition
+        return self.download_error_wait(retry_state=retry_state)
+
+    def stop(self, retry_state: RetryCallState) -> bool:
+        assert retry_state.outcome, "Unexpected empty outcome"
+        exc = retry_state.outcome.exception()
+        assert exc, "Unexpected empty exception"
+        if _is_throttling_error(exc):
+            return self.throttling_stop(retry_state)
+        if _is_network_error(exc):
+            return self.network_error_stop(retry_state)
+        if _undocumented_error(exc):
+            return self.undocumented_error_stop(retry_state)
+        assert _download_error(exc)  # See retry_condition
+        return self.download_error_stop(retry_state)
+
+    def reraise(self) -> bool:
+        return True
+
+    def build(self) -> AsyncRetrying:
+        return AsyncRetrying(
+            wait=self.wait,
+            retry=self.retry_condition,
+            stop=self.stop,
+            reraise=self.reraise(),
+            before=before_log(logger, logging.DEBUG),
+            after=after_log(logger, logging.DEBUG),
+            before_sleep=before_sleep_log(logger, logging.DEBUG),
+        )
+
+
+zyte_api_retrying: AsyncRetrying = RetryFactory().build()
 
 
 class AggressiveRetryFactory(RetryFactory):
@@ -287,37 +290,8 @@ class AggressiveRetryFactory(RetryFactory):
         CUSTOM_RETRY_POLICY = CustomRetryFactory().build()
     """
 
-    retry_condition = (
-        RetryFactory.retry_condition
-        | retry_if_exception(_download_error)
-        | retry_if_exception(_undocumented_error)
-    )
-
     download_error_stop = stop_on_download_error(max_total=8, max_permanent=4)
-    download_error_wait = RetryFactory.temporary_download_error_wait
-
     undocumented_error_stop = stop_on_count(4)
-    undocumented_error_wait = RetryFactory.temporary_download_error_wait
-
-    def stop(self, retry_state: RetryCallState) -> bool:
-        assert retry_state.outcome, "Unexpected empty outcome"
-        exc = retry_state.outcome.exception()
-        assert exc, "Unexpected empty exception"
-        if _download_error(exc):
-            return self.download_error_stop(retry_state)
-        if _undocumented_error(exc):
-            return self.undocumented_error_stop(retry_state)
-        return super().stop(retry_state)
-
-    def wait(self, retry_state: RetryCallState) -> float:
-        assert retry_state.outcome, "Unexpected empty outcome"
-        exc = retry_state.outcome.exception()
-        assert exc, "Unexpected empty exception"
-        if _download_error(exc):
-            return self.download_error_wait(retry_state)
-        if _undocumented_error(exc):
-            return self.undocumented_error_wait(retry_state=retry_state)
-        return super().wait(retry_state)
 
 
 aggressive_retrying = AggressiveRetryFactory().build()

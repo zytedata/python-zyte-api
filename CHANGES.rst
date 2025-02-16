@@ -1,6 +1,19 @@
 Changes
 =======
 
+Unreleased
+----------
+
+* **Backward-incompatible:** Renamed some methods of
+  :class:`~.RetryFactory` for consistency, since they now handle both temporary
+  and permanent download errors:
+
+  * ``temporary_download_error_stop`` →
+    :meth:`~.RetryFactory.download_error_stop`
+
+  * ``temporary_download_error_wait`` →
+    :meth:`~.RetryFactory.download_error_wait`
+
 0.6.0 (2024-05-29)
 ------------------
 

@@ -148,14 +148,20 @@ retries for :ref:`rate-limiting <zapi-rate-limit>` and :ref:`unsuccessful
 .. _default-retry-policy:
 
 The default retry policy, :data:`~zyte_api.zyte_api_retrying`, does the
-following:
+following for each request:
 
 -   Retries :ref:`rate-limiting responses <zapi-rate-limit>` forever.
 
--   Retries :ref:`temporary download errors
-    <zapi-temporary-download-errors>` up to 3 times.
+-   Retries :ref:`temporary download errors <zapi-temporary-download-errors>`
+    up to 3 times. :ref:`Permanent download errors
+    <zapi-permanent-download-errors>` also count towards this retry limit.
+
+-   Retries permanent download errors once.
 
 -   Retries network errors until they have happened for 15 minutes straight.
+
+-   Retries error responses with an HTTP status code in the 500-599 range (503,
+    520 and 521 excluded) once.
 
 All retries are done with an exponential backoff algorithm.
 
@@ -163,17 +169,8 @@ All retries are done with an exponential backoff algorithm.
 
 If some :ref:`unsuccessful responses <zapi-unsuccessful-responses>` exceed
 maximum retries with the default retry policy, try using
-:data:`~zyte_api.aggressive_retrying` instead, which modifies the default retry
-policy as follows:
-
--   Temporary download error are retried 7 times. :ref:`Permanent download
-    errors <zapi-permanent-download-errors>` also count towards this retry
-    limit.
-
--   Retries permanent download errors up to 3 times.
-
--   Retries error responses with an HTTP status code in the 500-599 range (503,
-    520 and 521 excluded) up to 3 times.
+:data:`~zyte_api.aggressive_retrying` instead, which doubles attempts for
+all retry scenarios.
 
 Alternatively, the reference documentation of :class:`~zyte_api.RetryFactory`
 and :class:`~zyte_api.AggressiveRetryFactory` features some examples of custom

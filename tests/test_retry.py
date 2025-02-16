@@ -66,7 +66,7 @@ async def test_get_handle_retries(value, exception, mockserver):
     ("retry_factory", "status", "waiter"),
     [
         (RetryFactory, 429, "throttling"),
-        (RetryFactory, 520, "temporary_download_error"),
+        (RetryFactory, 520, "download_error"),
         (AggressiveRetryFactory, 429, "throttling"),
         (AggressiveRetryFactory, 500, "undocumented_error"),
         (AggressiveRetryFactory, 520, "download_error"),
@@ -138,6 +138,14 @@ FOREVER_TIMES = 100
 class fast_forward:
     def __init__(self, time):
         self.time = time
+
+
+class scale:
+    def __init__(self, factor):
+        self.factor = factor
+
+    def __call__(self, number, add=0):
+        return int(number * self.factor) + add
 
 
 @pytest.mark.parametrize(
@@ -237,81 +245,36 @@ class fast_forward:
                 ),
             )
         ),
-        # Behaviors specific to the default retry policy
+        # Scaled behaviors, where the default retry policy uses half as many
+        # attempts as the aggressive retry policy.
         *(
-            (zyte_api_retrying, outcomes, exhausted)
-            for outcomes, exhausted in (
-                # Temporary download errors are retried until they have
-                # happened 4 times in total.
-                (
-                    (mock_request_error(status=520),) * 3,
-                    False,
-                ),
-                (
-                    (mock_request_error(status=520),) * 4,
-                    True,
-                ),
-                (
-                    (
-                        *(mock_request_error(status=429),) * 2,
-                        mock_request_error(status=520),
-                    ),
-                    False,
-                ),
-                (
-                    (
-                        *(mock_request_error(status=429),) * 3,
-                        mock_request_error(status=520),
-                    ),
-                    False,
-                ),
-                (
-                    (
-                        *(
-                            mock_request_error(status=429),
-                            mock_request_error(status=520),
-                        )
-                        * 3,
-                    ),
-                    False,
-                ),
-                (
-                    (
-                        *(
-                            mock_request_error(status=429),
-                            mock_request_error(status=520),
-                        )
-                        * 4,
-                    ),
-                    True,
-                ),
+            (retrying, outcomes, exhausted)
+            for retrying, scaled in (
+                (zyte_api_retrying, scale(0.5)),
+                (aggressive_retrying, scale(1)),
             )
-        ),
-        # Behaviors specific to the aggressive retry policy
-        *(
-            (aggressive_retrying, outcomes, exhausted)
             for outcomes, exhausted in (
                 # Temporary download errors are retried until they have
-                # happened 8 times in total. Permanent download errors also
-                # count towards that limit.
+                # happened 8*factor times in total. Permanent download errors
+                # also count towards that limit.
                 (
-                    (mock_request_error(status=520),) * 7,
+                    (mock_request_error(status=520),) * scaled(8, -1),
                     False,
                 ),
                 (
-                    (mock_request_error(status=520),) * 8,
+                    (mock_request_error(status=520),) * scaled(8),
                     True,
                 ),
                 (
                     (
-                        *(mock_request_error(status=429),) * 6,
+                        *(mock_request_error(status=429),) * scaled(8, -2),
                         mock_request_error(status=520),
                     ),
                     False,
                 ),
                 (
                     (
-                        *(mock_request_error(status=429),) * 7,
+                        *(mock_request_error(status=429),) * scaled(8, -1),
                         mock_request_error(status=520),
                     ),
                     False,
@@ -322,7 +285,7 @@ class fast_forward:
                             mock_request_error(status=429),
                             mock_request_error(status=520),
                         )
-                        * 7,
+                        * scaled(8, -1),
                     ),
                     False,
                 ),
@@ -332,13 +295,13 @@ class fast_forward:
                             mock_request_error(status=429),
                             mock_request_error(status=520),
                         )
-                        * 8,
+                        * scaled(8),
                     ),
                     True,
                 ),
                 (
                     (
-                        *(mock_request_error(status=520),) * 5,
+                        *(mock_request_error(status=520),) * scaled(8, -3),
                         *(mock_request_error(status=521),) * 1,
                         *(mock_request_error(status=520),) * 1,
                     ),
@@ -346,7 +309,7 @@ class fast_forward:
                 ),
                 (
                     (
-                        *(mock_request_error(status=520),) * 6,
+                        *(mock_request_error(status=520),) * scaled(8, -2),
                         *(mock_request_error(status=521),) * 1,
                         *(mock_request_error(status=520),) * 1,
                     ),
@@ -354,29 +317,30 @@ class fast_forward:
                 ),
                 (
                     (
-                        *(mock_request_error(status=520),) * 6,
+                        *(mock_request_error(status=520),) * scaled(8, -2),
                         *(mock_request_error(status=521),) * 1,
                     ),
                     False,
                 ),
                 (
                     (
-                        *(mock_request_error(status=520),) * 7,
+                        *(mock_request_error(status=520),) * scaled(8, -1),
                         *(mock_request_error(status=521),) * 1,
                     ),
                     True,
                 ),
                 # Permanent download errors are retried until they have
-                # happened 4 times in total.
+                # happened 4*factor times in total.
                 (
-                    (*(mock_request_error(status=521),) * 3,),
+                    (*(mock_request_error(status=521),) * scaled(4, -1),),
                     False,
                 ),
                 (
-                    (*(mock_request_error(status=521),) * 4,),
+                    (*(mock_request_error(status=521),) * scaled(4),),
                     True,
                 ),
-                # Undocumented 5xx errors are retried up to 3 times.
+                # Undocumented 5xx errors are retried until they have happened
+                # 4*factor times.
                 *(
                     scenario
                     for status in (
@@ -386,16 +350,16 @@ class fast_forward:
                     )
                     for scenario in (
                         (
-                            (*(mock_request_error(status=status),) * 3,),
+                            (*(mock_request_error(status=status),) * scaled(4, -1),),
                             False,
                         ),
                         (
-                            (*(mock_request_error(status=status),) * 4,),
+                            (*(mock_request_error(status=status),) * scaled(4),),
                             True,
                         ),
                         (
                             (
-                                *(mock_request_error(status=status),) * 2,
+                                *(mock_request_error(status=status),) * scaled(4, -2),
                                 mock_request_error(status=429),
                                 mock_request_error(status=503),
                                 ServerConnectionError(),
@@ -405,7 +369,7 @@ class fast_forward:
                         ),
                         (
                             (
-                                *(mock_request_error(status=status),) * 3,
+                                *(mock_request_error(status=status),) * scaled(4, -1),
                                 mock_request_error(status=429),
                                 mock_request_error(status=503),
                                 ServerConnectionError(),
@@ -415,17 +379,15 @@ class fast_forward:
                         ),
                         (
                             (
-                                mock_request_error(status=status),
                                 mock_request_error(status=555),
-                                mock_request_error(status=status),
+                                *(mock_request_error(status=status),) * scaled(4, -2),
                             ),
                             False,
                         ),
                         (
                             (
-                                mock_request_error(status=status),
                                 mock_request_error(status=555),
-                                *(mock_request_error(status=status),) * 2,
+                                *(mock_request_error(status=status),) * scaled(4, -1),
                             ),
                             True,
                         ),
@@ -464,7 +426,7 @@ async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
     try:
         await run()
     except Exception as outcome:
-        assert exhausted
+        assert exhausted, outcome  # noqa: PT017
         assert outcome is last_outcome  # noqa: PT017
     else:
         assert not exhausted
