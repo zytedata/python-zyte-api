@@ -134,16 +134,16 @@ class stop_on_download_error(stop_base):
 
     def __call__(self, retry_state: RetryCallState) -> bool:
         if not hasattr(retry_state, "counter"):
-            retry_state.counter = Counter()
+            retry_state.counter = Counter()  # type: ignore[attr-defined]
         assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
         assert exc, "Unexpected empty exception"
-        if exc.status == 521:
-            retry_state.counter["permanent_download_error"] += 1
-            if retry_state.counter["permanent_download_error"] >= self._max_permanent:
+        if exc.status == 521:  # type: ignore[attr-defined]
+            retry_state.counter["permanent_download_error"] += 1  # type: ignore[attr-defined]
+            if retry_state.counter["permanent_download_error"] >= self._max_permanent:  # type: ignore[attr-defined]
                 return True
-        retry_state.counter["download_error"] += 1
-        return retry_state.counter["download_error"] >= self._max_total
+        retry_state.counter["download_error"] += 1  # type: ignore[attr-defined]
+        return retry_state.counter["download_error"] >= self._max_total  # type: ignore[attr-defined]
 
 
 def _download_error(exc: BaseException) -> bool:
