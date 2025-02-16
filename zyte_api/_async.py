@@ -4,7 +4,7 @@ import asyncio
 import time
 from asyncio import Future
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any
 
 import aiohttp
 from tenacity import AsyncRetrying
@@ -18,15 +18,16 @@ from .stats import AggStats, ResponseStats
 from .utils import USER_AGENT, _process_query
 
 if TYPE_CHECKING:
-    _ResponseFuture = Future[Dict[str, Any]]
+    from collections.abc import Iterator
+
+    _ResponseFuture = Future[dict[str, Any]]
 
 
 def _post_func(session):
     """Return a function to send a POST request"""
     if session is None:
         return partial(aiohttp.request, method="POST", timeout=_AIO_API_TIMEOUT)
-    else:
-        return session.post
+    return session.post
 
 
 class _AsyncSession:
@@ -49,7 +50,7 @@ class _AsyncSession:
         *,
         endpoint: str = "extract",
         handle_retries=True,
-        retrying: Optional[AsyncRetrying] = None,
+        retrying: AsyncRetrying | None = None,
     ):
         return await self._client.get(
             query=query,
@@ -61,11 +62,11 @@ class _AsyncSession:
 
     def iter(
         self,
-        queries: List[dict],
+        queries: list[dict],
         *,
         endpoint: str = "extract",
         handle_retries=True,
-        retrying: Optional[AsyncRetrying] = None,
+        retrying: AsyncRetrying | None = None,
     ) -> Iterator[Future]:
         return self._client.iter(
             queries=queries,
@@ -88,8 +89,8 @@ class AsyncZyteAPI:
         api_key=None,
         api_url=API_URL,
         n_conn=15,
-        retrying: Optional[AsyncRetrying] = None,
-        user_agent: Optional[str] = None,
+        retrying: AsyncRetrying | None = None,
+        user_agent: str | None = None,
     ):
         if retrying is not None and not isinstance(retrying, AsyncRetrying):
             raise ValueError(
@@ -111,7 +112,7 @@ class AsyncZyteAPI:
         endpoint: str = "extract",
         session=None,
         handle_retries=True,
-        retrying: Optional[AsyncRetrying] = None,
+        retrying: AsyncRetrying | None = None,
     ) -> _ResponseFuture:
         """Asynchronous equivalent to :meth:`ZyteAPI.get`."""
         retrying = retrying or self.retrying
@@ -127,36 +128,35 @@ class AsyncZyteAPI:
             self.agg_stats.n_attempts += 1
 
             safe_query = _process_query(query)
-            post_kwargs = dict(
-                url=self.api_url + endpoint,
-                json=safe_query,
-                auth=auth,
-                headers=headers,
-            )
+            post_kwargs = {
+                "url": self.api_url + endpoint,
+                "json": safe_query,
+                "auth": auth,
+                "headers": headers,
+            }
 
             try:
-                async with self._semaphore:
-                    async with post(**post_kwargs) as resp:
-                        stats.record_connected(resp.status, self.agg_stats)
-                        if resp.status >= 400:
-                            content = await resp.read()
-                            resp.release()
-                            stats.record_read()
-                            stats.record_request_error(content, self.agg_stats)
+                async with self._semaphore, post(**post_kwargs) as resp:
+                    stats.record_connected(resp.status, self.agg_stats)
+                    if resp.status >= 400:
+                        content = await resp.read()
+                        resp.release()
+                        stats.record_read()
+                        stats.record_request_error(content, self.agg_stats)
 
-                            raise RequestError(
-                                request_info=resp.request_info,
-                                history=resp.history,
-                                status=resp.status,
-                                message=resp.reason,
-                                headers=resp.headers,
-                                response_content=content,
-                                query=safe_query,
-                            )
+                        raise RequestError(
+                            request_info=resp.request_info,
+                            history=resp.history,
+                            status=resp.status,
+                            message=resp.reason,
+                            headers=resp.headers,
+                            response_content=content,
+                            query=safe_query,
+                        )
 
-                        response = await resp.json()
-                        stats.record_read(self.agg_stats)
-                        return response
+                    response = await resp.json()
+                    stats.record_read(self.agg_stats)
+                    return response
             except Exception as e:
                 if not isinstance(e, RequestError):
                     self.agg_stats.n_errors += 1
@@ -180,12 +180,12 @@ class AsyncZyteAPI:
 
     def iter(
         self,
-        queries: List[dict],
+        queries: list[dict],
         *,
         endpoint: str = "extract",
-        session: Optional[aiohttp.ClientSession] = None,
+        session: aiohttp.ClientSession | None = None,
         handle_retries=True,
-        retrying: Optional[AsyncRetrying] = None,
+        retrying: AsyncRetrying | None = None,
     ) -> Iterator[_ResponseFuture]:
         """Asynchronous equivalent to :meth:`ZyteAPI.iter`.
 

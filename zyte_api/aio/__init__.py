@@ -15,4 +15,5 @@ warn(
         "zyte_api.zyte_api_retrying."
     ),
     DeprecationWarning,
+    stacklevel=2,
 )

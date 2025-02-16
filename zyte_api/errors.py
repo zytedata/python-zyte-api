@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from typing import Optional
 
@@ -22,7 +24,7 @@ class ParsedError:
     parse_error: Optional[str]
 
     @classmethod
-    def from_body(cls, response_body: bytes) -> "ParsedError":
+    def from_body(cls, response_body: bytes) -> ParsedError:
         """Return a :class:`ParsedError` object built out of the specified
         error response body."""
         data = None
@@ -34,7 +36,7 @@ class ParsedError:
                 if not isinstance(data, dict):
                     parse_error = "bad_format"
                     data = None
-            except (json.JSONDecodeError, UnicodeDecodeError) as _:  # noqa: F841
+            except (json.JSONDecodeError, UnicodeDecodeError) as _:
                 parse_error = "bad_json"
 
         return cls(response_body=response_body, data=data, parse_error=parse_error)

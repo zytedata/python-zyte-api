@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 from collections import Counter
@@ -66,13 +68,11 @@ class stop_on_count(stop_base):
         self._max_count = max_count
         self._counter_id = next(_IDS)
 
-    def __call__(self, retry_state: "RetryCallState") -> bool:
+    def __call__(self, retry_state: RetryCallState) -> bool:
         if not hasattr(retry_state, "counter"):
-            retry_state.counter = Counter()  # type: ignore
-        retry_state.counter[self._counter_id] += 1  # type: ignore
-        if retry_state.counter[self._counter_id] >= self._max_count:  # type: ignore
-            return True
-        return False
+            retry_state.counter = Counter()  # type: ignore[attr-defined]
+        retry_state.counter[self._counter_id] += 1  # type: ignore[attr-defined]
+        return retry_state.counter[self._counter_id] >= self._max_count  # type: ignore[attr-defined]
 
 
 time_unit_type = Union[int, float, timedelta]
@@ -96,30 +96,30 @@ class stop_after_uninterrupted_delay(stop_base):
         self._max_delay = to_seconds(max_delay)
         self._timer_id = next(_IDS)
 
-    def __call__(self, retry_state: "RetryCallState") -> bool:
+    def __call__(self, retry_state: RetryCallState) -> bool:
         if not hasattr(retry_state, "uninterrupted_start_times"):
-            retry_state.uninterrupted_start_times = {}  # type: ignore
-        if self._timer_id not in retry_state.uninterrupted_start_times:  # type: ignore
+            retry_state.uninterrupted_start_times = {}  # type: ignore[attr-defined]
+        if self._timer_id not in retry_state.uninterrupted_start_times:  # type: ignore[attr-defined]
             # First time.
-            retry_state.uninterrupted_start_times[self._timer_id] = [  # type: ignore
+            retry_state.uninterrupted_start_times[self._timer_id] = [  # type: ignore[attr-defined]
                 retry_state.attempt_number,
                 retry_state.outcome_timestamp,
             ]
             return False
-        attempt_number, start_time = retry_state.uninterrupted_start_times[  # type: ignore
+        attempt_number, start_time = retry_state.uninterrupted_start_times[  # type: ignore[attr-defined]
             self._timer_id
         ]
         if retry_state.attempt_number - attempt_number > 1:
             # There was a different stop reason since the last attempt,
             # resetting the timer.
-            retry_state.uninterrupted_start_times[self._timer_id] = [  # type: ignore
+            retry_state.uninterrupted_start_times[self._timer_id] = [  # type: ignore[attr-defined]
                 retry_state.attempt_number,
                 retry_state.outcome_timestamp,
             ]
             return False
         if retry_state.outcome_timestamp - start_time < self._max_delay:
             # Within time, do not stop, only increase the attempt count.
-            retry_state.uninterrupted_start_times[self._timer_id][0] += 1  # type: ignore
+            retry_state.uninterrupted_start_times[self._timer_id][0] += 1  # type: ignore[attr-defined]
             return False
         return True
 
@@ -132,20 +132,18 @@ class stop_on_download_error(stop_base):
         self._max_total = max_total
         self._max_permanent = max_permanent
 
-    def __call__(self, retry_state: "RetryCallState") -> bool:
+    def __call__(self, retry_state: RetryCallState) -> bool:
         if not hasattr(retry_state, "counter"):
-            retry_state.counter = Counter()  # type: ignore
+            retry_state.counter = Counter()
         assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
         assert exc, "Unexpected empty exception"
-        if exc.status == 521:  # type: ignore
-            retry_state.counter["permanent_download_error"] += 1  # type: ignore
-            if retry_state.counter["permanent_download_error"] >= self._max_permanent:  # type: ignore
+        if exc.status == 521:
+            retry_state.counter["permanent_download_error"] += 1
+            if retry_state.counter["permanent_download_error"] >= self._max_permanent:
                 return True
-        retry_state.counter["download_error"] += 1  # type: ignore
-        if retry_state.counter["download_error"] >= self._max_total:  # type: ignore
-            return True
-        return False
+        retry_state.counter["download_error"] += 1
+        return retry_state.counter["download_error"] >= self._max_total
 
 
 def _download_error(exc: BaseException) -> bool:
@@ -209,8 +207,7 @@ class RetryFactory:
     # connection errors, other client and server failures
     network_error_wait = (
         # wait from 3s to ~1m
-        wait_random(3, 7)
-        + wait_random_exponential(multiplier=1, max=55)
+        wait_random(3, 7) + wait_random_exponential(multiplier=1, max=55)
     )
     temporary_download_error_wait = network_error_wait
     throttling_stop = stop_never

@@ -90,11 +90,11 @@ multiple requests in parallel:
 
     import asyncio
 
-    from zyte_api import ZyteAPI, RequestError
+    from zyte_api import AsyncZyteAPI, RequestError
 
 
     async def main():
-        client = ZyteAPI()
+        client = AsyncZyteAPI()
         async with client.session() as session:
             queries = [
                 {"url": "https://toscrape.com", "httpResponseBody": True},

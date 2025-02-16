@@ -6,7 +6,7 @@ import time
 from base64 import b64encode
 from importlib import import_module
 from subprocess import PIPE, Popen
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlparse
 
 from twisted.internet import reactor
@@ -119,7 +119,7 @@ class DefaultResource(Resource):
             request.setResponseCode(500)
             return b'["foo"]'
 
-        response_data: Dict[str, Any] = {
+        response_data: dict[str, Any] = {
             "url": url,
         }
 
@@ -137,11 +137,11 @@ class DefaultResource(Resource):
 class MockServer:
     def __init__(self, resource=None, port=None):
         resource = resource or DefaultResource
-        self.resource = "{}.{}".format(resource.__module__, resource.__name__)
+        self.resource = f"{resource.__module__}.{resource.__name__}"
         self.proc = None
         self.host = socket.gethostbyname(socket.gethostname())
         self.port = port or get_ephemeral_port()
-        self.root_url = "http://%s:%d" % (self.host, self.port)
+        self.root_url = f"http://{self.host}:{self.port}"
 
     def __enter__(self):
         self.proc = Popen(
@@ -183,11 +183,7 @@ def main():
 
     def print_listening():
         host = http_port.getHost()
-        print(
-            "Mock server {} running at http://{}:{}".format(
-                resource, host.host, host.port
-            )
-        )
+        print(f"Mock server {resource} running at http://{host.host}:{host.port}")
 
     # Typing issue: https://github.com/twisted/twisted/issues/9909
     reactor.callWhenRunning(print_listening)  # type: ignore[attr-defined]

@@ -1,6 +1,5 @@
 import pytest
 from aiohttp import TCPConnector
-from pytest import raises
 
 from zyte_api._utils import create_session
 from zyte_api.utils import _guess_intype, _process_query
@@ -16,8 +15,8 @@ async def test_create_session_custom_connector():
 
 
 @pytest.mark.parametrize(
-    "file_name,first_line,expected",
-    (
+    ("file_name", "first_line", "expected"),
+    [
         (
             "<stdin>",
             "https://toscrape.com",
@@ -63,15 +62,15 @@ async def test_create_session_custom_connector():
             '{"url": "https://toscrape.com"}',
             "jl",
         ),
-    ),
+    ],
 )
 def test_guess_intype(file_name, first_line, expected):
     assert _guess_intype(file_name, [first_line]) == expected
 
 
 @pytest.mark.parametrize(
-    "input,output",
-    (
+    ("input", "output"),
+    [
         # Unsafe URLs in the url field are modified, while left untouched on
         # other fields.
         (
@@ -103,14 +102,14 @@ def test_guess_intype(file_name, first_line, expected):
         ),
         # NOTE: We use w3lib.url.safe_url_string for escaping. Tests covering
         # the URL escaping logic exist upstream.
-    ),
+    ],
 )
 def test_process_query(input, output):
     assert _process_query(input) == output
 
 
 def test_process_query_bytes():
-    with raises(ValueError):
+    with pytest.raises(ValueError, match="Expected a str URL parameter"):
         _process_query({"url": b"https://example.com"})
 
 
