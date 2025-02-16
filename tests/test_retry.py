@@ -66,7 +66,7 @@ async def test_get_handle_retries(value, exception, mockserver):
     ("retry_factory", "status", "waiter"),
     [
         (RetryFactory, 429, "throttling"),
-        (RetryFactory, 520, "temporary_download_error"),
+        (RetryFactory, 520, "download_error"),
         (AggressiveRetryFactory, 429, "throttling"),
         (AggressiveRetryFactory, 500, "undocumented_error"),
         (AggressiveRetryFactory, 520, "download_error"),
