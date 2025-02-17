@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="zyte-api",
-    version="0.6.0",
+    version="0.7.0",
     description="Python interface to Zyte API",
     long_description=Path("README.rst").read_text(encoding="utf-8"),
     long_description_content_type="text/x-rst",
