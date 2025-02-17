@@ -1,18 +1,34 @@
 Changes
 =======
 
-Unreleased
-----------
+0.7.0 (unreleased)
+------------------
 
-* **Backward-incompatible:** Renamed some methods of
-  :class:`~.RetryFactory` for consistency, since they now handle both temporary
-  and permanent download errors:
+* Dropped support for Python 3.8, added support for Python 3.12 and 3.13.
+
+* Renamed some methods of :class:`~.RetryFactory` for consistency, since they
+  now handle both temporary and permanent download errors:
 
   * ``temporary_download_error_stop`` →
     :meth:`~.RetryFactory.download_error_stop`
 
   * ``temporary_download_error_wait`` →
     :meth:`~.RetryFactory.download_error_wait`
+
+* Made the :ref:`default retry policy <default-retry-policy>` behave like the
+  :ref:`aggressive retry policy <aggressive-retry-policy>`, but with half the
+  retry attempts:
+
+  * :ref:`Permanent download errors <zapi-permanent-download-errors>` now also
+    count towards the retry limit of :ref:`temporary download errors
+    <zapi-temporary-download-errors>`.
+
+  * Permanent download errors are now retried once.
+
+  * Error responses with an HTTP status code in the 500-599 range (503, 520 and
+    521 excluded) are now retried once.
+
+* Fixed the session example of the :ref:`async API <asyncio_api>`.
 
 0.6.0 (2024-05-29)
 ------------------
