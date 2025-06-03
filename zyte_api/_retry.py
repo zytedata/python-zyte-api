@@ -5,7 +5,8 @@ import logging
 from collections import Counter
 from datetime import timedelta
 from itertools import count
-from typing import Union
+from typing import Callable, Union
+from warnings import warn
 
 from aiohttp import client_exceptions
 from tenacity import (
@@ -158,6 +159,14 @@ def _undocumented_error(exc: BaseException) -> bool:
     )
 
 
+def _deprecated(message: str, callable: Callable) -> Callable:
+    def wrapper(factory, retry_state: RetryCallState):
+        warn(message, DeprecationWarning, stacklevel=3)
+        return callable(retry_state=retry_state)
+
+    return wrapper
+
+
 class RetryFactory:
     """Factory class that builds the :class:`tenacity.AsyncRetrying` object
     that defines the :ref:`default retry policy <default-retry-policy>`.
@@ -204,14 +213,33 @@ class RetryFactory:
     )
 
     # connection errors, other client and server failures
+    network_error_stop = stop_after_uninterrupted_delay(15 * 60)
     network_error_wait = (
         # wait from 3s to ~1m
         wait_random(3, 7) + wait_random_exponential(multiplier=1, max=55)
     )
-    download_error_wait = network_error_wait
-    throttling_stop = stop_never
-    network_error_stop = stop_after_uninterrupted_delay(15 * 60)
+
     download_error_stop = stop_on_download_error(max_total=4, max_permanent=2)
+    download_error_wait = network_error_wait
+
+    temporary_download_error_stop = _deprecated(
+        (
+            "The zyte_api.RetryFactory.temporary_download_error_stop() method "
+            "is deprecated and will be removed in a future version. Use "
+            "download_error_stop() instead."
+        ),
+        download_error_stop,
+    )
+    temporary_download_error_wait = _deprecated(
+        (
+            "The zyte_api.RetryFactory.temporary_download_error_wait() method "
+            "is deprecated and will be removed in a future version. Use "
+            "download_error_wait() instead."
+        ),
+        download_error_wait,
+    )
+
+    throttling_stop = stop_never
 
     undocumented_error_stop = stop_on_count(2)
     undocumented_error_wait = network_error_wait
