@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from aiohttp.client_exceptions import ServerConnectionError
-from tenacity import AsyncRetrying
+from tenacity import AsyncRetrying, RetryCallState
 
 from zyte_api import (
     AggressiveRetryFactory,
@@ -430,3 +430,33 @@ async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
         assert outcome is last_outcome  # noqa: PT017
     else:
         assert not exhausted
+
+
+@pytest.mark.asyncio
+async def test_deprecated_temporary_download_error():
+    class CustomRetryFactory(RetryFactory):
+        def wait(self, retry_state: RetryCallState) -> float:
+            self.temporary_download_error_wait(retry_state=retry_state)
+            return 0.0
+
+        def stop(self, retry_state: RetryCallState) -> bool:
+            self.temporary_download_error_stop(retry_state)
+            return super().stop(retry_state)
+
+    retrying = CustomRetryFactory().build()
+
+    outcomes = deque((mock_request_error(status=520), None))
+
+    async def run():
+        outcome = outcomes.popleft()
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+    run = retrying.wraps(run)
+    with (
+        pytest.warns(DeprecationWarning, match="temporary_download_error_stop"),
+        pytest.warns(DeprecationWarning, match="temporary_download_error_wait"),
+    ):
+        await run()
+    assert not outcomes
