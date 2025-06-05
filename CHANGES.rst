@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.7.1 (unreleased)
+0.7.1 (2025-06-05)
 ------------------
 
 * Restored and deprecated the ``temporary_download_error_stop()`` and
