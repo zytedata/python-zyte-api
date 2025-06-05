@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.7.1 (unreleased)
+------------------
+
+* Restored and deprecated the ``temporary_download_error_stop()`` and
+  ``temporary_download_error_wait()`` methods of :class:`~.RetryFactory` for
+  backwards compatibility.
+
 0.7.0 (2025-02-17)
 ------------------
 
@@ -9,10 +16,10 @@ Changes
 * Renamed some methods of :class:`~.RetryFactory` for consistency, since they
   now handle both temporary and permanent download errors:
 
-  * ``temporary_download_error_stop`` →
+  * ``temporary_download_error_stop()`` →
     :meth:`~.RetryFactory.download_error_stop`
 
-  * ``temporary_download_error_wait`` →
+  * ``temporary_download_error_wait()`` →
     :meth:`~.RetryFactory.download_error_wait`
 
 * Made the :ref:`default retry policy <default-retry-policy>` behave like the
