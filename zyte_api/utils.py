@@ -1,3 +1,4 @@
+import base64
 import re
 from pathlib import Path
 
@@ -19,6 +20,11 @@ def _guess_intype(file_name, lines):
         return "jl"
 
     return "txt"
+
+
+def _decode_raw_response(response):
+    raw = base64.b64decode(response["httpResponseBody"])
+    return raw.decode("utf-8")
 
 
 def _process_query(query):
