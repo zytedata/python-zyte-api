@@ -14,8 +14,8 @@ from tenacity import retry_if_exception
 from zyte_api._async import AsyncZyteAPI
 from zyte_api._retry import RetryFactory, _is_throttling_error
 from zyte_api._utils import create_session
-from zyte_api.constants import API_URL
-from zyte_api.utils import _guess_intype
+from zyte_api.constants import API_URL, URLConstant
+from zyte_api.utils import _decode_raw_response, _guess_intype
 
 
 class DontRetryErrorsFactory(RetryFactory):
@@ -37,6 +37,7 @@ async def run(
     api_key=None,
     retry_errors=True,
     store_errors=None,
+    raw_html_resp=False,
 ):
     if stop_on_errors is not _UNSET:
         warn(
@@ -48,6 +49,12 @@ async def run(
         stop_on_errors = False
 
     def write_output(content):
+        if raw_html_resp:
+            if content.get("httpResponseBody"):
+                raw_html = _decode_raw_response(content)
+                content["httpResponseBody"] = raw_html
+            else:
+                raise ValueError("Response does not contain 'httpResponseBody' field")
         json.dump(content, out, ensure_ascii=False)
         out.write("\n")
         out.flush()
@@ -90,7 +97,7 @@ async def run(
     logger.info(f"\nException types:\n{client.agg_stats.exception_types.most_common()}")
 
 
-def read_input(input_fp, intype):
+def read_input(input_fp, intype, url_params):
     assert intype in {"txt", "jl", _UNSET}
     lines = input_fp.readlines()
     if not lines:
@@ -99,7 +106,7 @@ def read_input(input_fp, intype):
         intype = _guess_intype(input_fp.name, lines)
     if intype == "txt":
         urls = [u.strip() for u in lines if u.strip()]
-        records = [{"url": url, "browserHtml": True} for url in urls]
+        records = [{"url": url, **json.loads(url_params)} for url in urls]
     else:
         records = [json.loads(line.strip()) for line in lines if line.strip()]
     # Automatically replicating the url in echoData to being able to
@@ -162,6 +169,20 @@ def _get_argument_parser(program_name="zyte-api"):
         "--api-url", help="Zyte API endpoint (default: %(default)s).", default=API_URL
     )
     p.add_argument(
+        "--url-params",
+        "-p",
+        default=f'{{"{URLConstant.BROWSER_RESPONSE.value}": true}}',
+        choices=[
+            json.dumps({URLConstant.BROWSER_RESPONSE.value: True}),
+            json.dumps({URLConstant.HTTP_RAW_RESPONSE.value: True}),
+        ],
+        type=str,
+        help=(
+            "Zyte API response parameter (default: %(default)s). \n"
+            "Receieve response either as a raw HTML page or a browser rendered HTML page."
+        ),
+    )
+    p.add_argument(
         "--loglevel",
         "-L",
         default="INFO",
@@ -196,7 +217,7 @@ def _main(program_name="zyte-api"):
     args = p.parse_args()
     logging.basicConfig(stream=sys.stderr, level=getattr(logging, args.loglevel))
 
-    queries = read_input(args.INPUT, args.intype)
+    queries = read_input(args.INPUT, args.intype, args.url_params)
     if not queries:
         print("No input queries found. Is the input file empty?", file=sys.stderr)
         sys.exit(-1)
@@ -220,6 +241,7 @@ def _main(program_name="zyte-api"):
         api_key=args.api_key,
         retry_errors=not args.dont_retry_errors,
         store_errors=args.store_errors,
+        raw_html_resp=(args.url_params == '{"httpResponseBody": true}'),
     )
     loop.run_until_complete(coro)
     loop.close()
