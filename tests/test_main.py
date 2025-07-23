@@ -12,6 +12,7 @@ from zyte_api.__main__ import run
 from zyte_api.aio.errors import RequestError
 
 from .test_x402 import HAS_X402
+from .test_x402 import KEY as ETH_KEY
 
 
 class MockRequestError(Exception):
@@ -330,3 +331,23 @@ def test_env_key(mockserver):
             env={**environ, "ZYTE_API_KEY": "a"},
         )
     assert result.returncode == 0
+
+
+def test_env_eth_key(mockserver):
+    with NamedTemporaryFile("w") as url_list:
+        url_list.write("https://a.example\n")
+        url_list.flush()
+        result = subprocess.run(
+            [
+                "python",
+                "-m",
+                "zyte_api",
+                "--api-url",
+                mockserver.urljoin("/"),
+                url_list.name,
+            ],
+            capture_output=True,
+            check=False,
+            env={**environ, "ZYTE_API_ETH_KEY": ETH_KEY},
+        )
+    assert (result.returncode == 0) if HAS_X402 else (result.returncode != 0)
