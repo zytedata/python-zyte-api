@@ -6,6 +6,8 @@ from os import environ
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
+from zyte_api._errors import RequestError
+
 if TYPE_CHECKING:
     from asyncio import Semaphore
     from collections.abc import Callable
@@ -159,9 +161,16 @@ class _x402Handler:
                     retried = True
                     continue
                 if response.status != 402:
-                    raise ValueError(
-                        "Expected 402 status code for X-402 authorization, got "
-                        f"{response.status}"
+                    content = await response.read()
+                    response.release()
+                    raise RequestError(
+                        request_info=response.request_info,
+                        history=response.history,
+                        status=response.status,
+                        message=response.reason,
+                        headers=response.headers,
+                        response_content=content,
+                        query=query,
                     )
                 data = await response.json()
                 break
