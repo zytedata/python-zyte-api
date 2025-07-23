@@ -113,9 +113,11 @@ class AsyncZyteAPI:
         except NoApiKey:
             try:
                 self.auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
-            except ValueError:
+            except (ImportError, ValueError):
                 raise NoApiKey(
-                    "You must provide either a Zyte API key or an Ethereum private key."
+                    "You must provide either a Zyte API key or an Ethereum "
+                    "private key. For the latter, you must also install "
+                    "zyte-api as zyte-api[x402]."
                 ) from None
 
     async def get(
