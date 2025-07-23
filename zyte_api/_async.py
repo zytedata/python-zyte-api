@@ -109,7 +109,7 @@ class AsyncZyteAPI:
         self._semaphore = asyncio.Semaphore(n_conn)
 
         try:
-            self.auth = get_apikey(api_key)
+            self.auth: str | _x402Handler = get_apikey(api_key)
         except NoApiKey:
             try:
                 self.auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
