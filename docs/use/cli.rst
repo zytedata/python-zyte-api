@@ -4,8 +4,9 @@
 Command-line client
 ===================
 
-Once you have :ref:`installed python-zyte-api <install>` and :ref:`configured
-your API key <api-key>`, you can use the ``zyte-api`` command-line client.
+Once you have :ref:`installed python-zyte-api <install>` and configured your
+:ref:`API key <api-key>` or :ref:`Ethereum private key <x402>`, you can use the
+``zyte-api`` command-line client.
 
 To use ``zyte-api``, pass an :ref:`input file <input-file>` as the first
 parameter and specify an :ref:`output file <output-file>` with ``--output``.

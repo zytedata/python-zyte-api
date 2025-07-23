@@ -9,10 +9,12 @@ from typing import TYPE_CHECKING, Any
 import aiohttp
 from tenacity import AsyncRetrying
 
+from zyte_api._x402 import _get_eth_key, _get_x402_headers
+
 from ._errors import RequestError
 from ._retry import zyte_api_retrying
 from ._utils import _AIO_API_TIMEOUT, create_session
-from .apikey import get_apikey
+from .apikey import NoApiKey, get_apikey
 from .constants import API_URL
 from .stats import AggStats, ResponseStats
 from .utils import USER_AGENT, _process_query
@@ -86,18 +88,35 @@ class AsyncZyteAPI:
     def __init__(
         self,
         *,
-        api_key=None,
-        api_url=API_URL,
-        n_conn=15,
+        api_key: str | None = None,
+        api_url: str = API_URL,
+        n_conn: int = 15,
         retrying: AsyncRetrying | None = None,
         user_agent: str | None = None,
+        eth_key: str | None = None,
     ):
         if retrying is not None and not isinstance(retrying, AsyncRetrying):
             raise ValueError(
                 "The retrying parameter, if defined, must be an instance of "
                 "AsyncRetrying."
             )
-        self.api_key = get_apikey(api_key)
+
+        try:
+            self.auth = get_apikey(api_key)
+        except NoApiKey:
+            try:
+                eth_key = _get_eth_key(eth_key)
+            except ValueError:
+                raise NoApiKey(
+                    "You must provide either a Zyte API key or an Ethereum private key."
+                ) from None
+
+            from eth_account import Account
+            from x402.clients import x402Client
+
+            account = Account.from_key(eth_key)
+            self.auth = x402Client(account=account)
+
         self.api_url = api_url
         self.n_conn = n_conn
         self.agg_stats = AggStats()
@@ -117,8 +136,19 @@ class AsyncZyteAPI:
         """Asynchronous equivalent to :meth:`ZyteAPI.get`."""
         retrying = retrying or self.retrying
         post = _post_func(session)
-        auth = aiohttp.BasicAuth(self.api_key)
+
+        url = self.api_url + endpoint
+        query = _process_query(query)
         headers = {"User-Agent": self.user_agent, "Accept-Encoding": "br"}
+
+        auth_kwargs = {}
+        if isinstance(self.auth, str):
+            auth_kwargs["auth"] = aiohttp.BasicAuth(self.auth)
+        else:
+            x402_headers = await _get_x402_headers(
+                self.auth, url, query, headers, self._semaphore, post
+            )
+            headers.update(x402_headers)
 
         response_stats = []
         start_global = time.perf_counter()
@@ -127,12 +157,11 @@ class AsyncZyteAPI:
             stats = ResponseStats.create(start_global)
             self.agg_stats.n_attempts += 1
 
-            safe_query = _process_query(query)
             post_kwargs = {
-                "url": self.api_url + endpoint,
-                "json": safe_query,
-                "auth": auth,
+                "url": url,
+                "json": query,
                 "headers": headers,
+                **auth_kwargs,
             }
 
             try:
@@ -151,7 +180,7 @@ class AsyncZyteAPI:
                             message=resp.reason,
                             headers=resp.headers,
                             response_content=content,
-                            query=safe_query,
+                            query=query,
                         )
 
                     response = await resp.json()

@@ -24,6 +24,12 @@ setup(
         "tqdm",
         "w3lib >= 2.1.1",
     ],
+    extras_require={
+        "x402": [
+            "eth-account",
+            "x402",
+        ]
+    },
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",

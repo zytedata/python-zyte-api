@@ -6,8 +6,9 @@
 Python client library
 =====================
 
-Once you have :ref:`installed python-zyte-api <install>` and :ref:`configured
-your API key <api-key>`, you can use one of its APIs from Python code:
+Once you have :ref:`installed python-zyte-api <install>` and configured your
+:ref:`API key <api-key>` or :ref:`Ethereum private key <x402>`, you can use one
+of its APIs from Python code:
 
 -   The :ref:`sync API <sync>` can be used to build simple, proof-of-concept or
     debugging Python scripts.
