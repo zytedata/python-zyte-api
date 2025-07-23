@@ -6,7 +6,10 @@ from os import environ
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
+from tenacity import stop_after_attempt
+
 from zyte_api._errors import RequestError
+from zyte_api._retry import RetryFactory
 
 if TYPE_CHECKING:
     from asyncio import Semaphore
@@ -99,6 +102,14 @@ def get_max_cost_hash(query: dict[str, Any]) -> bytes:
     return md5(json.dumps(data, sort_keys=True).encode()).digest()  # noqa: S324
 
 
+class X402RetryFactory(RetryFactory):
+    # Disable ban response retries.
+    download_error_stop = stop_after_attempt(1)
+
+
+X402_RETRYING = X402RetryFactory().build()
+
+
 class _x402Handler:
     def __init__(
         self,
@@ -151,28 +162,26 @@ class _x402Handler:
         stats: AggStats,
     ) -> tuple[Any, str]:
         post_kwargs = {"url": url, "json": query, "headers": headers}
-        retried = False
-        while True:
+
+        async def request():
             stats.n_x402_req += 1
             async with self.semaphore, post_fn(**post_kwargs) as response:
-                if response.status >= 500 and not retried:
-                    retried = True
-                    continue
-                if response.status != 402:
-                    content = await response.read()
-                    response.release()
-                    raise RequestError(
-                        request_info=response.request_info,
-                        history=response.history,
-                        status=response.status,
-                        message=response.reason,
-                        headers=response.headers,
-                        response_content=content,
-                        query=query,
-                    )
-                data = await response.json()
-                break
+                if response.status == 402:
+                    return await response.json()
+                content = await response.read()
+                response.release()
+                raise RequestError(
+                    request_info=response.request_info,
+                    history=response.history,
+                    status=response.status,
+                    message=response.reason,
+                    headers=response.headers,
+                    response_content=content,
+                    query=query,
+                )
 
+        request = X402_RETRYING.wraps(request)
+        data = await request()
         payment_response = self.x402PaymentRequiredResponse(**data)
         requirements = self.client.select_payment_requirements(payment_response.accepts)
         version = payment_response.x402_version
