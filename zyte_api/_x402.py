@@ -66,10 +66,7 @@ def may_use_browser(query: dict[str, Any]) -> bool:
 def _get_eth_key(key: str | None = None) -> str:
     if key is not None:
         return key
-    try:
-        return environ[ENV_VARIABLE]
-    except KeyError:
-        raise ValueError from None
+    return environ[ENV_VARIABLE]
 
 
 def get_max_cost_hash(query: dict[str, Any]) -> bytes:
@@ -109,11 +106,12 @@ class _x402Handler:
         semaphore: Semaphore,
         stats: AggStats,
     ):
+        eth_key = _get_eth_key(eth_key)
+
         from eth_account import Account
         from x402.clients import x402Client
         from x402.types import x402PaymentRequiredResponse
 
-        eth_key = _get_eth_key(eth_key)
         account = Account.from_key(eth_key)
         self.client = x402Client(account=account)
         self.semaphore = semaphore
