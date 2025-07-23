@@ -37,6 +37,7 @@ class AggStats:
         )
         self.n_429 = 0  # number of 429 (throttling) responses
         self.n_errors = 0  # number of errors, including errors which were retried
+        self.n_x402_req = 0  # x402 requests for payment requirements
 
         self.status_codes = Counter()
         self.exception_types = Counter()

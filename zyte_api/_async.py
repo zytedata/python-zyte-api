@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import aiohttp
 from tenacity import AsyncRetrying
 
-from zyte_api._x402 import _get_eth_key, _get_x402_headers
+from zyte_api._x402 import _x402Handler
 
 from ._errors import RequestError
 from ._retry import zyte_api_retrying
@@ -101,28 +101,22 @@ class AsyncZyteAPI:
                 "AsyncRetrying."
             )
 
-        try:
-            self.auth = get_apikey(api_key)
-        except NoApiKey:
-            try:
-                eth_key = _get_eth_key(eth_key)
-            except ValueError:
-                raise NoApiKey(
-                    "You must provide either a Zyte API key or an Ethereum private key."
-                ) from None
-
-            from eth_account import Account
-            from x402.clients import x402Client
-
-            account = Account.from_key(eth_key)
-            self.auth = x402Client(account=account)
-
         self.api_url = api_url
         self.n_conn = n_conn
         self.agg_stats = AggStats()
         self.retrying = retrying or zyte_api_retrying
         self.user_agent = user_agent or USER_AGENT
         self._semaphore = asyncio.Semaphore(n_conn)
+
+        try:
+            self.auth = get_apikey(api_key)
+        except NoApiKey:
+            try:
+                self.auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
+            except ValueError:
+                raise NoApiKey(
+                    "You must provide either a Zyte API key or an Ethereum private key."
+                ) from None
 
     async def get(
         self,
@@ -145,9 +139,7 @@ class AsyncZyteAPI:
         if isinstance(self.auth, str):
             auth_kwargs["auth"] = aiohttp.BasicAuth(self.auth)
         else:
-            x402_headers = await _get_x402_headers(
-                self.auth, url, query, headers, self._semaphore, post
-            )
+            x402_headers = await self.auth.get_headers(url, query, headers, post)
             headers.update(x402_headers)
 
         response_stats = []

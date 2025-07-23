@@ -12,7 +12,8 @@ if TYPE_CHECKING:
     from contextlib import AbstractAsyncContextManager
 
     from aiohttp import ClientResponse
-    from x402.clients import x402Client
+
+    from zyte_api.stats import AggStats
 
 CACHE: dict[bytes, tuple[Any, str]] = {}
 ENV_VARIABLE = "ZYTE_API_ETH_KEY"
@@ -28,6 +29,7 @@ EXTRACT_KEYS = {
     "productNavigation",
     "serp",
 }
+MINIMIZE_REQUESTS = environ.get("ZYTE_API_ETH_MINIMIZE_REQUESTS") != "false"
 
 
 def get_extract_from(query: dict[str, Any], data_type: str) -> str | Any:
@@ -98,52 +100,73 @@ def get_max_cost_hash(query: dict[str, Any]) -> bytes:
     return md5(json.dumps(data, sort_keys=True).encode()).digest()  # noqa: S324
 
 
-async def fetch_requirements(
-    client: x402Client,
-    url: str,
-    query: dict[str, Any],
-    headers: dict[str, str],
-    semaphore: Semaphore,
-    post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
-) -> tuple[Any, str]:
-    post_kwargs = {"url": url, "json": query, "headers": headers}
-    async with semaphore, post_fn(**post_kwargs) as response:
-        if response.status != 402:
-            raise ValueError(
-                "Expected 402 status code for X-402 authorization, got "
-                f"{response.status}"
+class _x402Handler:
+    def __init__(
+        self,
+        eth_key: str | None,
+        semaphore: Semaphore,
+        stats: AggStats,
+    ):
+        from eth_account import Account
+        from x402.clients import x402Client
+        from x402.types import x402PaymentRequiredResponse
+
+        eth_key = _get_eth_key(eth_key)
+        account = Account.from_key(eth_key)
+        self.client = x402Client(account=account)
+        self.semaphore = semaphore
+        self.stats = stats
+        self.x402PaymentRequiredResponse = x402PaymentRequiredResponse
+
+    async def get_headers(
+        self,
+        url: str,
+        query: dict[str, Any],
+        headers: dict[str, str],
+        post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
+    ) -> dict[str, str]:
+        if MINIMIZE_REQUESTS:
+            max_cost_hash = get_max_cost_hash(query)
+            if max_cost_hash not in CACHE:
+                CACHE[max_cost_hash] = await self.fetch_requirements(
+                    url, query, headers, post_fn, self.stats
+                )
+            requirements, version = CACHE[max_cost_hash]
+        else:
+            requirements, version = await self.fetch_requirements(
+                url, query, headers, post_fn, self.stats
             )
-        data = await response.json()
+        payment_header = self.client.create_payment_header(requirements, version)
+        return {
+            "Access-Control-Expose-Headers": "X-Payment-Response",
+            "X-Payment": payment_header,
+        }
 
-    from x402.types import x402PaymentRequiredResponse
+    async def fetch_requirements(
+        self,
+        url: str,
+        query: dict[str, Any],
+        headers: dict[str, str],
+        post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
+        stats: AggStats,
+    ) -> tuple[Any, str]:
+        post_kwargs = {"url": url, "json": query, "headers": headers}
+        retried = False
+        while True:
+            stats.n_x402_req += 1
+            async with self.semaphore, post_fn(**post_kwargs) as response:
+                if response.status >= 500 and not retried:
+                    retried = True
+                    continue
+                if response.status != 402:
+                    raise ValueError(
+                        "Expected 402 status code for X-402 authorization, got "
+                        f"{response.status}"
+                    )
+                data = await response.json()
+                break
 
-    payment_response = x402PaymentRequiredResponse(**data)
-    requirements = client.select_payment_requirements(payment_response.accepts)
-    version = payment_response.x402_version
-    return requirements, version
-
-
-async def _get_x402_headers(
-    client: x402Client,
-    url: str,
-    query: dict[str, Any],
-    headers: dict[str, str],
-    semaphore: Semaphore,
-    post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
-) -> dict[str, str]:
-    if environ.get("ZYTE_API_ETH_MINIMIZE_REQUESTS") != "false":
-        max_cost_hash = get_max_cost_hash(query)
-        if max_cost_hash not in CACHE:
-            CACHE[max_cost_hash] = await fetch_requirements(
-                client, url, query, headers, semaphore, post_fn
-            )
-        requirements, version = CACHE[max_cost_hash]
-    else:
-        requirements, version = await fetch_requirements(
-            client, url, query, headers, semaphore, post_fn
-        )
-    payment_header = client.create_payment_header(requirements, version)
-    return {
-        "Access-Control-Expose-Headers": "X-Payment-Response",
-        "X-Payment": payment_header,
-    }
+        payment_response = self.x402PaymentRequiredResponse(**data)
+        requirements = self.client.select_payment_requirements(payment_response.accepts)
+        version = payment_response.x402_version
+        return requirements, version
