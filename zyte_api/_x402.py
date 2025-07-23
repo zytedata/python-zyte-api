@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
+from hashlib import md5
 from os import environ
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from asyncio import Semaphore
@@ -11,7 +14,49 @@ if TYPE_CHECKING:
     from aiohttp import ClientResponse
     from x402.clients import x402Client
 
+CACHE: dict[bytes, tuple[Any, str]] = {}
 ENV_VARIABLE = "ZYTE_API_ETH_KEY"
+EXTRACT_KEYS = {
+    "article",
+    "articleList",
+    "articleNavigation",
+    "forumThread",
+    "jobPosting",
+    "jobPostingNavigation",
+    "product",
+    "productList",
+    "productNavigation",
+    "serp",
+}
+
+
+def get_extract_from(query: dict[str, Any], data_type: str) -> str | Any:
+    options = query.get(f"{data_type}Options", {})
+    default_extract_from = "httpResponseBody" if data_type == "serp" else None
+    return options.get("extractFrom", default_extract_from)
+
+
+def get_extract_froms(query: dict[str, Any]) -> set[str]:
+    result = set()
+    for key in EXTRACT_KEYS:
+        if not query.get(key, False):
+            continue
+        result.add(get_extract_from(query, key))
+    return result
+
+
+def may_use_browser(query: dict[str, Any]) -> bool:
+    """Return ``False`` if *query* indicates with certainty that browser
+    rendering will not be used, or ``True`` otherwise."""
+    for key in ("browserHtml", "screenshot"):
+        if query.get(key):
+            return True
+    extract_froms = get_extract_froms(query)
+    if "browserHtml" in extract_froms:
+        return True
+    if "httpResponseBody" in extract_froms:
+        return False
+    return not query.get("httpResponseBody")
 
 
 def _get_eth_key(key: str | None = None) -> str:
@@ -23,16 +68,44 @@ def _get_eth_key(key: str | None = None) -> str:
         raise ValueError from None
 
 
-async def _get_x402_headers(
+def get_max_cost_hash(query: dict[str, Any]) -> bytes:
+    """Returns a hash based on *query* that should be the same for queries
+    whose estimate costs are the same.
+
+    For open-ended costs, like actions, network capture or custom attributes,
+    we assume that Zyte API will not report a different cost based on e.g. the
+    number of actions or their parameters, or similar details of network
+    capture or custom attributes.
+
+    See also: https://docs.zyte.com/zyte-api/pricing.html#request-costs
+    """
+    data = {
+        "domain": urlparse(query["url"]).netloc,
+        "type": "browser" if may_use_browser(query) else "http",
+    }
+    for key in (
+        *(k for k in EXTRACT_KEYS if k != "serp"),  # serp does not affect cost
+        "actions",
+        "networkCapture",
+        "screenshot",
+    ):
+        if query.get(key):
+            data[key] = True
+    if query.get("customAttributes"):
+        data["customAttributesOptions.method"] = query.get(
+            "customAttributesOptions", {}
+        ).get("method", "generate")
+    return md5(json.dumps(data, sort_keys=True).encode()).digest()  # noqa: S324
+
+
+async def fetch_requirements(
     client: x402Client,
     url: str,
     query: dict[str, Any],
     headers: dict[str, str],
     semaphore: Semaphore,
     post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
-) -> dict[str, str]:
-    from x402.types import x402PaymentRequiredResponse
-
+) -> tuple[Any, str]:
     post_kwargs = {"url": url, "json": query, "headers": headers}
     async with semaphore, post_fn(**post_kwargs) as response:
         if response.status != 402:
@@ -42,11 +115,34 @@ async def _get_x402_headers(
             )
         data = await response.json()
 
+    from x402.types import x402PaymentRequiredResponse
+
     payment_response = x402PaymentRequiredResponse(**data)
-    selected_requirements = client.select_payment_requirements(payment_response.accepts)
-    payment_header = client.create_payment_header(
-        selected_requirements, payment_response.x402_version
-    )
+    requirements = client.select_payment_requirements(payment_response.accepts)
+    version = payment_response.x402_version
+    return requirements, version
+
+
+async def _get_x402_headers(
+    client: x402Client,
+    url: str,
+    query: dict[str, Any],
+    headers: dict[str, str],
+    semaphore: Semaphore,
+    post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
+) -> dict[str, str]:
+    if environ.get("ZYTE_API_ETH_MINIMIZE_REQUESTS") != "false":
+        max_cost_hash = get_max_cost_hash(query)
+        if max_cost_hash not in CACHE:
+            CACHE[max_cost_hash] = await fetch_requirements(
+                client, url, query, headers, semaphore, post_fn
+            )
+        requirements, version = CACHE[max_cost_hash]
+    else:
+        requirements, version = await fetch_requirements(
+            client, url, query, headers, semaphore, post_fn
+        )
+    payment_header = client.create_payment_header(requirements, version)
     return {
         "Access-Control-Expose-Headers": "X-Payment-Response",
         "X-Payment": payment_header,
