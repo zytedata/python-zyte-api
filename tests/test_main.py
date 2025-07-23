@@ -10,6 +10,8 @@ import pytest
 from zyte_api.__main__ import run
 from zyte_api.aio.errors import RequestError
 
+from .test_x402 import HAS_X402
+
 
 class MockRequestError(Exception):
     @property
@@ -52,7 +54,7 @@ async def fake_exception(value=True):
 @pytest.mark.parametrize(
     ("queries", "expected_response", "store_errors", "exception"),
     (
-        [
+        (
             # test if it stores the error(s) also by adding flag
             (
                 [
@@ -79,7 +81,7 @@ async def fake_exception(value=True):
                 False,
                 fake_exception,
             ),
-        ]
+        )
     ),
 )
 @pytest.mark.asyncio
@@ -264,3 +266,45 @@ def test_run_non_json_response(mockserver):
     assert not result.returncode
     assert result.stdout == b""
     assert b"json.decoder.JSONDecodeError" in result.stderr
+
+
+@pytest.mark.skipif(not HAS_X402, reason="x402 not installed")
+def test_eth_key(mockserver):
+    with NamedTemporaryFile("w") as url_list:
+        url_list.write("https://a.example\n")
+        url_list.flush()
+        result = subprocess.run(
+            [
+                "python",
+                "-m",
+                "zyte_api",
+                "--eth-key",
+                "a",
+                "--api-url",
+                mockserver.urljoin("/"),
+                url_list.name,
+            ],
+            capture_output=True,
+            check=False,
+        )
+    assert b"must be exactly 32 bytes long" in result.stderr
+
+
+@pytest.mark.skipif(not HAS_X402, reason="x402 not installed")
+def test_no_key(mockserver):
+    with NamedTemporaryFile("w") as url_list:
+        url_list.write("https://a.example\n")
+        url_list.flush()
+        result = subprocess.run(
+            [
+                "python",
+                "-m",
+                "zyte_api",
+                "--api-url",
+                mockserver.urljoin("/"),
+                url_list.name,
+            ],
+            capture_output=True,
+            check=False,
+        )
+    assert b"NoApiKey" in result.stderr

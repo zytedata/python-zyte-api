@@ -14,6 +14,11 @@ from twisted.internet.task import deferLater
 from twisted.web.resource import Resource
 from twisted.web.server import NOT_DONE_YET, Site
 
+SCREENSHOT = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQott"
+    "AAAAABJRU5ErkJggg=="
+)
+
 
 # https://github.com/scrapy/scrapy/blob/02b97f98e74a994ad3e4d74e7ed55207e508a576/tests/mockserver.py#L27C1-L33C19
 def getarg(request, name, default=None, type=None):
@@ -62,6 +67,26 @@ class DropResource(Resource):
             request.finish()
 
 
+RESPONSE_402 = {
+    "x402Version": 1,
+    "accepts": [
+        {
+            "scheme": "exact",
+            "network": "base-sepolia",
+            "maxAmountRequired": "1000",
+            "resource": "https://api.zyte.com/v1/extract",
+            "description": "",
+            "mimeType": "",
+            "payTo": "0xFACEdD967ea0592bbb9410fA4877Df9AeB628CB7",
+            "maxTimeoutSeconds": 130,
+            "asset": "0xFACEbD53842c5426634e7929541eC2318f3dCF7e",
+            "extra": {"name": "USDC", "version": "2"},
+        }
+    ],
+    "error": "Use basic auth or x402",
+}
+
+
 class DefaultResource(Resource):
     request_count = 0
 
@@ -69,8 +94,6 @@ class DefaultResource(Resource):
         return self
 
     def render_POST(self, request):
-        request_data = json.loads(request.content.read())
-
         request.responseHeaders.setRawHeaders(
             b"Content-Type",
             [b"application/json"],
@@ -80,12 +103,17 @@ class DefaultResource(Resource):
             [b"abcd1234"],
         )
 
+        request_data = json.loads(request.content.read())
+
         url = request_data["url"]
         domain = urlparse(url).netloc
         if domain == "e429.example":
             request.setResponseCode(429)
             response_data = {"status": 429, "type": "/limits/over-user-limit"}
             return json.dumps(response_data).encode()
+        if domain == "e404.example":
+            request.setResponseCode(404)
+            return b""
         if domain == "e500.example":
             request.setResponseCode(500)
             return ""
@@ -119,6 +147,12 @@ class DefaultResource(Resource):
             request.setResponseCode(500)
             return b'["foo"]'
 
+        auth_header = request.getHeader("Authorization")
+        payment_header = request.getHeader("X-Payment")
+        if not auth_header and not payment_header:
+            request.setResponseCode(402)
+            return json.dumps(RESPONSE_402).encode()
+
         response_data: dict[str, Any] = {
             "url": url,
         }
@@ -127,9 +161,12 @@ class DefaultResource(Resource):
         if "httpResponseBody" in request_data:
             body = b64encode(html.encode()).decode()
             response_data["httpResponseBody"] = body
-        else:
+        if "browserHtml" in request_data:
             assert "browserHtml" in request_data
             response_data["browserHtml"] = html
+        if "screenshot" in request_data:
+            assert "screenshot" in request_data
+            response_data["screenshot"] = SCREENSHOT
 
         return json.dumps(response_data).encode()
 
