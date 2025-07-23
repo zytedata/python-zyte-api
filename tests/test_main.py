@@ -290,7 +290,6 @@ def test_eth_key(mockserver):
     assert b"must be exactly 32 bytes long" in result.stderr
 
 
-@pytest.mark.skipif(not HAS_X402, reason="x402 not installed")
 def test_no_key(mockserver):
     with NamedTemporaryFile("w") as url_list:
         url_list.write("https://a.example\n")
