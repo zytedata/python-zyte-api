@@ -104,7 +104,7 @@ def get_max_cost_hash(query: dict[str, Any]) -> bytes:
 
 class X402RetryFactory(RetryFactory):
     # Disable ban response retries.
-    download_error_stop = stop_after_attempt(1)
+    download_error_stop = stop_after_attempt(1)  # type: ignore[assignment]
 
 
 X402_RETRYING = X402RetryFactory().build()
