@@ -52,7 +52,7 @@ async def fake_exception(value=True):
 @pytest.mark.parametrize(
     ("queries", "expected_response", "store_errors", "exception"),
     (
-        [
+        (
             # test if it stores the error(s) also by adding flag
             (
                 [
@@ -79,7 +79,7 @@ async def fake_exception(value=True):
                 False,
                 fake_exception,
             ),
-        ]
+        )
     ),
 )
 @pytest.mark.asyncio

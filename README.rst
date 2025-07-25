@@ -35,14 +35,22 @@ Installation
 
     pip install zyte-api
 
-.. note:: Python 3.9+ is required.
+Or, to use x402_:
+
+.. _x402: https://www.x402.org/
+
+.. code-block:: shell
+
+    pip install zyte-api[x402]
+
+.. note:: Python 3.9+ is required; Python 3.10+ if using x402.
 
 .. install-end
 
 Basic usage
 ===========
 
-.. basic-start
+.. basic-key-start
 
 Set your API key
 ----------------
@@ -54,6 +62,9 @@ After you `sign up for a Zyte API account
 <https://app.zyte.com/o/zyte-api/api-access>`_.
 
 .. key-get-end
+.. basic-key-end
+
+.. basic-start
 
 
 Use the command-line client
