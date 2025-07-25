@@ -454,7 +454,7 @@ async def test_payment_retry(mockserver):
     assert client.agg_stats.n_402_req == 1
     assert client.agg_stats.status_codes == {402: 1, 200: 1}
     assert client.agg_stats.exception_types == {}
-    assert client.agg_stats.api_error_types == {"use-basic-auth-or-x402": 1}
+    assert client.agg_stats.api_error_types == {"/x402/use-basic-auth-or-x402": 1}
 
 
 @pytest.mark.skipif(not HAS_X402, reason="x402 not installed")
@@ -481,7 +481,7 @@ async def test_payment_retry_exceeded(mockserver):
     assert client.agg_stats.n_402_req == 1
     assert client.agg_stats.status_codes == {402: 2}
     assert client.agg_stats.exception_types == {}
-    assert client.agg_stats.api_error_types == {"use-basic-auth-or-x402": 2}
+    assert client.agg_stats.api_error_types == {"/x402/use-basic-auth-or-x402": 2}
 
 
 @pytest.mark.asyncio
@@ -509,7 +509,7 @@ async def test_no_payment_retry(mockserver):
     assert client.agg_stats.n_402_req == 0
     assert client.agg_stats.status_codes == {402: 1, 200: 1}
     assert client.agg_stats.exception_types == {}
-    assert client.agg_stats.api_error_types == {"use-basic-auth-or-x402": 1}
+    assert client.agg_stats.api_error_types == {"/x402/use-basic-auth-or-x402": 1}
 
 
 @pytest.mark.asyncio
@@ -535,4 +535,4 @@ async def test_no_payment_retry_exceeded(mockserver):
     assert client.agg_stats.n_402_req == 0
     assert client.agg_stats.status_codes == {402: 2}
     assert client.agg_stats.exception_types == {}
-    assert client.agg_stats.api_error_types == {"use-basic-auth-or-x402": 2}
+    assert client.agg_stats.api_error_types == {"/x402/use-basic-auth-or-x402": 2}

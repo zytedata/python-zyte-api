@@ -59,5 +59,5 @@ class ParsedError:
                 prefix = data["error"]
             if len(prefix) > 32:
                 return None
-            return _to_kebab_case(prefix)
+            return f"/x402/{_to_kebab_case(prefix)}"
         return None
