@@ -21,7 +21,6 @@ if TYPE_CHECKING:
     from zyte_api.stats import AggStats
 
 CACHE: dict[bytes, tuple[Any, str]] = {}
-ENV_VARIABLE = "ZYTE_API_ETH_KEY"
 EXTRACT_KEYS = {
     "article",
     "articleList",
@@ -66,12 +65,6 @@ def may_use_browser(query: dict[str, Any]) -> bool:
     return not query.get("httpResponseBody")
 
 
-def _get_eth_key(key: str | None = None) -> str:
-    if key is not None:
-        return key
-    return environ[ENV_VARIABLE]
-
-
 def get_max_cost_hash(query: dict[str, Any]) -> bytes:
     """Returns a hash based on *query* that should be the same for queries
     whose estimate costs are the same.
@@ -113,12 +106,10 @@ X402_RETRYING = X402RetryFactory().build()
 class _x402Handler:
     def __init__(
         self,
-        eth_key: str | None,
+        eth_key: str,
         semaphore: Semaphore,
         stats: AggStats,
     ):
-        eth_key = _get_eth_key(eth_key)
-
         from eth_account import Account
         from x402.clients import x402Client
         from x402.types import x402PaymentRequiredResponse

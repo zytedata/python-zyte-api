@@ -4,18 +4,20 @@ import asyncio
 import time
 from asyncio import Future
 from functools import partial
+from os import environ
 from typing import TYPE_CHECKING, Any
 
 import aiohttp
 from tenacity import AsyncRetrying
 
 from zyte_api._x402 import _x402Handler
+from zyte_api.apikey import NoApiKey
 
 from ._errors import RequestError
 from ._retry import zyte_api_retrying
 from ._utils import _AIO_API_TIMEOUT, create_session
-from .apikey import NoApiKey, get_apikey
 from .constants import API_URL
+from .constants import ENV_VARIABLE as API_KEY_ENV_VAR
 from .stats import AggStats, ResponseStats
 from .utils import USER_AGENT, _process_query
 
@@ -107,18 +109,24 @@ class AsyncZyteAPI:
         self.retrying = retrying or zyte_api_retrying
         self.user_agent = user_agent or USER_AGENT
         self._semaphore = asyncio.Semaphore(n_conn)
+        self.auth: str | _x402Handler
+        self._load_auth(api_key, eth_key)
 
-        try:
-            self.auth: str | _x402Handler = get_apikey(api_key)
-        except NoApiKey:
-            try:
-                self.auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
-            except KeyError:
-                raise NoApiKey(
-                    "You must provide either a Zyte API key or an Ethereum "
-                    "private key. For the latter, you must also install "
-                    "zyte-api as zyte-api[x402]."
-                ) from None
+    def _load_auth(self, api_key: str | None, eth_key: str | None):
+        if api_key:
+            self.auth = api_key
+        elif eth_key:
+            self.auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
+        elif api_key := environ.get(API_KEY_ENV_VAR):
+            self.auth = api_key
+        elif eth_key := environ.get("ZYTE_API_ETH_KEY"):
+            self.auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
+        else:
+            raise NoApiKey(
+                "You must provide either a Zyte API key or an Ethereum "
+                "private key. For the latter, you must also install "
+                "zyte-api as zyte-api[x402]."
+            )
 
     async def get(
         self,

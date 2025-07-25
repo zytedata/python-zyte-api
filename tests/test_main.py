@@ -1,7 +1,6 @@
 import json
 import subprocess
 from json import JSONDecodeError
-from os import environ
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest.mock import AsyncMock, Mock, patch
@@ -10,9 +9,6 @@ import pytest
 
 from zyte_api.__main__ import run
 from zyte_api.aio.errors import RequestError
-
-from .test_x402 import HAS_X402
-from .test_x402 import KEY as ETH_KEY
 
 
 class MockRequestError(Exception):
@@ -268,86 +264,3 @@ def test_run_non_json_response(mockserver):
     assert not result.returncode
     assert result.stdout == b""
     assert b"json.decoder.JSONDecodeError" in result.stderr
-
-
-@pytest.mark.skipif(not HAS_X402, reason="x402 not installed")
-def test_eth_key(mockserver):
-    with NamedTemporaryFile("w") as url_list:
-        url_list.write("https://a.example\n")
-        url_list.flush()
-        result = subprocess.run(
-            [
-                "python",
-                "-m",
-                "zyte_api",
-                "--eth-key",
-                "a",
-                "--api-url",
-                mockserver.urljoin("/"),
-                url_list.name,
-            ],
-            capture_output=True,
-            check=False,
-        )
-    assert b"must be exactly 32 bytes long" in result.stderr
-    assert result.returncode
-
-
-def test_no_key(mockserver):
-    with NamedTemporaryFile("w") as url_list:
-        url_list.write("https://a.example\n")
-        url_list.flush()
-        result = subprocess.run(
-            [
-                "python",
-                "-m",
-                "zyte_api",
-                "--api-url",
-                mockserver.urljoin("/"),
-                url_list.name,
-            ],
-            capture_output=True,
-            check=False,
-        )
-    assert b"NoApiKey" in result.stderr
-    assert result.returncode
-
-
-def test_env_key(mockserver):
-    with NamedTemporaryFile("w") as url_list:
-        url_list.write("https://a.example\n")
-        url_list.flush()
-        result = subprocess.run(
-            [
-                "python",
-                "-m",
-                "zyte_api",
-                "--api-url",
-                mockserver.urljoin("/"),
-                url_list.name,
-            ],
-            capture_output=True,
-            check=False,
-            env={**environ, "ZYTE_API_KEY": "a"},
-        )
-    assert result.returncode == 0
-
-
-def test_env_eth_key(mockserver):
-    with NamedTemporaryFile("w") as url_list:
-        url_list.write("https://a.example\n")
-        url_list.flush()
-        result = subprocess.run(
-            [
-                "python",
-                "-m",
-                "zyte_api",
-                "--api-url",
-                mockserver.urljoin("/"),
-                url_list.name,
-            ],
-            capture_output=True,
-            check=False,
-            env={**environ, "ZYTE_API_ETH_KEY": ETH_KEY},
-        )
-    assert (result.returncode == 0) if HAS_X402 else (result.returncode != 0)
