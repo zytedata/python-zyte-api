@@ -6,6 +6,10 @@ from typing import Optional
 import attr
 
 
+def _to_kebab_case(s: str) -> str:
+    return s.strip().replace(" ", "-").replace("_", "-").lower()
+
+
 @attr.s(auto_attribs=True)
 class ParsedError:
     """Parsed error response body from Zyte API."""
@@ -45,4 +49,15 @@ class ParsedError:
     def type(self) -> Optional[str]:
         """ID of the error type, e.g. ``"/limits/over-user-limit"`` or
         ``"/download/temporary-error"``."""
-        return (self.data or {}).get("type", None)
+        data = self.data or {}
+        if "type" in data:
+            return data["type"]
+        if "error" in data and isinstance(data["error"], str):  # HTTP 402
+            try:
+                prefix, _ = data["error"].split(":", 1)
+            except ValueError:
+                prefix = data["error"]
+            if len(prefix) > 32:
+                return None
+            return _to_kebab_case(prefix)
+        return None

@@ -4,8 +4,8 @@ from tempfile import NamedTemporaryFile
 
 import pytest
 
+from zyte_api import AsyncZyteAPI
 from zyte_api._x402 import _x402Handler
-from zyte_api.aio.client import AsyncClient
 
 from .test_x402 import HAS_X402
 from .test_x402 import KEY as ETH_KEY
@@ -110,9 +110,9 @@ def test_precedence(scenario, expected, monkeypatch):
         monkeypatch.setenv(key, value)
     if expected["key_type"] == "eth" and not HAS_X402:
         with pytest.raises(ImportError):
-            AsyncClient(**scenario.get("kwargs", {}))
+            AsyncZyteAPI(**scenario.get("kwargs", {}))
         return
-    client = AsyncClient(**scenario.get("kwargs", {}))
+    client = AsyncZyteAPI(**scenario.get("kwargs", {}))
     if expected["key_type"] == "zyte":
         assert client.auth == expected["key"]
     else:

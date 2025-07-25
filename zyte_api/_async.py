@@ -152,6 +152,13 @@ class AsyncZyteAPI:
             x402_headers = await self.auth.get_headers(url, query, headers, post)
             headers.update(x402_headers)
 
+        post_kwargs = {
+            "url": url,
+            "json": query,
+            "headers": headers,
+            **auth_kwargs,
+        }
+
         response_stats = []
         start_global = time.perf_counter()
 
@@ -159,16 +166,15 @@ class AsyncZyteAPI:
             stats = ResponseStats.create(start_global)
             self.agg_stats.n_attempts += 1
 
-            post_kwargs = {
-                "url": url,
-                "json": query,
-                "headers": headers,
-                **auth_kwargs,
-            }
-
             try:
                 async with self._semaphore, post(**post_kwargs) as resp:
                     stats.record_connected(resp.status, self.agg_stats)
+                    if (
+                        resp.status == 402
+                        and isinstance(self.auth, _x402Handler)
+                        and "X-Payment" in post_kwargs["headers"]
+                    ):
+                        self.auth.refresh_post_kwargs(post_kwargs, await resp.json())
                     if resp.status >= 400:
                         content = await resp.read()
                         resp.release()

@@ -127,22 +127,33 @@ class _x402Handler:
         headers: dict[str, str],
         post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
     ) -> dict[str, str]:
-        if MINIMIZE_REQUESTS:
-            max_cost_hash = get_max_cost_hash(query)
-            if max_cost_hash not in CACHE:
-                CACHE[max_cost_hash] = await self.fetch_requirements(
-                    url, query, headers, post_fn, self.stats
-                )
-            requirements, version = CACHE[max_cost_hash]
-        else:
-            requirements, version = await self.fetch_requirements(
-                url, query, headers, post_fn, self.stats
-            )
-        payment_header = self.client.create_payment_header(requirements, version)
+        requirement_data = await self.get_requirement_data(url, query, headers, post_fn)
+        return self.get_headers_from_requirement_data(requirement_data)
+
+    def get_headers_from_requirement_data(
+        self, requirement_data: tuple[Any, str]
+    ) -> dict[str, str]:
+        payment_header = self.client.create_payment_header(*requirement_data)
         return {
             "Access-Control-Expose-Headers": "X-Payment-Response",
             "X-Payment": payment_header,
         }
+
+    async def get_requirement_data(
+        self,
+        url: str,
+        query: dict[str, Any],
+        headers: dict[str, str],
+        post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
+    ) -> tuple[Any, str]:
+        if not MINIMIZE_REQUESTS:
+            return await self.fetch_requirements(url, query, headers, post_fn)
+        max_cost_hash = get_max_cost_hash(query)
+        if max_cost_hash not in CACHE:
+            CACHE[max_cost_hash] = await self.fetch_requirements(
+                url, query, headers, post_fn
+            )
+        return CACHE[max_cost_hash]
 
     async def fetch_requirements(
         self,
@@ -150,12 +161,11 @@ class _x402Handler:
         query: dict[str, Any],
         headers: dict[str, str],
         post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
-        stats: AggStats,
     ) -> tuple[Any, str]:
         post_kwargs = {"url": url, "json": query, "headers": headers}
 
         async def request():
-            stats.n_x402_req += 1
+            self.stats.n_402_req += 1
             async with self.semaphore, post_fn(**post_kwargs) as response:
                 if response.status == 402:
                     return await response.json()
@@ -173,7 +183,22 @@ class _x402Handler:
 
         request = X402_RETRYING.wraps(request)
         data = await request()
+        return self.parse_requirements(data)
+
+    def parse_requirements(self, data: dict[str, Any]) -> tuple[Any, str]:
         payment_response = self.x402PaymentRequiredResponse(**data)
         requirements = self.client.select_payment_requirements(payment_response.accepts)
         version = payment_response.x402_version
         return requirements, version
+
+    def refresh_post_kwargs(
+        self,
+        post_kwargs: dict[str, Any],
+        response_data: dict[str, Any],
+    ) -> None:
+        requirement_data = self.parse_requirements(response_data)
+        if MINIMIZE_REQUESTS:
+            max_cost_hash = get_max_cost_hash(post_kwargs["json"])
+            CACHE[max_cost_hash] = requirement_data
+        headers = self.get_headers_from_requirement_data(requirement_data)
+        post_kwargs["headers"] = {**post_kwargs["headers"], **headers}

@@ -5,14 +5,25 @@ x402
 ====
 
 It is possible to use :ref:`Zyte API <zyte-api>` without a Zyte API account by 
-using the x402_ protocol to handle payments.
+using the x402_ protocol to handle payments:
 
-During :ref:`installation <install>`, make sure to install the ``x402`` extra.
+#.  Read the `Zyte Terms of Service`_. By using Zyte API, you are accepting
+    them.
 
-Then, configure the *private* key of your Ethereum_ account as follows so that
-it can be used to authorize payments.
+    .. _Zyte Terms of Service: https://www.zyte.com/terms-policies/terms-of-service/
 
-.. _Ethereum: https://ethereum.org/
+#.  During :ref:`installation <install>`, make sure to install the ``x402`` extra.
+
+#.  :ref:`Configure <eth-key>` the *private* key of your Ethereum_ account to
+    authorize payments.
+
+    .. _Ethereum: https://ethereum.org/
+
+
+.. _eth-key:
+
+Configuring your Ethereum private key
+=====================================
 
 It is recommended to configure your Ethereum private key through an environment
 variable, so that it can be picked by both the :ref:`command-line client
