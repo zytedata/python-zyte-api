@@ -94,7 +94,7 @@ class AuthInfo:
         return self._auth.client.account.key.hex()
 
     @property
-    def key_type(self):
+    def type(self) -> str:
         if isinstance(self._auth, str):
             return "zyte"
         assert isinstance(self._auth, _x402Handler)
