@@ -5,7 +5,6 @@ from tempfile import NamedTemporaryFile
 import pytest
 
 from zyte_api import AsyncZyteAPI
-from zyte_api._x402 import _x402Handler
 
 from .test_x402 import HAS_X402
 from .test_x402 import KEY as ETH_KEY
@@ -113,9 +112,14 @@ def test_precedence(scenario, expected, monkeypatch):
             AsyncZyteAPI(**scenario.get("kwargs", {}))
         return
     client = AsyncZyteAPI(**scenario.get("kwargs", {}))
+    assert client.auth.key_type == expected["key_type"]
+    assert client.auth.key == expected["key"]
     if expected["key_type"] == "zyte":
-        assert client.auth == expected["key"]
+        with pytest.warns(DeprecationWarning, match="api_key property is deprecated"):
+            assert client.api_key == expected["key"]
     else:
-        assert expected["key_type"] == "eth"
-        assert isinstance(client.auth, _x402Handler)
-        assert client.auth.client.account.key.hex() == expected["key"]
+        with pytest.raises(
+            NotImplementedError,
+            match="api_key is not available when using an Ethereum private key",
+        ):
+            client.api_key  # noqa: B018

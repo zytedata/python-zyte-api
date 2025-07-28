@@ -159,7 +159,7 @@ class DefaultResource(Resource):
         echo_data = request_data.get("echoData")
         if echo_data:
             session_data = WORKFLOWS.setdefault(echo_data, {})
-            if echo_data == "402-payment-retry":
+            if echo_data in {"402-payment-retry", "402-payment-retry-2"}:
                 assert request.getHeader("X-Payment")
                 # Return 402 on the first request, then 200 on the second
                 if not session_data:
@@ -202,6 +202,17 @@ class DefaultResource(Resource):
                     session_data["payment_attempts"] = 2
                     request.setResponseCode(402)
                     return json.dumps(RESPONSE_402).encode()
+            elif echo_data == "402-long-error":
+                request.setResponseCode(402)
+                response_data = {
+                    **RESPONSE_402,
+                    "error": (
+                        "This is a long error message that exceeds the 32 "
+                        "character limit for the error type prefix. It should "
+                        "not be parsed as an error type."
+                    ),
+                }
+                return json.dumps(response_data).encode()
 
         response_data: dict[str, Any] = {
             "url": url,

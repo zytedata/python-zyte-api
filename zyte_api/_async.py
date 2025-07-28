@@ -6,6 +6,7 @@ from asyncio import Future
 from functools import partial
 from os import environ
 from typing import TYPE_CHECKING, Any
+from warnings import warn
 
 import aiohttp
 from tenacity import AsyncRetrying
@@ -81,6 +82,25 @@ class _AsyncSession:
         )
 
 
+class AuthInfo:
+    def __init__(self, *, _auth):
+        self._auth = _auth
+
+    @property
+    def key(self) -> str:
+        if isinstance(self._auth, str):
+            return self._auth
+        assert isinstance(self._auth, _x402Handler)
+        return self._auth.client.account.key.hex()
+
+    @property
+    def key_type(self):
+        if isinstance(self._auth, str):
+            return "zyte"
+        assert isinstance(self._auth, _x402Handler)
+        return "eth"
+
+
 class AsyncZyteAPI:
     """:ref:`Asynchronous Zyte API client <asyncio_api>`.
 
@@ -109,24 +129,39 @@ class AsyncZyteAPI:
         self.retrying = retrying or zyte_api_retrying
         self.user_agent = user_agent or USER_AGENT
         self._semaphore = asyncio.Semaphore(n_conn)
-        self.auth: str | _x402Handler
+        self._auth: str | _x402Handler
+        self.auth: AuthInfo
         self._load_auth(api_key, eth_key)
 
     def _load_auth(self, api_key: str | None, eth_key: str | None):
         if api_key:
-            self.auth = api_key
+            self._auth = api_key
         elif eth_key:
-            self.auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
+            self._auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
         elif api_key := environ.get(API_KEY_ENV_VAR):
-            self.auth = api_key
+            self._auth = api_key
         elif eth_key := environ.get("ZYTE_API_ETH_KEY"):
-            self.auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
+            self._auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
         else:
             raise NoApiKey(
                 "You must provide either a Zyte API key or an Ethereum "
                 "private key. For the latter, you must also install "
                 "zyte-api as zyte-api[x402]."
             )
+        self.auth = AuthInfo(_auth=self._auth)
+
+    @property
+    def api_key(self) -> str:
+        if isinstance(self._auth, str):
+            warn(
+                "The api_key property is deprecated, use auth.key instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self._auth
+        raise NotImplementedError(
+            "api_key is not available when using an Ethereum private key, use auth.key instead."
+        )
 
     async def get(
         self,
@@ -146,10 +181,10 @@ class AsyncZyteAPI:
         headers = {"User-Agent": self.user_agent, "Accept-Encoding": "br"}
 
         auth_kwargs = {}
-        if isinstance(self.auth, str):
-            auth_kwargs["auth"] = aiohttp.BasicAuth(self.auth)
+        if isinstance(self._auth, str):
+            auth_kwargs["auth"] = aiohttp.BasicAuth(self._auth)
         else:
-            x402_headers = await self.auth.get_headers(url, query, headers, post)
+            x402_headers = await self._auth.get_headers(url, query, headers, post)
             headers.update(x402_headers)
 
         post_kwargs = {
@@ -171,10 +206,10 @@ class AsyncZyteAPI:
                     stats.record_connected(resp.status, self.agg_stats)
                     if (
                         resp.status == 402
-                        and isinstance(self.auth, _x402Handler)
+                        and isinstance(self._auth, _x402Handler)
                         and "X-Payment" in post_kwargs["headers"]
                     ):
-                        self.auth.refresh_post_kwargs(post_kwargs, await resp.json())
+                        self._auth.refresh_post_kwargs(post_kwargs, await resp.json())
                     if resp.status >= 400:
                         content = await resp.read()
                         resp.release()
