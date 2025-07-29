@@ -192,7 +192,7 @@ class DefaultResource(Resource):
             elif echo_data == "402-no-payment-retry-exceeded":
                 assert not request.getHeader("X-Payment")
                 # Return 402 on the first 2 requests, then 200 on the third
-                # (the client will give up after 2 attempts, so the will be no
+                # (the client will give up after 2 attempts, so there will be no
                 # third in practice)
                 if not session_data:
                     session_data["payment_attempts"] = 1
