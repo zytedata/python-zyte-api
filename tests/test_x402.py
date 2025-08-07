@@ -18,7 +18,10 @@ KEY = "c85ef7d79691fe79573b1a7064c5232332f53bb1b44a08f1a737f57a68a4706e"
 
 def test_eth_key_param():
     if HAS_X402:
-        AsyncZyteAPI(eth_key=KEY)
+        client = AsyncZyteAPI(eth_key=KEY)
+        assert client.auth.key == KEY
+        assert client.auth.type == "eth"
+        assert client.api_url == "https://api-x402.zyte.com/v1/"
     else:
         with pytest.raises(ImportError, match="No module named 'eth_account'"):
             AsyncZyteAPI(eth_key=KEY)

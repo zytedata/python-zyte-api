@@ -114,6 +114,11 @@ def test_precedence(scenario, expected, monkeypatch):
     client = AsyncZyteAPI(**scenario.get("kwargs", {}))
     assert client.auth.type == expected["key_type"]
     assert client.auth.key == expected["key"]
+    assert (
+        client.api_url == "https://api-x402.zyte.com/v1/"
+        if expected["key_type"] == "eth"
+        else "https://api.zyte.com/v1/"
+    )
     if expected["key_type"] == "zyte":
         with pytest.warns(DeprecationWarning, match="api_key property is deprecated"):
             assert client.api_key == expected["key"]

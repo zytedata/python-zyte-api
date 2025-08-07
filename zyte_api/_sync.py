@@ -4,7 +4,6 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from ._async import AsyncZyteAPI
-from .constants import API_URL
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -87,7 +86,10 @@ class ZyteAPI:
     Ethereum for payments. If not specified, it is read from the
     ``ZYTE_API_ETH_KEY`` environment variable. See :ref:`x402`.
 
-    *api_url* is the Zyte API base URL.
+    *api_url* is the Zyte API base URL. If set to ``None``, it defaults to
+    ``"https://api.zyte.com/v1/"``. If using an Ethereum private key, e.g.
+    through *eth_key* or through  the ``ZYTE_API_ETH_KEY`` environment
+    variable, ``None`` results in ``"https://api-x402.zyte.com/v1/"`` instead.
 
     *n_conn* is the maximum number of concurrent requests to use. See
     :ref:`api-optimize`.
@@ -106,7 +108,7 @@ class ZyteAPI:
         self,
         *,
         api_key: str | None = None,
-        api_url: str = API_URL,
+        api_url: str | None = None,
         n_conn: int = 15,
         retrying: AsyncRetrying | None = None,
         user_agent: str | None = None,

@@ -111,7 +111,7 @@ class AsyncZyteAPI:
         self,
         *,
         api_key: str | None = None,
-        api_url: str = API_URL,
+        api_url: str | None = None,
         n_conn: int = 15,
         retrying: AsyncRetrying | None = None,
         user_agent: str | None = None,
@@ -123,7 +123,6 @@ class AsyncZyteAPI:
                 "AsyncRetrying."
             )
 
-        self.api_url = api_url
         self.n_conn = n_conn
         self.agg_stats = AggStats()
         self.retrying = retrying or zyte_api_retrying
@@ -131,9 +130,10 @@ class AsyncZyteAPI:
         self._semaphore = asyncio.Semaphore(n_conn)
         self._auth: str | _x402Handler
         self.auth: AuthInfo
-        self._load_auth(api_key, eth_key)
+        self.api_url: str
+        self._load_auth(api_key, eth_key, api_url)
 
-    def _load_auth(self, api_key: str | None, eth_key: str | None):
+    def _load_auth(self, api_key: str | None, eth_key: str | None, api_url: str | None):
         if api_key:
             self._auth = api_key
         elif eth_key:
@@ -149,6 +149,13 @@ class AsyncZyteAPI:
                 "zyte-api as zyte-api[x402]."
             )
         self.auth = AuthInfo(_auth=self._auth)
+        self.api_url = (
+            api_url
+            if api_url is not None
+            else "https://api-x402.zyte.com/v1/"
+            if self.auth.type == "eth"
+            else API_URL
+        )
 
     @property
     def api_key(self) -> str:

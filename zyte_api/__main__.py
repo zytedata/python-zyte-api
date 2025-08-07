@@ -1,5 +1,7 @@
 """Basic command-line interface for Zyte API."""
 
+from __future__ import annotations
+
 import argparse
 import asyncio
 import json
@@ -12,6 +14,7 @@ import tqdm
 from tenacity import retry_if_exception
 
 from zyte_api._async import AsyncZyteAPI
+from zyte_api._errors import RequestError
 from zyte_api._retry import RetryFactory, _is_throttling_error
 from zyte_api._utils import create_session
 from zyte_api.constants import API_URL
@@ -33,7 +36,7 @@ async def run(
     *,
     n_conn,
     stop_on_errors=_UNSET,
-    api_url,
+    api_url: str | None,
     api_key=None,
     retry_errors=True,
     store_errors=None,
@@ -77,7 +80,7 @@ async def run(
                 try:
                     result = await fut
                 except Exception as e:
-                    if store_errors:
+                    if store_errors and isinstance(e, RequestError):
                         write_output(e.parsed.response_body.decode())
 
                     if stop_on_errors:
@@ -184,7 +187,14 @@ def _get_argument_parser(program_name="zyte-api"):
         ),
     )
     p.add_argument(
-        "--api-url", help="Zyte API endpoint (default: %(default)s).", default=API_URL
+        "--api-url",
+        help=(
+            f"Zyte API endpoint (default: {API_URL}).\n"
+            f"\n"
+            f"Using an Ethereum private key, e.g. through --eth-key or "
+            f"through the ZYTE_API_ETH_KEY environment variable, changes the "
+            f"default API URL to https://api-x402.zyte.com/v1/.\n"
+        ),
     )
     p.add_argument(
         "--loglevel",
