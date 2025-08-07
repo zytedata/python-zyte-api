@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.8.0 (unreleased)
+0.8.0 (2025-08-07)
 ------------------
 
 * Added :ref:`x402 support <x402>`.
