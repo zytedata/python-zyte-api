@@ -30,7 +30,10 @@ def test_eth_key_param():
 @mock.patch.dict(environ, {"ZYTE_API_ETH_KEY": KEY})
 def test_eth_key_env_var():
     if HAS_X402:
-        AsyncZyteAPI()
+        client = AsyncZyteAPI()
+        assert client.auth.key == KEY
+        assert client.auth.type == "eth"
+        assert client.api_url == "https://api-x402.zyte.com/v1/"
     else:
         with pytest.raises(ImportError, match="No module named 'eth_account'"):
             AsyncZyteAPI()
