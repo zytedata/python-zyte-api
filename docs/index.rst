@@ -18,6 +18,7 @@ python-zyte-api
    :maxdepth: 1
 
    use/key
+   use/x402
    use/cli
    use/api
 

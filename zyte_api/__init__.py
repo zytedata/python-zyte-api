@@ -2,7 +2,7 @@
 Python client libraries and command line utilities for Zyte API
 """
 
-from ._async import AsyncZyteAPI
+from ._async import AsyncZyteAPI, AuthInfo
 from ._errors import RequestError
 from ._retry import (
     AggressiveRetryFactory,

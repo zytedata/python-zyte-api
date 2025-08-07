@@ -12,14 +12,14 @@ from zyte_api.utils import USER_AGENT
 
 @pytest.mark.parametrize(
     "client_cls",
-    [
+    (
         AsyncZyteAPI,
         AsyncClient,
-    ],
+    ),
 )
 @pytest.mark.parametrize(
     ("user_agent", "expected"),
-    [
+    (
         (
             None,
             USER_AGENT,
@@ -28,7 +28,7 @@ from zyte_api.utils import USER_AGENT
             f"scrapy-zyte-api/0.11.1 {USER_AGENT}",
             f"scrapy-zyte-api/0.11.1 {USER_AGENT}",
         ),
-    ],
+    ),
 )
 def test_user_agent(client_cls, user_agent, expected):
     client = client_cls(api_key="123", api_url="http:\\test", user_agent=user_agent)
@@ -37,10 +37,10 @@ def test_user_agent(client_cls, user_agent, expected):
 
 @pytest.mark.parametrize(
     "client_cls",
-    [
+    (
         AsyncZyteAPI,
         AsyncClient,
-    ],
+    ),
 )
 def test_api_key(client_cls):
     client_cls(api_key="a")
@@ -50,10 +50,10 @@ def test_api_key(client_cls):
 
 @pytest.mark.parametrize(
     ("client_cls", "get_method"),
-    [
+    (
         (AsyncZyteAPI, "get"),
         (AsyncClient, "request_raw"),
-    ],
+    ),
 )
 @pytest.mark.asyncio
 async def test_get(client_cls, get_method, mockserver):
@@ -70,10 +70,10 @@ async def test_get(client_cls, get_method, mockserver):
 
 @pytest.mark.parametrize(
     ("client_cls", "get_method"),
-    [
+    (
         (AsyncZyteAPI, "get"),
         (AsyncClient, "request_raw"),
-    ],
+    ),
 )
 @pytest.mark.asyncio
 async def test_get_request_error(client_cls, get_method, mockserver):
@@ -94,10 +94,10 @@ async def test_get_request_error(client_cls, get_method, mockserver):
 
 @pytest.mark.parametrize(
     ("client_cls", "get_method"),
-    [
+    (
         (AsyncZyteAPI, "get"),
         (AsyncClient, "request_raw"),
-    ],
+    ),
 )
 @pytest.mark.asyncio
 async def test_get_request_error_empty_body(client_cls, get_method, mockserver):
@@ -113,10 +113,10 @@ async def test_get_request_error_empty_body(client_cls, get_method, mockserver):
 
 @pytest.mark.parametrize(
     ("client_cls", "get_method"),
-    [
+    (
         (AsyncZyteAPI, "get"),
         (AsyncClient, "request_raw"),
-    ],
+    ),
 )
 @pytest.mark.asyncio
 async def test_get_request_error_non_json(client_cls, get_method, mockserver):
@@ -132,10 +132,10 @@ async def test_get_request_error_non_json(client_cls, get_method, mockserver):
 
 @pytest.mark.parametrize(
     ("client_cls", "get_method"),
-    [
+    (
         (AsyncZyteAPI, "get"),
         (AsyncClient, "request_raw"),
-    ],
+    ),
 )
 @pytest.mark.asyncio
 async def test_get_request_error_unexpected_json(client_cls, get_method, mockserver):
@@ -151,10 +151,10 @@ async def test_get_request_error_unexpected_json(client_cls, get_method, mockser
 
 @pytest.mark.parametrize(
     ("client_cls", "iter_method"),
-    [
+    (
         (AsyncZyteAPI, "iter"),
         (AsyncClient, "request_parallel_as_completed"),
-    ],
+    ),
 )
 @pytest.mark.asyncio
 async def test_iter(client_cls, iter_method, mockserver):
@@ -192,10 +192,10 @@ async def test_iter(client_cls, iter_method, mockserver):
 
 @pytest.mark.parametrize(
     ("client_cls", "get_method", "iter_method"),
-    [
+    (
         (AsyncZyteAPI, "get", "iter"),
         (AsyncClient, "request_raw", "request_parallel_as_completed"),
-    ],
+    ),
 )
 @pytest.mark.asyncio
 async def test_semaphore(client_cls, get_method, iter_method, mockserver):

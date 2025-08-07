@@ -4,16 +4,21 @@ import asyncio
 import time
 from asyncio import Future
 from functools import partial
+from os import environ
 from typing import TYPE_CHECKING, Any
+from warnings import warn
 
 import aiohttp
 from tenacity import AsyncRetrying
 
+from zyte_api._x402 import _x402Handler
+from zyte_api.apikey import NoApiKey
+
 from ._errors import RequestError
 from ._retry import zyte_api_retrying
 from ._utils import _AIO_API_TIMEOUT, create_session
-from .apikey import get_apikey
 from .constants import API_URL
+from .constants import ENV_VARIABLE as API_KEY_ENV_VAR
 from .stats import AggStats, ResponseStats
 from .utils import USER_AGENT, _process_query
 
@@ -77,6 +82,25 @@ class _AsyncSession:
         )
 
 
+class AuthInfo:
+    def __init__(self, *, _auth):
+        self._auth = _auth
+
+    @property
+    def key(self) -> str:
+        if isinstance(self._auth, str):
+            return self._auth
+        assert isinstance(self._auth, _x402Handler)
+        return self._auth.client.account.key.hex()
+
+    @property
+    def type(self) -> str:
+        if isinstance(self._auth, str):
+            return "zyte"
+        assert isinstance(self._auth, _x402Handler)
+        return "eth"
+
+
 class AsyncZyteAPI:
     """:ref:`Asynchronous Zyte API client <asyncio_api>`.
 
@@ -86,24 +110,65 @@ class AsyncZyteAPI:
     def __init__(
         self,
         *,
-        api_key=None,
-        api_url=API_URL,
-        n_conn=15,
+        api_key: str | None = None,
+        api_url: str | None = None,
+        n_conn: int = 15,
         retrying: AsyncRetrying | None = None,
         user_agent: str | None = None,
+        eth_key: str | None = None,
     ):
         if retrying is not None and not isinstance(retrying, AsyncRetrying):
             raise ValueError(
                 "The retrying parameter, if defined, must be an instance of "
                 "AsyncRetrying."
             )
-        self.api_key = get_apikey(api_key)
-        self.api_url = api_url
+
         self.n_conn = n_conn
         self.agg_stats = AggStats()
         self.retrying = retrying or zyte_api_retrying
         self.user_agent = user_agent or USER_AGENT
         self._semaphore = asyncio.Semaphore(n_conn)
+        self._auth: str | _x402Handler
+        self.auth: AuthInfo
+        self.api_url: str
+        self._load_auth(api_key, eth_key, api_url)
+
+    def _load_auth(self, api_key: str | None, eth_key: str | None, api_url: str | None):
+        if api_key:
+            self._auth = api_key
+        elif eth_key:
+            self._auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
+        elif api_key := environ.get(API_KEY_ENV_VAR):
+            self._auth = api_key
+        elif eth_key := environ.get("ZYTE_API_ETH_KEY"):
+            self._auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
+        else:
+            raise NoApiKey(
+                "You must provide either a Zyte API key or an Ethereum "
+                "private key. For the latter, you must also install "
+                "zyte-api as zyte-api[x402]."
+            )
+        self.auth = AuthInfo(_auth=self._auth)
+        self.api_url = (
+            api_url
+            if api_url is not None
+            else "https://api-x402.zyte.com/v1/"
+            if self.auth.type == "eth"
+            else API_URL
+        )
+
+    @property
+    def api_key(self) -> str:
+        if isinstance(self._auth, str):
+            warn(
+                "The api_key property is deprecated, use auth.key instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self._auth
+        raise NotImplementedError(
+            "api_key is not available when using an Ethereum private key, use auth.key instead."
+        )
 
     async def get(
         self,
@@ -117,8 +182,24 @@ class AsyncZyteAPI:
         """Asynchronous equivalent to :meth:`ZyteAPI.get`."""
         retrying = retrying or self.retrying
         post = _post_func(session)
-        auth = aiohttp.BasicAuth(self.api_key)
+
+        url = self.api_url + endpoint
+        query = _process_query(query)
         headers = {"User-Agent": self.user_agent, "Accept-Encoding": "br"}
+
+        auth_kwargs = {}
+        if isinstance(self._auth, str):
+            auth_kwargs["auth"] = aiohttp.BasicAuth(self._auth)
+        else:
+            x402_headers = await self._auth.get_headers(url, query, headers, post)
+            headers.update(x402_headers)
+
+        post_kwargs = {
+            "url": url,
+            "json": query,
+            "headers": headers,
+            **auth_kwargs,
+        }
 
         response_stats = []
         start_global = time.perf_counter()
@@ -127,17 +208,15 @@ class AsyncZyteAPI:
             stats = ResponseStats.create(start_global)
             self.agg_stats.n_attempts += 1
 
-            safe_query = _process_query(query)
-            post_kwargs = {
-                "url": self.api_url + endpoint,
-                "json": safe_query,
-                "auth": auth,
-                "headers": headers,
-            }
-
             try:
                 async with self._semaphore, post(**post_kwargs) as resp:
                     stats.record_connected(resp.status, self.agg_stats)
+                    if (
+                        resp.status == 402
+                        and isinstance(self._auth, _x402Handler)
+                        and "X-Payment" in post_kwargs["headers"]
+                    ):
+                        self._auth.refresh_post_kwargs(post_kwargs, await resp.json())
                     if resp.status >= 400:
                         content = await resp.read()
                         resp.release()
@@ -151,7 +230,7 @@ class AsyncZyteAPI:
                             message=resp.reason,
                             headers=resp.headers,
                             response_content=content,
-                            query=safe_query,
+                            query=query,
                         )
 
                     response = await resp.json()

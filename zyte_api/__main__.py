@@ -1,5 +1,7 @@
 """Basic command-line interface for Zyte API."""
 
+from __future__ import annotations
+
 import argparse
 import asyncio
 import json
@@ -12,6 +14,7 @@ import tqdm
 from tenacity import retry_if_exception
 
 from zyte_api._async import AsyncZyteAPI
+from zyte_api._errors import RequestError
 from zyte_api._retry import RetryFactory, _is_throttling_error
 from zyte_api._utils import create_session
 from zyte_api.constants import API_URL
@@ -33,10 +36,11 @@ async def run(
     *,
     n_conn,
     stop_on_errors=_UNSET,
-    api_url,
+    api_url: str | None,
     api_key=None,
     retry_errors=True,
     store_errors=None,
+    eth_key=None,
 ):
     if stop_on_errors is not _UNSET:
         warn(
@@ -54,8 +58,13 @@ async def run(
         pbar.update()
 
     retrying = None if retry_errors else DontRetryErrorsFactory().build()
+    auth_kwargs = {}
+    if api_key:
+        auth_kwargs["api_key"] = api_key
+    elif eth_key:
+        auth_kwargs["eth_key"] = eth_key
     client = AsyncZyteAPI(
-        n_conn=n_conn, api_key=api_key, api_url=api_url, retrying=retrying
+        n_conn=n_conn, api_url=api_url, retrying=retrying, **auth_kwargs
     )
     async with create_session(connection_pool_size=n_conn) as session:
         result_iter = client.iter(
@@ -71,7 +80,7 @@ async def run(
                 try:
                     result = await fut
                 except Exception as e:
-                    if store_errors:
+                    if store_errors and isinstance(e, RequestError):
                         write_output(e.parsed.response_body.decode())
 
                     if stop_on_errors:
@@ -154,12 +163,38 @@ def _get_argument_parser(program_name="zyte-api"):
         default=20,
         help=("Number of concurrent connections to use (default: %(default)s)."),
     )
-    p.add_argument(
+    group = p.add_mutually_exclusive_group(required=False)
+    group.add_argument(
         "--api-key",
-        help="Zyte API key.",
+        help=(
+            "Zyte API key.\n"
+            "\n"
+            "If not specified, it is read from the ZYTE_API_KEY environment "
+            "variable."
+            "\n"
+            "Cannot be combined with --eth-key."
+        ),
+    )
+    group.add_argument(
+        "--eth-key",
+        help=(
+            "Ethereum private key, as a hexadecimal string.\n"
+            "\n"
+            "If not specified, it is read from the ZYTE_API_ETH_KEY "
+            "environment variable."
+            "\n"
+            "Cannot be combined with --api-key."
+        ),
     )
     p.add_argument(
-        "--api-url", help="Zyte API endpoint (default: %(default)s).", default=API_URL
+        "--api-url",
+        help=(
+            f"Zyte API endpoint (default: {API_URL}).\n"
+            f"\n"
+            f"Using an Ethereum private key, e.g. through --eth-key or "
+            f"through the ZYTE_API_ETH_KEY environment variable, changes the "
+            f"default API URL to https://api-x402.zyte.com/v1/.\n"
+        ),
     )
     p.add_argument(
         "--loglevel",
@@ -218,6 +253,7 @@ def _main(program_name="zyte-api"):
         n_conn=args.n_conn,
         api_url=args.api_url,
         api_key=args.api_key,
+        eth_key=args.eth_key,
         retry_errors=not args.dont_retry_errors,
         store_errors=args.store_errors,
     )

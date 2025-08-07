@@ -19,6 +19,7 @@ from tenacity import (
     retry_if_exception,
     wait_chain,
     wait_fixed,
+    wait_none,
     wait_random,
     wait_random_exponential,
 )
@@ -159,6 +160,10 @@ def _undocumented_error(exc: BaseException) -> bool:
     )
 
 
+def _402_error(exc: BaseException) -> bool:
+    return isinstance(exc, RequestError) and exc.status == 402
+
+
 def _deprecated(message: str, callable: Callable) -> Callable:
     def wrapper(factory, retry_state: RetryCallState):
         warn(message, DeprecationWarning, stacklevel=3)
@@ -200,6 +205,7 @@ class RetryFactory:
         | retry_if_exception(_is_network_error)
         | retry_if_exception(_download_error)
         | retry_if_exception(_undocumented_error)
+        | retry_if_exception(_402_error)
     )
     # throttling
     throttling_wait = wait_chain(
@@ -244,6 +250,9 @@ class RetryFactory:
     undocumented_error_stop = stop_on_count(2)
     undocumented_error_wait = network_error_wait
 
+    x402_error_stop = stop_on_count(2)
+    x402_error_wait = wait_none()
+
     def wait(self, retry_state: RetryCallState) -> float:
         assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
@@ -254,6 +263,8 @@ class RetryFactory:
             return self.network_error_wait(retry_state=retry_state)
         if _undocumented_error(exc):
             return self.undocumented_error_wait(retry_state=retry_state)
+        if _402_error(exc):
+            return self.x402_error_wait(retry_state=retry_state)
         assert _download_error(exc)  # See retry_condition
         return self.download_error_wait(retry_state=retry_state)
 
@@ -267,6 +278,8 @@ class RetryFactory:
             return self.network_error_stop(retry_state)
         if _undocumented_error(exc):
             return self.undocumented_error_stop(retry_state)
+        if _402_error(exc):
+            return self.x402_error_stop(retry_state)
         assert _download_error(exc)  # See retry_condition
         return self.download_error_stop(retry_state)
 

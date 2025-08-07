@@ -1,0 +1,66 @@
+.. _x402:
+
+====
+x402
+====
+
+It is possible to use :ref:`Zyte API <zyte-api>` without a Zyte API account by 
+using the x402_ protocol to handle payments:
+
+#.  Read the `Zyte Terms of Service`_. By using Zyte API, you are accepting
+    them.
+
+    .. _Zyte Terms of Service: https://www.zyte.com/terms-policies/terms-of-service/
+
+#.  During :ref:`installation <install>`, make sure to install the ``x402`` extra.
+
+#.  :ref:`Configure <eth-key>` the *private* key of your Ethereum_ account to
+    authorize payments.
+
+    .. _Ethereum: https://ethereum.org/
+
+
+.. _eth-key:
+
+Configuring your Ethereum private key
+=====================================
+
+It is recommended to configure your Ethereum private key through an environment
+variable, so that it can be picked by both the :ref:`command-line client
+<command_line>` and the :ref:`Python client library <api>`:
+
+-  On Windows’ CMD:
+
+   .. code-block:: shell
+
+        > set ZYTE_API_ETH_KEY=YOUR_ETH_PRIVATE_KEY
+
+-  On macOS and Linux:
+
+   .. code-block:: shell
+
+        $ export ZYTE_API_ETH_KEY=YOUR_ETH_PRIVATE_KEY
+
+Alternatively, you may pass your Ethereum private key to the clients directly:
+
+-   To pass your Ethereum private key directly to the command-line client, use
+    the ``--eth-key`` switch:
+
+    .. code-block:: shell
+
+        zyte-api --eth-key YOUR_ETH_PRIVATE_KEY …
+
+-   To pass your Ethereum private key directly to the Python client classes,
+    use the ``eth_key`` parameter when creating a client object:
+
+    .. code-block:: python
+
+        from zyte_api import ZyteAPI
+
+        client = ZyteAPI(eth_key="YOUR_ETH_PRIVATE_KEY")
+
+    .. code-block:: python
+
+        from zyte_api import AsyncZyteAPI
+
+        client = AsyncZyteAPI(eth_key="YOUR_ETH_PRIVATE_KEY")

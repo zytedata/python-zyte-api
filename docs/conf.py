@@ -183,6 +183,11 @@ epub_title = project
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
 
+# -- Smart quotes ------------------------------------------------------------
+# Disabled so that, in the CLI reference, ``--api-key` and similar options are
+# not turned into –api-key in descriptions.
+smartquotes = False
+
 
 # -- Extension configuration -------------------------------------------------
 

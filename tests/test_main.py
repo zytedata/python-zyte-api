@@ -11,7 +11,17 @@ from zyte_api.__main__ import run
 from zyte_api.aio.errors import RequestError
 
 
-class MockRequestError(Exception):
+class MockRequestError(RequestError):
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            *args,
+            query={},
+            response_content=b"",
+            request_info=None,
+            history=None,
+            **kwargs,
+        )
+
     @property
     def parsed(self):
         return Mock(
@@ -52,7 +62,7 @@ async def fake_exception(value=True):
 @pytest.mark.parametrize(
     ("queries", "expected_response", "store_errors", "exception"),
     (
-        [
+        (
             # test if it stores the error(s) also by adding flag
             (
                 [
@@ -79,7 +89,7 @@ async def fake_exception(value=True):
                 False,
                 fake_exception,
             ),
-        ]
+        )
     ),
 )
 @pytest.mark.asyncio

@@ -154,6 +154,9 @@ ignore = [
 "zyte_api/errors.py" = ["UP007"]
 "zyte_api/stats.py" = ["UP007"]
 
+[tool.ruff.lint.flake8-pytest-style]
+parametrize-values-type = "tuple"
+
 [tool.ruff.lint.flake8-type-checking]
 runtime-evaluated-decorators = ["attr.s"]
 
