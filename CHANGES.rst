@@ -1,6 +1,15 @@
 Changes
 =======
 
+0.8.0 (unreleased)
+------------------
+
+* Added :ref:`x402 support <x402>`.
+
+  .. note:: This is an upcoming feature of Zyte API. If you want to use it, 
+    keep an eye on the `Zyte blog <https://www.zyte.com/blog/>`_ for a release 
+    announcement.
+
 0.7.1 (2025-06-05)
 ------------------
 
