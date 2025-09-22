@@ -49,7 +49,7 @@ class _Session:
 
     def get(
         self,
-        query: dict,
+        query: dict[str, Any],
         *,
         endpoint: str = "extract",
         handle_retries: bool = True,
@@ -65,7 +65,7 @@ class _Session:
 
     def iter(
         self,
-        queries: list[dict],
+        queries: list[dict[str, Any]],
         *,
         endpoint: str = "extract",
         handle_retries: bool = True,
@@ -129,7 +129,7 @@ class ZyteAPI:
 
     def get(
         self,
-        query: dict,
+        query: dict[str, Any],
         *,
         endpoint: str = "extract",
         session: ClientSession | None = None,
@@ -163,7 +163,7 @@ class ZyteAPI:
 
     def iter(
         self,
-        queries: list[dict],
+        queries: list[dict[str, Any]],
         *,
         endpoint: str = "extract",
         session: ClientSession | None = None,

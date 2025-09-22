@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from types import GeneratorType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 
 import pytest
 
 from zyte_api import ZyteAPI
 from zyte_api.apikey import NoApiKey
+
+if TYPE_CHECKING:
+    from tests.mockserver import MockServer
 
 
 def test_api_key():
@@ -70,7 +73,7 @@ def test_semaphore(mockserver):
     assert client._async_client._semaphore.__aexit__.call_count == len(queries)
 
 
-def test_session_context_manager(mockserver):
+def test_session_context_manager(mockserver: MockServer) -> None:
     client = ZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
     queries = [
         {"url": "https://a.example", "httpResponseBody": True},
@@ -111,7 +114,7 @@ def test_session_context_manager(mockserver):
             assert actual_result in expected_results
 
 
-def test_session_no_context_manager(mockserver):
+def test_session_no_context_manager(mockserver: MockServer) -> None:
     client = ZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
     queries = [
         {"url": "https://a.example", "httpResponseBody": True},

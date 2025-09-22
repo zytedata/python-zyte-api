@@ -1,15 +1,22 @@
+from __future__ import annotations
+
 import json
 import subprocess
 from json import JSONDecodeError
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
 from zyte_api import RequestError
 from zyte_api.__main__ import run
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from tests.mockserver import MockServer
 
 
 class MockRequestError(RequestError):
@@ -178,7 +185,9 @@ async def test_run_stop_on_errors_true(mockserver):
     assert exc_info.value.query == query
 
 
-def _run(*, input, mockserver, cli_params=None):
+def _run(
+    *, input: str, mockserver: MockServer, cli_params: Iterable[str] | None = None
+) -> subprocess.CompletedProcess[bytes]:
     cli_params = cli_params or ()
     with NamedTemporaryFile("w") as url_list:
         url_list.write(input)

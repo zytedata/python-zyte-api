@@ -145,10 +145,10 @@ class fast_forward:
 
 
 class scale:
-    def __init__(self, factor):
-        self.factor = factor
+    def __init__(self, factor: float):
+        self.factor: float = factor
 
-    def __call__(self, number, add=0):
+    def __call__(self, number: float, add: int = 0) -> int:
         return int(number * self.factor) + add
 
 
@@ -414,7 +414,7 @@ async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
     retrying = copy(retrying)
     retrying.wait = wait
 
-    async def run():
+    async def run() -> None:
         while True:
             try:
                 outcome = outcomes.popleft()

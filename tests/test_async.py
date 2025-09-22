@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -11,6 +11,9 @@ from zyte_api.aio.client import AsyncClient
 from zyte_api.apikey import NoApiKey
 from zyte_api.errors import ParsedError
 from zyte_api.utils import USER_AGENT
+
+if TYPE_CHECKING:
+    from tests.mockserver import MockServer
 
 
 @pytest.mark.parametrize(
@@ -221,7 +224,7 @@ async def test_semaphore(client_cls, get_method, iter_method, mockserver):
 
 
 @pytest.mark.asyncio
-async def test_session_context_manager(mockserver):
+async def test_session_context_manager(mockserver: MockServer) -> None:
     client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
     queries = [
         {"url": "https://a.example", "httpResponseBody": True},
@@ -271,7 +274,7 @@ async def test_session_context_manager(mockserver):
 
 
 @pytest.mark.asyncio
-async def test_session_no_context_manager(mockserver):
+async def test_session_no_context_manager(mockserver: MockServer) -> None:
     client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
     queries = [
         {"url": "https://a.example", "httpResponseBody": True},
