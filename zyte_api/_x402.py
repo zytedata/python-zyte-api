@@ -110,9 +110,9 @@ class _x402Handler:
         semaphore: Semaphore,
         stats: AggStats,
     ):
-        from eth_account import Account
-        from x402.clients import x402Client
-        from x402.types import x402PaymentRequiredResponse
+        from eth_account import Account  # noqa: PLC0415
+        from x402.clients import x402Client  # noqa: PLC0415
+        from x402.types import x402PaymentRequiredResponse  # noqa: PLC0415
 
         account = Account.from_key(eth_key)
         self.client = x402Client(account=account)

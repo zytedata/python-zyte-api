@@ -115,7 +115,7 @@ def test_process_query_bytes():
 
 @pytest.mark.asyncio  # https://github.com/aio-libs/aiohttp/pull/1468
 async def test_deprecated_create_session():
-    from zyte_api.aio.client import create_session as _create_session
+    from zyte_api.aio.client import create_session as _create_session  # noqa: PLC0415
 
     with pytest.warns(
         DeprecationWarning,

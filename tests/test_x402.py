@@ -50,7 +50,7 @@ def test_eth_key_short():
 
 @contextlib.contextmanager
 def reset_x402_cache():
-    from zyte_api import _x402
+    from zyte_api import _x402  # noqa: PLC0415
 
     try:
         yield _x402.CACHE

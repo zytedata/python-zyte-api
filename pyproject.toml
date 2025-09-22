@@ -162,8 +162,8 @@ ignore = [
 "tests/*" = ["S"]
 "docs/**" = ["B006"]
 # Skip PEP 604 suggestions for files with attr classes
-"zyte_api/errors.py" = ["UP007"]
-"zyte_api/stats.py" = ["UP007"]
+"zyte_api/errors.py" = ["UP007", "UP045"]
+"zyte_api/stats.py" = ["UP007", "UP045"]
 
 [tool.ruff.lint.flake8-pytest-style]
 parametrize-values-type = "tuple"
