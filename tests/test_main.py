@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from zyte_api import RequestError
 from zyte_api.__main__ import run
-from zyte_api.aio.errors import RequestError
 
 
 class MockRequestError(RequestError):

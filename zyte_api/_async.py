@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterator
     from contextlib import AbstractAsyncContextManager
 
-    from eth_account.account import LocalAccount
+    from eth_account.signers.local import LocalAccount
 
     # typing.Self requires Python 3.11
     from typing_extensions import Self
