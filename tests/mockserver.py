@@ -10,7 +10,6 @@ from subprocess import PIPE, Popen
 from typing import Any
 from urllib.parse import urlparse
 
-from twisted.internet import reactor
 from twisted.internet.task import deferLater
 from twisted.web.resource import Resource
 from twisted.web.server import NOT_DONE_YET, Site
@@ -22,11 +21,11 @@ SCREENSHOT = (
 
 
 # https://github.com/scrapy/scrapy/blob/02b97f98e74a994ad3e4d74e7ed55207e508a576/tests/mockserver.py#L27C1-L33C19
-def getarg(request, name, default=None, type=None):
+def getarg(request, name, default=None, type_=None):
     if name in request.args:
         value = request.args[name][0]
-        if type is not None:
-            value = type(value)
+        if type_ is not None:
+            value = type_(value)
         return value
     return default
 
@@ -41,6 +40,8 @@ class DropResource(Resource):
     isLeaf = True
 
     def deferRequest(self, request, delay, f, *a, **kw):
+        from twisted.internet import reactor
+
         def _cancelrequest(_):
             # silence CancelledError
             d.addErrback(lambda _: None)
@@ -56,7 +57,7 @@ class DropResource(Resource):
         return NOT_DONE_YET
 
     def _delayedRender(self, request):
-        abort = getarg(request, b"abort", 0, type=int)
+        abort = getarg(request, b"abort", 0, type_=int)
         request.write(b"this connection will be dropped\n")
         tr = request.channel.transport
         try:
@@ -270,6 +271,8 @@ class MockServer:
 
 
 def main():
+    from twisted.internet import reactor
+
     parser = argparse.ArgumentParser()
     parser.add_argument("resource")
     parser.add_argument("--port", type=int)

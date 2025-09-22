@@ -164,10 +164,10 @@ def _402_error(exc: BaseException) -> bool:
     return isinstance(exc, RequestError) and exc.status == 402
 
 
-def _deprecated(message: str, callable: Callable) -> Callable:
+def _deprecated(message: str, callable_: Callable) -> Callable:
     def wrapper(factory: Any, retry_state: RetryCallState) -> Callable:
         warn(message, DeprecationWarning, stacklevel=3)
-        return callable(retry_state=retry_state)
+        return callable_(retry_state=retry_state)
 
     return wrapper
 
