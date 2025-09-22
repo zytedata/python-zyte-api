@@ -5,7 +5,7 @@ import logging
 from collections import Counter
 from datetime import timedelta
 from itertools import count
-from typing import Any, Callable, Union
+from typing import TYPE_CHECKING, Any, Callable, Union, cast
 from warnings import warn
 
 from aiohttp import client_exceptions
@@ -26,6 +26,9 @@ from tenacity import (
 from tenacity.stop import stop_base, stop_never
 
 from ._errors import RequestError
+
+if TYPE_CHECKING:
+    from tenacity.wait import wait_base
 
 logger = logging.getLogger(__name__)
 
@@ -208,7 +211,7 @@ class RetryFactory:
         | retry_if_exception(_402_error)
     )
     # throttling
-    throttling_wait = wait_chain(
+    throttling_wait: wait_base = wait_chain(
         # always wait 20-40s first
         wait_fixed(20) + wait_random(0, 20),
         # wait 20-40s again
@@ -219,39 +222,47 @@ class RetryFactory:
     )
 
     # connection errors, other client and server failures
-    network_error_stop = stop_after_uninterrupted_delay(15 * 60)
-    network_error_wait = (
+    network_error_stop: stop_base = stop_after_uninterrupted_delay(15 * 60)
+    network_error_wait: wait_base = (
         # wait from 3s to ~1m
         wait_random(3, 7) + wait_random_exponential(multiplier=1, max=55)
     )
 
-    download_error_stop = stop_on_download_error(max_total=4, max_permanent=2)
-    download_error_wait = network_error_wait
-
-    temporary_download_error_stop = _deprecated(
-        (
-            "The zyte_api.RetryFactory.temporary_download_error_stop() method "
-            "is deprecated and will be removed in a future version. Use "
-            "download_error_stop() instead."
-        ),
-        download_error_stop,
+    download_error_stop: stop_base = stop_on_download_error(
+        max_total=4, max_permanent=2
     )
-    temporary_download_error_wait = _deprecated(
-        (
-            "The zyte_api.RetryFactory.temporary_download_error_wait() method "
-            "is deprecated and will be removed in a future version. Use "
-            "download_error_wait() instead."
+    download_error_wait: wait_base = network_error_wait
+
+    temporary_download_error_stop: stop_base = cast(
+        "stop_base",
+        _deprecated(
+            (
+                "The zyte_api.RetryFactory.temporary_download_error_stop() method "
+                "is deprecated and will be removed in a future version. Use "
+                "download_error_stop() instead."
+            ),
+            download_error_stop,
         ),
-        download_error_wait,
+    )
+    temporary_download_error_wait: wait_base = cast(
+        "wait_base",
+        _deprecated(
+            (
+                "The zyte_api.RetryFactory.temporary_download_error_wait() method "
+                "is deprecated and will be removed in a future version. Use "
+                "download_error_wait() instead."
+            ),
+            download_error_wait,
+        ),
     )
 
-    throttling_stop = stop_never
+    throttling_stop: stop_base = stop_never
 
-    undocumented_error_stop = stop_on_count(2)
-    undocumented_error_wait = network_error_wait
+    undocumented_error_stop: stop_base = stop_on_count(2)
+    undocumented_error_wait: wait_base = network_error_wait
 
-    x402_error_stop = stop_on_count(2)
-    x402_error_wait = wait_none()
+    x402_error_stop: stop_base = stop_on_count(2)
+    x402_error_wait: wait_base = wait_none()
 
     def wait(self, retry_state: RetryCallState) -> float:
         assert retry_state.outcome, "Unexpected empty outcome"
