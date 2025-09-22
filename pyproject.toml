@@ -21,6 +21,9 @@ filename = "zyte_api/__version__.py"
 
 [tool.coverage.run]
 branch = true
+patch = [
+    "subprocess",
+]
 
 [tool.coverage.report]
 exclude_also = [
