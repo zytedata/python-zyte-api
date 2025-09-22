@@ -3,6 +3,7 @@ import subprocess
 from json import JSONDecodeError
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -41,7 +42,7 @@ def get_json_content(file_object):
         pass
 
 
-def forbidden_domain_response():
+def forbidden_domain_response() -> dict[str, Any]:
     return {
         "type": "/download/temporary-error",
         "title": "Temporary Downloading Error",

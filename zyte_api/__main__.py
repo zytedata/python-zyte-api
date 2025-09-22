@@ -34,14 +34,14 @@ async def run(
     queries,
     out,
     *,
-    n_conn,
+    n_conn: int,
     stop_on_errors=_UNSET,
     api_url: str | None,
-    api_key=None,
-    retry_errors=True,
+    api_key: str | None = None,
+    retry_errors: bool = True,
     store_errors=None,
     eth_key=None,
-):
+) -> None:
     if stop_on_errors is not _UNSET:
         warn(
             "The stop_on_errors parameter is deprecated.",
@@ -51,7 +51,7 @@ async def run(
     else:
         stop_on_errors = False
 
-    def write_output(content):
+    def write_output(content) -> None:
         json.dump(content, out, ensure_ascii=False)
         out.write("\n")
         out.flush()
@@ -118,7 +118,7 @@ def read_input(input_fp, intype):
     return records
 
 
-def _get_argument_parser(program_name="zyte-api"):
+def _get_argument_parser(program_name: str = "zyte-api") -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog=program_name,
         description="Send Zyte API requests.",
@@ -225,7 +225,7 @@ def _get_argument_parser(program_name="zyte-api"):
     return p
 
 
-def _main(program_name="zyte-api"):
+def _main(program_name: str = "zyte-api") -> None:
     """Process urls from input file through Zyte API"""
     p = _get_argument_parser(program_name=program_name)
     args = p.parse_args()

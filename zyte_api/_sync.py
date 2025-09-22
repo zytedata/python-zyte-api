@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
+from asyncio import AbstractEventLoop
+from typing import TYPE_CHECKING, Any
 
 from ._async import AsyncZyteAPI
 
@@ -11,8 +12,11 @@ if TYPE_CHECKING:
     from aiohttp import ClientSession
     from tenacity import AsyncRetrying
 
+    # typing.Self requires Python 3.11
+    from typing_extensions import Self
 
-def _get_loop():
+
+def _get_loop() -> AbstractEventLoop:
     try:
         return asyncio.get_event_loop()
     except RuntimeError:  # pragma: no cover (tests always have a running loop)
@@ -22,24 +26,24 @@ def _get_loop():
 
 
 class _Session:
-    def __init__(self, client, **session_kwargs):
-        self._client = client
+    def __init__(self, client: ZyteAPI, **session_kwargs: Any):
+        self._client: ZyteAPI = client
 
         # https://github.com/aio-libs/aiohttp/pull/1468
-        async def create_session():
+        async def create_session() -> ClientSession:
             return client._async_client.session(**session_kwargs)._session
 
         loop = _get_loop()
-        self._session = loop.run_until_complete(create_session())
+        self._session: ClientSession = loop.run_until_complete(create_session())
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *exc_info):
+    def __exit__(self, *exc_info) -> None:
         loop = _get_loop()
         loop.run_until_complete(self._session.close())
 
-    def close(self):
+    def close(self) -> None:
         loop = _get_loop()
         loop.run_until_complete(self._session.close())
 
@@ -48,9 +52,9 @@ class _Session:
         query: dict,
         *,
         endpoint: str = "extract",
-        handle_retries=True,
+        handle_retries: bool = True,
         retrying: AsyncRetrying | None = None,
-    ):
+    ) -> dict[str, Any]:
         return self._client.get(
             query=query,
             endpoint=endpoint,
@@ -64,9 +68,9 @@ class _Session:
         queries: list[dict],
         *,
         endpoint: str = "extract",
-        handle_retries=True,
+        handle_retries: bool = True,
         retrying: AsyncRetrying | None = None,
-    ) -> Generator[dict | Exception, None, None]:
+    ) -> Generator[dict[str, Any] | Exception, None, None]:
         return self._client.iter(
             queries=queries,
             endpoint=endpoint,
@@ -131,7 +135,7 @@ class ZyteAPI:
         session: ClientSession | None = None,
         handle_retries: bool = True,
         retrying: AsyncRetrying | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Send *query* to Zyte API and return the result.
 
         *endpoint* is the Zyte API endpoint path relative to the client object
@@ -165,7 +169,7 @@ class ZyteAPI:
         session: ClientSession | None = None,
         handle_retries: bool = True,
         retrying: AsyncRetrying | None = None,
-    ) -> Generator[dict | Exception, None, None]:
+    ) -> Generator[dict[str, Any] | Exception, None, None]:
         """Send multiple *queries* to Zyte API in parallel and iterate over
         their results as they come.
 
@@ -194,7 +198,7 @@ class ZyteAPI:
             except Exception as exception:
                 yield exception
 
-    def session(self, **kwargs):
+    def session(self, **kwargs: Any) -> _Session:
         """:ref:`Context manager <context-managers>` to create a session.
 
         A session is an object that has the same API as the client object,

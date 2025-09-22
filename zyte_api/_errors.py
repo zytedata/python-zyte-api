@@ -15,7 +15,7 @@ class RequestError(ClientResponseError):
     <zapi-rate-limit>` or :ref:`unsuccessful
     <zapi-unsuccessful-responses>` response from Zyte API."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         #: Query sent to Zyte API.
         #:
         #: May be slightly different from the input query due to
@@ -31,13 +31,14 @@ class RequestError(ClientResponseError):
         super().__init__(*args, **kwargs)
 
     @property
-    def parsed(self):
+    def parsed(self) -> ParsedError:
         """Response as a :class:`ParsedError` object."""
-        return ParsedError.from_body(self.response_content)
+        # TODO: self.response_content can be None but ParsedError doesn't expect it
+        return ParsedError.from_body(self.response_content)  # type: ignore[arg-type]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"RequestError: {self.status}, message={self.message}, "
-            f"headers={self.headers}, body={self.response_content}, "
+            f"headers={self.headers}, body={self.response_content!r}, "
             f"request_id={self.request_id}"
         )

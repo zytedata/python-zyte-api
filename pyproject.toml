@@ -27,6 +27,17 @@ exclude_also = [
     "if TYPE_CHECKING:",
 ]
 
+[tool.mypy]
+#allow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "runstats"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+allow_untyped_defs = true
+
 [tool.pytest.ini_options]
 filterwarnings = [
     "ignore:The zyte_api\\.aio module is deprecated:DeprecationWarning"

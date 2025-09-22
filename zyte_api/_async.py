@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import time
-from asyncio import Future
 from functools import partial
 from os import environ
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from warnings import warn
 
 import aiohttp
@@ -23,12 +22,20 @@ from .stats import AggStats, ResponseStats
 from .utils import USER_AGENT, _process_query
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Awaitable, Callable, Iterator
+    from contextlib import AbstractAsyncContextManager
 
-    _ResponseFuture = Future[dict[str, Any]]
+    from eth_account.account import LocalAccount
+
+    # typing.Self requires Python 3.11
+    from typing_extensions import Self
+
+    _ResponseFuture = Awaitable[dict[str, Any]]
 
 
-def _post_func(session):
+def _post_func(
+    session: aiohttp.ClientSession | None,
+) -> Callable[..., AbstractAsyncContextManager[aiohttp.ClientResponse]]:
     """Return a function to send a POST request"""
     if session is None:
         return partial(aiohttp.request, method="POST", timeout=_AIO_API_TIMEOUT)
@@ -36,17 +43,19 @@ def _post_func(session):
 
 
 class _AsyncSession:
-    def __init__(self, client, **session_kwargs):
-        self._client = client
-        self._session = create_session(client.n_conn, **session_kwargs)
+    def __init__(self, client: AsyncZyteAPI, **session_kwargs: Any):
+        self._client: AsyncZyteAPI = client
+        self._session: aiohttp.ClientSession = create_session(
+            client.n_conn, **session_kwargs
+        )
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, *exc_info):
+    async def __aexit__(self, *exc_info) -> None:
         await self._session.close()
 
-    async def close(self):
+    async def close(self) -> None:
         await self._session.close()
 
     async def get(
@@ -54,9 +63,9 @@ class _AsyncSession:
         query: dict,
         *,
         endpoint: str = "extract",
-        handle_retries=True,
+        handle_retries: bool = True,
         retrying: AsyncRetrying | None = None,
-    ):
+    ) -> dict[str, Any]:
         return await self._client.get(
             query=query,
             endpoint=endpoint,
@@ -70,9 +79,9 @@ class _AsyncSession:
         queries: list[dict],
         *,
         endpoint: str = "extract",
-        handle_retries=True,
+        handle_retries: bool = True,
         retrying: AsyncRetrying | None = None,
-    ) -> Iterator[Future]:
+    ) -> Iterator[_ResponseFuture]:
         return self._client.iter(
             queries=queries,
             endpoint=endpoint,
@@ -91,7 +100,7 @@ class AuthInfo:
         if isinstance(self._auth, str):
             return self._auth
         assert isinstance(self._auth, _x402Handler)
-        return self._auth.client.account.key.hex()
+        return cast("LocalAccount", self._auth.client.account).key.hex()
 
     @property
     def type(self) -> str:
@@ -172,13 +181,13 @@ class AsyncZyteAPI:
 
     async def get(
         self,
-        query: dict,
+        query: dict[str, Any],
         *,
         endpoint: str = "extract",
-        session=None,
-        handle_retries=True,
+        session: aiohttp.ClientSession | None = None,
+        handle_retries: bool = True,
         retrying: AsyncRetrying | None = None,
-    ) -> _ResponseFuture:
+    ) -> dict[str, Any]:
         """Asynchronous equivalent to :meth:`ZyteAPI.get`."""
         retrying = retrying or self.retrying
         post = _post_func(session)
@@ -204,7 +213,7 @@ class AsyncZyteAPI:
         response_stats = []
         start_global = time.perf_counter()
 
-        async def request():
+        async def request() -> dict[str, Any]:
             stats = ResponseStats.create(start_global)
             self.agg_stats.n_attempts += 1
 
@@ -233,7 +242,7 @@ class AsyncZyteAPI:
                             query=query,
                         )
 
-                    response = await resp.json()
+                    response = cast("dict[str, Any]", await resp.json())
                     stats.record_read(self.agg_stats)
                     return response
             except Exception as e:
@@ -263,7 +272,7 @@ class AsyncZyteAPI:
         *,
         endpoint: str = "extract",
         session: aiohttp.ClientSession | None = None,
-        handle_retries=True,
+        handle_retries: bool = True,
         retrying: AsyncRetrying | None = None,
     ) -> Iterator[_ResponseFuture]:
         """Asynchronous equivalent to :meth:`ZyteAPI.iter`.
@@ -272,7 +281,7 @@ class AsyncZyteAPI:
                   instead of only returning them.
         """
 
-        def _request(query):
+        def _request(query: dict) -> _ResponseFuture:
             return self.get(
                 query,
                 endpoint=endpoint,
@@ -283,7 +292,7 @@ class AsyncZyteAPI:
 
         return asyncio.as_completed([_request(query) for query in queries])
 
-    def session(self, **kwargs):
+    def session(self, **kwargs: Any) -> _AsyncSession:
         """Asynchronous equivalent to :meth:`ZyteAPI.session`.
 
         You do not need to use :meth:`~AsyncZyteAPI.session` as an async

@@ -121,7 +121,7 @@ async def test_retry_wait_network_error(retry_factory):
             )
 
 
-def mock_request_error(*, status=200):
+def mock_request_error(*, status: int = 200) -> RequestError:
     return RequestError(
         history=None,
         request_info=None,
@@ -136,7 +136,7 @@ FOREVER_TIMES = 100
 
 
 class fast_forward:
-    def __init__(self, time):
+    def __init__(self, time: float):
         self.time = time
 
 

@@ -87,6 +87,7 @@ def test_session_context_manager(mockserver):
     ]
     actual_results = []
     with client.session() as session:
+        assert session._session.connector is not None
         assert session._session.connector.limit == client._async_client.n_conn
         actual_results.append(session.get(queries[0]))
         actual_results.extend(session.iter(queries[1:]))

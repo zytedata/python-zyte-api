@@ -12,6 +12,10 @@ setup(
     author_email="opensource@zyte.com",
     url="https://github.com/zytedata/python-zyte-api",
     packages=find_packages(exclude=["tests", "examples"]),
+    package_data={
+        "zyte_api": ["py.typed"],
+    },
+    include_package_data=True,
     entry_points={
         "console_scripts": ["zyte-api=zyte_api.__main__:_main"],
     },
