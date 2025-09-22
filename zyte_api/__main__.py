@@ -8,6 +8,7 @@ import json
 import logging
 import random
 import sys
+from typing import Any, Literal, TextIO
 from warnings import warn
 
 import tqdm
@@ -31,16 +32,16 @@ _UNSET = object()
 
 
 async def run(
-    queries,
-    out,
+    queries: list[dict[str, Any]],
+    out: TextIO,
     *,
     n_conn: int,
-    stop_on_errors=_UNSET,
+    stop_on_errors: bool | object = _UNSET,
     api_url: str | None,
     api_key: str | None = None,
     retry_errors: bool = True,
-    store_errors=None,
-    eth_key=None,
+    store_errors: bool | None = None,
+    eth_key: str | None = None,
 ) -> None:
     if stop_on_errors is not _UNSET:
         warn(
@@ -51,7 +52,7 @@ async def run(
     else:
         stop_on_errors = False
 
-    def write_output(content) -> None:
+    def write_output(content: Any) -> None:
         json.dump(content, out, ensure_ascii=False)
         out.write("\n")
         out.flush()
@@ -99,7 +100,9 @@ async def run(
     logger.info(f"\nException types:\n{client.agg_stats.exception_types.most_common()}")
 
 
-def read_input(input_fp, intype):
+def read_input(
+    input_fp: TextIO, intype: Literal["txt", "jl"] | object
+) -> list[dict[str, Any]]:
     assert intype in {"txt", "jl", _UNSET}
     lines = input_fp.readlines()
     if not lines:

@@ -52,7 +52,7 @@ class _AsyncSession:
     async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, *exc_info) -> None:
+    async def __aexit__(self, *exc_info: object) -> None:
         await self._session.close()
 
     async def close(self) -> None:
@@ -60,7 +60,7 @@ class _AsyncSession:
 
     async def get(
         self,
-        query: dict,
+        query: dict[str, Any],
         *,
         endpoint: str = "extract",
         handle_retries: bool = True,
@@ -76,7 +76,7 @@ class _AsyncSession:
 
     def iter(
         self,
-        queries: list[dict],
+        queries: list[dict[str, Any]],
         *,
         endpoint: str = "extract",
         handle_retries: bool = True,
@@ -92,21 +92,19 @@ class _AsyncSession:
 
 
 class AuthInfo:
-    def __init__(self, *, _auth):
-        self._auth = _auth
+    def __init__(self, *, _auth: str | _x402Handler):
+        self._auth: str | _x402Handler = _auth
 
     @property
     def key(self) -> str:
         if isinstance(self._auth, str):
             return self._auth
-        assert isinstance(self._auth, _x402Handler)
         return cast("LocalAccount", self._auth.client.account).key.hex()
 
     @property
     def type(self) -> str:
         if isinstance(self._auth, str):
             return "zyte"
-        assert isinstance(self._auth, _x402Handler)
         return "eth"
 
 
@@ -142,7 +140,9 @@ class AsyncZyteAPI:
         self.api_url: str
         self._load_auth(api_key, eth_key, api_url)
 
-    def _load_auth(self, api_key: str | None, eth_key: str | None, api_url: str | None):
+    def _load_auth(
+        self, api_key: str | None, eth_key: str | None, api_url: str | None
+    ) -> None:
         if api_key:
             self._auth = api_key
         elif eth_key:
@@ -268,7 +268,7 @@ class AsyncZyteAPI:
 
     def iter(
         self,
-        queries: list[dict],
+        queries: list[dict[str, Any]],
         *,
         endpoint: str = "extract",
         session: aiohttp.ClientSession | None = None,
@@ -281,7 +281,7 @@ class AsyncZyteAPI:
                   instead of only returning them.
         """
 
-        def _request(query: dict) -> _ResponseFuture:
+        def _request(query: dict[str, Any]) -> _ResponseFuture:
             return self.get(
                 query,
                 endpoint=endpoint,

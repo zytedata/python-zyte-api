@@ -39,7 +39,7 @@ class _Session:
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *exc_info) -> None:
+    def __exit__(self, *exc_info: object) -> None:
         loop = _get_loop()
         loop.run_until_complete(self._session.close())
 

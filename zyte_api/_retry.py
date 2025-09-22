@@ -5,7 +5,7 @@ import logging
 from collections import Counter
 from datetime import timedelta
 from itertools import count
-from typing import Callable, Union
+from typing import Any, Callable, Union
 from warnings import warn
 
 from aiohttp import client_exceptions
@@ -165,7 +165,7 @@ def _402_error(exc: BaseException) -> bool:
 
 
 def _deprecated(message: str, callable: Callable) -> Callable:
-    def wrapper(factory, retry_state: RetryCallState):
+    def wrapper(factory: Any, retry_state: RetryCallState) -> Callable:
         warn(message, DeprecationWarning, stacklevel=3)
         return callable(retry_state=retry_state)
 

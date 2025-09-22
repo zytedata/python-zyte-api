@@ -28,7 +28,7 @@ exclude_also = [
 ]
 
 [tool.mypy]
-#allow_untyped_defs = false
+allow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = "runstats"

@@ -164,7 +164,7 @@ class _x402Handler:
     ) -> tuple[Any, int]:
         post_kwargs = {"url": url, "json": query, "headers": headers}
 
-        async def request():
+        async def request() -> dict[str, Any]:
             self.stats.n_402_req += 1
             async with self.semaphore, post_fn(**post_kwargs) as response:
                 if response.status == 402:
