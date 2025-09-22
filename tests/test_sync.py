@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from types import GeneratorType
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -85,7 +88,7 @@ def test_session_context_manager(mockserver):
             "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
         },
     ]
-    actual_results = []
+    actual_results: list[dict[str, Any] | Exception] = []
     with client.session() as session:
         assert session._session.connector is not None
         assert session._session.connector.limit == client._async_client.n_conn
@@ -126,8 +129,9 @@ def test_session_no_context_manager(mockserver):
             "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
         },
     ]
-    actual_results = []
+    actual_results: list[dict[str, Any] | Exception] = []
     session = client.session()
+    assert session._session.connector is not None
     assert session._session.connector.limit == client._async_client.n_conn
     actual_results.append(session.get(queries[0]))
     actual_results.extend(session.iter(queries[1:]))

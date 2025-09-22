@@ -289,7 +289,8 @@ async def test_session_no_context_manager(mockserver):
             "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
         },
     ]
-    actual_results = []
+    actual_results: list[dict[str, Any] | Exception] = []
+    result: dict[str, Any] | Exception
     session = client.session()
     assert session._session.connector is not None
     assert session._session.connector.limit == client.n_conn
@@ -324,4 +325,4 @@ def test_retrying_class():
     """A descriptive exception is raised when creating a client with an
     AsyncRetrying subclass or similar instead of an instance of it."""
     with pytest.raises(ValueError, match="must be an instance of AsyncRetrying"):
-        AsyncZyteAPI(api_key="foo", retrying=AggressiveRetryFactory)
+        AsyncZyteAPI(api_key="foo", retrying=AggressiveRetryFactory)  # type: ignore[arg-type]

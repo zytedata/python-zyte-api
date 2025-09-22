@@ -107,6 +107,7 @@ class DefaultResource(Resource):
         )
 
         request_data = json.loads(request.content.read())
+        response_data: dict[str, Any]
 
         url = request_data["url"]
         domain = urlparse(url).netloc
@@ -214,7 +215,7 @@ class DefaultResource(Resource):
                 }
                 return json.dumps(response_data).encode()
 
-        response_data: dict[str, Any] = {
+        response_data = {
             "url": url,
         }
 

@@ -8,7 +8,7 @@ import json
 import logging
 import random
 import sys
-from typing import Any, Literal, TextIO
+from typing import IO, Any, Literal
 from warnings import warn
 
 import tqdm
@@ -33,7 +33,7 @@ _UNSET = object()
 
 async def run(
     queries: list[dict[str, Any]],
-    out: TextIO,
+    out: IO[str],
     *,
     n_conn: int,
     stop_on_errors: bool | object = _UNSET,
@@ -101,7 +101,7 @@ async def run(
 
 
 def read_input(
-    input_fp: TextIO, intype: Literal["txt", "jl"] | object
+    input_fp: IO[str], intype: Literal["txt", "jl"] | object
 ) -> list[dict[str, Any]]:
     assert intype in {"txt", "jl", _UNSET}
     lines = input_fp.readlines()
