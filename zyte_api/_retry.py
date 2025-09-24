@@ -342,8 +342,10 @@ class AggressiveRetryFactory(RetryFactory):
         CUSTOM_RETRY_POLICY = CustomRetryFactory().build()
     """
 
-    download_error_stop = stop_on_download_error(max_total=8, max_permanent=4)
-    undocumented_error_stop = stop_on_count(4)
+    download_error_stop: stop_base = stop_on_download_error(
+        max_total=8, max_permanent=4
+    )
+    undocumented_error_stop: stop_base = stop_on_count(4)
 
 
 aggressive_retrying = AggressiveRetryFactory().build()
