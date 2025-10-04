@@ -19,9 +19,13 @@ from .mockserver import DropResource, MockServer
 
 
 def test_deprecated_imports():
-    from zyte_api import RetryFactory, zyte_api_retrying
-    from zyte_api.aio.retry import RetryFactory as DeprecatedRetryFactory
-    from zyte_api.aio.retry import zyte_api_retrying as deprecated_zyte_api_retrying
+    from zyte_api import RetryFactory, zyte_api_retrying  # noqa: PLC0415
+    from zyte_api.aio.retry import (  # noqa: PLC0415
+        RetryFactory as DeprecatedRetryFactory,
+    )
+    from zyte_api.aio.retry import (  # noqa: PLC0415
+        zyte_api_retrying as deprecated_zyte_api_retrying,
+    )
 
     assert RetryFactory is DeprecatedRetryFactory
     assert zyte_api_retrying is deprecated_zyte_api_retrying
@@ -121,7 +125,7 @@ async def test_retry_wait_network_error(retry_factory):
             )
 
 
-def mock_request_error(*, status=200):
+def mock_request_error(*, status: int = 200) -> RequestError:
     return RequestError(
         history=None,
         request_info=None,
@@ -136,15 +140,15 @@ FOREVER_TIMES = 100
 
 
 class fast_forward:
-    def __init__(self, time):
+    def __init__(self, time: float):
         self.time = time
 
 
 class scale:
-    def __init__(self, factor):
-        self.factor = factor
+    def __init__(self, factor: float):
+        self.factor: float = factor
 
-    def __call__(self, number, add=0):
+    def __call__(self, number: float, add: int = 0) -> int:
         return int(number * self.factor) + add
 
 
@@ -410,7 +414,7 @@ async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
     retrying = copy(retrying)
     retrying.wait = wait
 
-    async def run():
+    async def run() -> None:
         while True:
             try:
                 outcome = outcomes.popleft()

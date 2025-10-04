@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import asyncio
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -8,6 +11,9 @@ from zyte_api.aio.client import AsyncClient
 from zyte_api.apikey import NoApiKey
 from zyte_api.errors import ParsedError
 from zyte_api.utils import USER_AGENT
+
+if TYPE_CHECKING:
+    from tests.mockserver import MockServer
 
 
 @pytest.mark.parametrize(
@@ -218,7 +224,7 @@ async def test_semaphore(client_cls, get_method, iter_method, mockserver):
 
 
 @pytest.mark.asyncio
-async def test_session_context_manager(mockserver):
+async def test_session_context_manager(mockserver: MockServer) -> None:
     client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
     queries = [
         {"url": "https://a.example", "httpResponseBody": True},
@@ -236,11 +242,13 @@ async def test_session_context_manager(mockserver):
             "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
         },
     ]
-    actual_results = []
+    actual_results: list[dict[str, Any] | Exception] = []
     async with client.session() as session:
+        assert session._session.connector is not None
         assert session._session.connector.limit == client.n_conn
         actual_results.append(await session.get(queries[0]))
         for future in session.iter(queries[1:]):
+            result: dict[str, Any] | Exception
             try:
                 result = await future
             except Exception as e:
@@ -266,7 +274,7 @@ async def test_session_context_manager(mockserver):
 
 
 @pytest.mark.asyncio
-async def test_session_no_context_manager(mockserver):
+async def test_session_no_context_manager(mockserver: MockServer) -> None:
     client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
     queries = [
         {"url": "https://a.example", "httpResponseBody": True},
@@ -284,8 +292,10 @@ async def test_session_no_context_manager(mockserver):
             "httpResponseBody": "PGh0bWw+PGJvZHk+SGVsbG88aDE+V29ybGQhPC9oMT48L2JvZHk+PC9odG1sPg==",
         },
     ]
-    actual_results = []
+    actual_results: list[dict[str, Any] | Exception] = []
+    result: dict[str, Any] | Exception
     session = client.session()
+    assert session._session.connector is not None
     assert session._session.connector.limit == client.n_conn
     actual_results.append(await session.get(queries[0]))
     for future in session.iter(queries[1:]):
@@ -318,4 +328,4 @@ def test_retrying_class():
     """A descriptive exception is raised when creating a client with an
     AsyncRetrying subclass or similar instead of an instance of it."""
     with pytest.raises(ValueError, match="must be an instance of AsyncRetrying"):
-        AsyncZyteAPI(api_key="foo", retrying=AggressiveRetryFactory)
+        AsyncZyteAPI(api_key="foo", retrying=AggressiveRetryFactory)  # type: ignore[arg-type]

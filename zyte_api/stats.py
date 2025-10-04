@@ -3,17 +3,24 @@ from __future__ import annotations
 import functools
 import time
 from collections import Counter
-from typing import Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 import attr
 from runstats import Statistics
 
 from zyte_api.errors import ParsedError
 
+if TYPE_CHECKING:
+    # typing.ParamSpec requires Python 3.10
+    # typing.Self requires Python 3.11
+    from typing_extensions import ParamSpec, Self
 
-def zero_on_division_error(meth):
+    _P = ParamSpec("_P")
+
+
+def zero_on_division_error(meth: Callable[_P, float]) -> Callable[_P, float]:
     @functools.wraps(meth)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> float:
         try:
             return meth(*args, **kwargs)
         except ZeroDivisionError:
@@ -23,7 +30,7 @@ def zero_on_division_error(meth):
 
 
 class AggStats:
-    def __init__(self):
+    def __init__(self) -> None:
         self.time_connect_stats = Statistics()
         self.time_total_stats = Statistics()
 
@@ -39,11 +46,11 @@ class AggStats:
         self.n_errors = 0  # number of errors, including errors which were retried
         self.n_402_req = 0  # requests for a 402 (payment required) response
 
-        self.status_codes = Counter()
-        self.exception_types = Counter()
-        self.api_error_types = Counter()
+        self.status_codes: Counter[int] = Counter()
+        self.exception_types: Counter[type] = Counter()
+        self.api_error_types: Counter[str | None] = Counter()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"conn:{self.time_connect_stats.mean():0.2f}s, "
             f"resp:{self.time_total_stats.mean():0.2f}s, "
@@ -52,7 +59,7 @@ class AggStats:
             f"success:{self.n_success}/{self.n_processed}({self.success_ratio():.1%})"
         )
 
-    def summary(self):
+    def summary(self) -> str:
         return (
             "\n"
             "Summary\n"
@@ -67,19 +74,19 @@ class AggStats:
         )
 
     @zero_on_division_error
-    def throttle_ratio(self):
+    def throttle_ratio(self) -> float:
         return self.n_429 / self.n_attempts
 
     @zero_on_division_error
-    def error_ratio(self):
+    def error_ratio(self) -> float:
         return self.n_errors / self.n_attempts
 
     @zero_on_division_error
-    def success_ratio(self):
+    def success_ratio(self) -> float:
         return self.n_success / self.n_processed
 
     @property
-    def n_processed(self):
+    def n_processed(self) -> float:
         """Total number of processed URLs"""
         return self.n_success + self.n_fatal_errors
 
@@ -114,33 +121,33 @@ class ResponseStats:
     exception: Optional[Exception] = attr.ib(default=None)
 
     @classmethod
-    def create(cls, start_global):
+    def create(cls, start_global: float) -> Self:
         start = time.perf_counter()
         return cls(
             start=start,
             time_delayed=start - start_global,
         )
 
-    def record_connected(self, status: int, agg_stats: AggStats):
+    def record_connected(self, status: int, agg_stats: AggStats) -> None:
         self.status = status
         self.time_connect = time.perf_counter() - self._start
         agg_stats.time_connect_stats.push(self.time_connect)
         agg_stats.status_codes[self.status] += 1
 
-    def record_read(self, agg_stats: AggStats | None = None):
+    def record_read(self, agg_stats: AggStats | None = None) -> None:
         now = time.perf_counter()
         self.time_total = now - self._start
         self.time_read = self.time_total - (self.time_connect or 0)
         if agg_stats:
             agg_stats.time_total_stats.push(self.time_total)
 
-    def record_exception(self, exception: Exception, agg_stats: AggStats):
+    def record_exception(self, exception: Exception, agg_stats: AggStats) -> None:
         self.time_exception = time.perf_counter() - self._start
         self.exception = exception
         agg_stats.status_codes[0] += 1
         agg_stats.exception_types[exception.__class__] += 1
 
-    def record_request_error(self, error_body: bytes, agg_stats: AggStats):
+    def record_request_error(self, error_body: bytes, agg_stats: AggStats) -> None:
         self.error = ParsedError.from_body(error_body)
 
         if self.status == 429:  # XXX: status must be set already!

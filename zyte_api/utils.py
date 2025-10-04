@@ -1,5 +1,7 @@
 import re
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from w3lib.url import safe_url_string
 
@@ -8,7 +10,7 @@ from .__version__ import __version__
 USER_AGENT = f"python-zyte-api/{__version__}"
 
 
-def _guess_intype(file_name, lines):
+def _guess_intype(file_name: str, lines: Sequence[str]) -> str:
     extension = Path(file_name).suffix[1:]
     if extension in {"jl", "jsonl"}:
         return "jl"
@@ -21,7 +23,7 @@ def _guess_intype(file_name, lines):
     return "txt"
 
 
-def _process_query(query):
+def _process_query(query: dict[str, Any]) -> dict[str, Any]:
     """Given a query to be sent to Zyte API, return a functionally-equivalent
     query that fixes any known issue.
 
@@ -34,7 +36,7 @@ def _process_query(query):
     changes where needed, or a shallow copy of *query* with some common nested
     objects (e.g. shared ``actions`` list).
     """
-    url = query.get("url", None)
+    url = query.get("url")
     if url is None:
         return query
     if not isinstance(url, str):

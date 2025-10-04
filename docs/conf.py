@@ -16,7 +16,7 @@ from pathlib import Path
 # -- Project information -----------------------------------------------------
 
 project = "python-zyte-api"
-copyright = "2021, Zyte Group Ltd"
+project_copyright = "2021, Zyte Group Ltd"
 author = "Zyte Group Ltd"
 
 # The short X.Y version
