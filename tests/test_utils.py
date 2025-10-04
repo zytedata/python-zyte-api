@@ -69,7 +69,7 @@ def test_guess_intype(file_name, first_line, expected):
 
 
 @pytest.mark.parametrize(
-    ("input", "output"),
+    ("input_", "output"),
     (
         # Unsafe URLs in the url field are modified, while left untouched on
         # other fields.
@@ -104,8 +104,8 @@ def test_guess_intype(file_name, first_line, expected):
         # the URL escaping logic exist upstream.
     ),
 )
-def test_process_query(input, output):
-    assert _process_query(input) == output
+def test_process_query(input_, output):
+    assert _process_query(input_) == output
 
 
 def test_process_query_bytes():
@@ -115,7 +115,7 @@ def test_process_query_bytes():
 
 @pytest.mark.asyncio  # https://github.com/aio-libs/aiohttp/pull/1468
 async def test_deprecated_create_session():
-    from zyte_api.aio.client import create_session as _create_session
+    from zyte_api.aio.client import create_session as _create_session  # noqa: PLC0415
 
     with pytest.warns(
         DeprecationWarning,

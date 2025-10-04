@@ -1,14 +1,22 @@
+from __future__ import annotations
+
 import json
 import subprocess
 from json import JSONDecodeError
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from zyte_api import RequestError
 from zyte_api.__main__ import run
-from zyte_api.aio.errors import RequestError
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from tests.mockserver import MockServer
 
 
 class MockRequestError(RequestError):
@@ -41,7 +49,7 @@ def get_json_content(file_object):
         pass
 
 
-def forbidden_domain_response():
+def forbidden_domain_response() -> dict[str, Any]:
     return {
         "type": "/download/temporary-error",
         "title": "Temporary Downloading Error",
@@ -95,7 +103,7 @@ async def fake_exception(value=True):
 @pytest.mark.asyncio
 async def test_run(queries, expected_response, store_errors, exception):
     tmp_path = Path("temporary_file.jsonl")
-    temporary_file = tmp_path.open("w")
+    temporary_file = tmp_path.open("w")  # noqa: ASYNC230
     n_conn = 5
     api_url = "https://example.com"
     api_key = "fake_key"
@@ -177,10 +185,12 @@ async def test_run_stop_on_errors_true(mockserver):
     assert exc_info.value.query == query
 
 
-def _run(*, input, mockserver, cli_params=None):
+def _run(
+    *, input_: str, mockserver: MockServer, cli_params: Iterable[str] | None = None
+) -> subprocess.CompletedProcess[bytes]:
     cli_params = cli_params or ()
     with NamedTemporaryFile("w") as url_list:
-        url_list.write(input)
+        url_list.write(input_)
         url_list.flush()
         # Note: Using “python -m zyte_api” instead of “zyte-api” enables
         # coverage tracking to work.
@@ -202,14 +212,14 @@ def _run(*, input, mockserver, cli_params=None):
 
 
 def test_empty_input(mockserver):
-    result = _run(input="", mockserver=mockserver)
+    result = _run(input_="", mockserver=mockserver)
     assert result.returncode
     assert result.stdout == b""
     assert result.stderr == b"No input queries found. Is the input file empty?\n"
 
 
 def test_intype_txt_implicit(mockserver):
-    result = _run(input="https://a.example", mockserver=mockserver)
+    result = _run(input_="https://a.example", mockserver=mockserver)
     assert not result.returncode
     assert (
         result.stdout
@@ -219,7 +229,9 @@ def test_intype_txt_implicit(mockserver):
 
 def test_intype_txt_explicit(mockserver):
     result = _run(
-        input="https://a.example", mockserver=mockserver, cli_params=["--intype", "txt"]
+        input_="https://a.example",
+        mockserver=mockserver,
+        cli_params=["--intype", "txt"],
     )
     assert not result.returncode
     assert (
@@ -230,7 +242,8 @@ def test_intype_txt_explicit(mockserver):
 
 def test_intype_jsonl_implicit(mockserver):
     result = _run(
-        input='{"url": "https://a.example", "browserHtml": true}', mockserver=mockserver
+        input_='{"url": "https://a.example", "browserHtml": true}',
+        mockserver=mockserver,
     )
     assert not result.returncode
     assert (
@@ -241,7 +254,7 @@ def test_intype_jsonl_implicit(mockserver):
 
 def test_intype_jsonl_explicit(mockserver):
     result = _run(
-        input='{"url": "https://a.example", "browserHtml": true}',
+        input_='{"url": "https://a.example", "browserHtml": true}',
         mockserver=mockserver,
         cli_params=["--intype", "jl"],
     )
@@ -255,7 +268,7 @@ def test_intype_jsonl_explicit(mockserver):
 @pytest.mark.flaky(reruns=16)
 def test_limit_and_shuffle(mockserver):
     result = _run(
-        input="https://a.example\nhttps://b.example",
+        input_="https://a.example\nhttps://b.example",
         mockserver=mockserver,
         cli_params=["--limit", "1", "--shuffle"],
     )
@@ -268,7 +281,7 @@ def test_limit_and_shuffle(mockserver):
 
 def test_run_non_json_response(mockserver):
     result = _run(
-        input="https://nonjson.example",
+        input_="https://nonjson.example",
         mockserver=mockserver,
     )
     assert not result.returncode

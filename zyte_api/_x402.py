@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     from zyte_api.stats import AggStats
 
-CACHE: dict[bytes, tuple[Any, str]] = {}
+CACHE: dict[bytes, tuple[Any, int]] = {}
 EXTRACT_KEYS = {
     "article",
     "articleList",
@@ -110,9 +110,9 @@ class _x402Handler:
         semaphore: Semaphore,
         stats: AggStats,
     ):
-        from eth_account import Account
-        from x402.clients import x402Client
-        from x402.types import x402PaymentRequiredResponse
+        from eth_account import Account  # noqa: PLC0415
+        from x402.clients import x402Client  # noqa: PLC0415
+        from x402.types import x402PaymentRequiredResponse  # noqa: PLC0415
 
         account = Account.from_key(eth_key)
         self.client = x402Client(account=account)
@@ -131,7 +131,7 @@ class _x402Handler:
         return self.get_headers_from_requirement_data(requirement_data)
 
     def get_headers_from_requirement_data(
-        self, requirement_data: tuple[Any, str]
+        self, requirement_data: tuple[Any, int]
     ) -> dict[str, str]:
         payment_header = self.client.create_payment_header(*requirement_data)
         return {
@@ -145,7 +145,7 @@ class _x402Handler:
         query: dict[str, Any],
         headers: dict[str, str],
         post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
-    ) -> tuple[Any, str]:
+    ) -> tuple[Any, int]:
         if not MINIMIZE_REQUESTS:
             return await self.fetch_requirements(url, query, headers, post_fn)
         max_cost_hash = get_max_cost_hash(query)
@@ -161,10 +161,10 @@ class _x402Handler:
         query: dict[str, Any],
         headers: dict[str, str],
         post_fn: Callable[..., AbstractAsyncContextManager[ClientResponse]],
-    ) -> tuple[Any, str]:
+    ) -> tuple[Any, int]:
         post_kwargs = {"url": url, "json": query, "headers": headers}
 
-        async def request():
+        async def request() -> dict[str, Any]:
             self.stats.n_402_req += 1
             async with self.semaphore, post_fn(**post_kwargs) as response:
                 if response.status == 402:
@@ -185,7 +185,7 @@ class _x402Handler:
         data = await request()
         return self.parse_requirements(data)
 
-    def parse_requirements(self, data: dict[str, Any]) -> tuple[Any, str]:
+    def parse_requirements(self, data: dict[str, Any]) -> tuple[Any, int]:
         payment_response = self.x402PaymentRequiredResponse(**data)
         requirements = self.client.select_payment_requirements(payment_response.accepts)
         version = payment_response.x402_version

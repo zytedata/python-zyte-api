@@ -23,3 +23,18 @@ zyte_api_retrying = _zyte_api_retrying
 
 #: :ref:`Aggresive retry policy <aggressive-retry-policy>`.
 aggressive_retrying = _aggressive_retrying
+
+__all__ = [
+    "AggressiveRetryFactory",
+    "AsyncZyteAPI",
+    "AuthInfo",
+    "ParsedError",
+    "RequestError",
+    "RetryFactory",
+    "ZyteAPI",
+    "aggressive_retrying",
+    "stop_after_uninterrupted_delay",
+    "stop_on_count",
+    "stop_on_download_error",
+    "zyte_api_retrying",
+]

@@ -30,9 +30,9 @@ jobs:
           tox: x402
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -44,7 +44,7 @@ jobs:
         tox -e ${{ matrix.tox || 'py' }}
     - name: coverage
       if: ${{ success() }}
-      uses: codecov/codecov-action@v4.0.1
+      uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -53,13 +53,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.12']  # Keep in sync with .readthedocs.yml
+        python-version: ["3.13"]  # Keep in sync with .readthedocs.yml
         tox-job: ["mypy", "docs"]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies

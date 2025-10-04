@@ -21,11 +21,21 @@ filename = "zyte_api/__version__.py"
 
 [tool.coverage.run]
 branch = true
-
-[tool.coverage.report]
-exclude_also = [
-    "if TYPE_CHECKING:",
+patch = [
+    "subprocess",
 ]
+
+[tool.mypy]
+allow_untyped_defs = false
+implicit_reexport = false
+
+[[tool.mypy.overrides]]
+module = "runstats"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+allow_untyped_defs = true
 
 [tool.pytest.ini_options]
 filterwarnings = [
@@ -34,10 +44,16 @@ filterwarnings = [
 
 [tool.ruff.lint]
 extend-select = [
+    # flake8-builtins
+    "A",
+    # flake8-async
+    "ASYNC",
     # flake8-bugbear
     "B",
     # flake8-comprehensions
     "C4",
+    # flake8-commas
+    "COM",
     # pydocstyle
     "D",
     # flake8-future-annotations
@@ -84,6 +100,8 @@ extend-select = [
     "T10",
     # flake8-type-checking
     "TC",
+    # flake8-tidy-imports
+    "TID",
     # pyupgrade
     "UP",
     # pycodestyle warnings
@@ -92,6 +110,8 @@ extend-select = [
     "YTT",
 ]
 ignore = [
+    # Trailing comma missing
+    "COM812",
     # Missing docstring in public module
     "D100",
     # Missing docstring in public class
@@ -144,6 +164,18 @@ ignore = [
     "S101",
 ]
 
+[tool.ruff.lint.flake8-pytest-style]
+parametrize-values-type = "tuple"
+
+[tool.ruff.lint.flake8-tidy-imports]
+banned-module-level-imports = ["twisted.internet.reactor"]
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-decorators = ["attr.s"]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
 [tool.ruff.lint.per-file-ignores]
 "zyte_api/__init__.py" = ["F401"]
 "zyte_api/aio/errors.py" = ["F401"]
@@ -151,14 +183,8 @@ ignore = [
 "tests/*" = ["S"]
 "docs/**" = ["B006"]
 # Skip PEP 604 suggestions for files with attr classes
-"zyte_api/errors.py" = ["UP007"]
-"zyte_api/stats.py" = ["UP007"]
-
-[tool.ruff.lint.flake8-pytest-style]
-parametrize-values-type = "tuple"
-
-[tool.ruff.lint.flake8-type-checking]
-runtime-evaluated-decorators = ["attr.s"]
+"zyte_api/errors.py" = ["UP007", "UP045"]
+"zyte_api/stats.py" = ["UP007", "UP045"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

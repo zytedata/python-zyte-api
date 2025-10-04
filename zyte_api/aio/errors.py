@@ -1,1 +1,1 @@
-from .._errors import RequestError
+from .._errors import RequestError  # noqa: TID252

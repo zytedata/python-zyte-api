@@ -1,3 +1,4 @@
+from typing import Any
 from warnings import warn
 
 import aiohttp
@@ -12,7 +13,7 @@ _AIO_API_TIMEOUT = aiohttp.ClientTimeout(total=API_TIMEOUT + 120)
 
 
 def deprecated_create_session(
-    connection_pool_size=100, **kwargs
+    connection_pool_size: int = 100, **kwargs: Any
 ) -> aiohttp.ClientSession:
     warn(
         (
@@ -25,7 +26,9 @@ def deprecated_create_session(
     return create_session(connection_pool_size=connection_pool_size, **kwargs)
 
 
-def create_session(connection_pool_size=100, **kwargs) -> aiohttp.ClientSession:
+def create_session(
+    connection_pool_size: int = 100, **kwargs: Any
+) -> aiohttp.ClientSession:
     """Create a session with parameters suited for Zyte API"""
     kwargs.setdefault("timeout", _AIO_API_TIMEOUT)
     if "connector" not in kwargs:
