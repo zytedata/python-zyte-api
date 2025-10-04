@@ -25,11 +25,6 @@ patch = [
     "subprocess",
 ]
 
-[tool.coverage.report]
-exclude_also = [
-    "if TYPE_CHECKING:",
-]
-
 [tool.mypy]
 allow_untyped_defs = false
 implicit_reexport = false
