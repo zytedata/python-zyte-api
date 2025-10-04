@@ -33,8 +33,7 @@ class RequestError(ClientResponseError):
     @property
     def parsed(self) -> ParsedError:
         """Response as a :class:`ParsedError` object."""
-        # TODO: self.response_content can be None but ParsedError doesn't expect it
-        return ParsedError.from_body(self.response_content)  # type: ignore[arg-type]
+        return ParsedError.from_body(self.response_content or b"")
 
     def __str__(self) -> str:
         return (
