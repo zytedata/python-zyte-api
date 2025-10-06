@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.8.1 (unreleased)
+------------------
+
+* Added ``py.typed`` and improved type hints.
+
 0.8.0 (2025-08-07)
 ------------------
 
