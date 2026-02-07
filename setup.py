@@ -31,7 +31,7 @@ setup(
     extras_require={
         "x402": [
             "eth-account>=0.13.7",
-            "x402>=0.1.1",
+            "x402>=0.1.1,<2.0.0",
         ]
     },
     classifiers=[
