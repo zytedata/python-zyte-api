@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.8.2 (unreleased)
+0.8.2 (2026-02-10)
 ------------------
 
 * ``zyte-api[x402]`` no longer allows installing x402 2.0.0+, which is not
