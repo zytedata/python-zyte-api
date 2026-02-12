@@ -28,6 +28,9 @@ jobs:
         - python-version: "3.13"
         - python-version: "3.13"
           tox: x402
+        - python-version: "3.14.0-rc.2"
+        - python-version: "3.14.0-rc.2"
+          tox: x402
 
     steps:
     - uses: actions/checkout@v5
