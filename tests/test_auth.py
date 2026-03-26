@@ -14,6 +14,11 @@ assert ETH_KEY_2 != ETH_KEY
 
 
 def run_zyte_api(args, env, mockserver):
+    base_env = {
+        key: value
+        for key, value in environ.items()
+        if key not in {"ZYTE_API_KEY", "ZYTE_API_ETH_KEY"}
+    }
     with NamedTemporaryFile("w") as url_list:
         url_list.write("https://a.example\n")
         url_list.flush()
@@ -29,7 +34,7 @@ def run_zyte_api(args, env, mockserver):
             ],
             capture_output=True,
             check=False,
-            env={**environ, **env},
+            env={**base_env, **env},
         )
 
 

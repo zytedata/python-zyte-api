@@ -12,6 +12,21 @@ async def test_create_session_custom_connector():
     custom_connector = TCPConnector(limit=1850)
     session = create_session(connector=custom_connector)
     assert session.connector == custom_connector
+    await session.close()
+
+
+@pytest.mark.asyncio
+async def test_create_session_trust_env_disabled_by_default():
+    session = create_session()
+    assert session._trust_env is False
+    await session.close()
+
+
+@pytest.mark.asyncio
+async def test_create_session_trust_env_can_be_enabled():
+    session = create_session(trust_env=True)
+    assert session._trust_env is True
+    await session.close()
 
 
 @pytest.mark.parametrize(
@@ -121,4 +136,5 @@ async def test_deprecated_create_session():
         DeprecationWarning,
         match=r"^zyte_api\.aio\.client\.create_session is deprecated",
     ):
-        _create_session()
+        session = _create_session()
+    await session.close()

@@ -1,6 +1,14 @@
 Changes
 =======
 
+0.9.0 (unreleased)
+------------------
+
+* Added an opt-in ``trust_env`` parameter to :class:`~zyte_api.AsyncZyteAPI`
+  and :class:`~zyte_api.ZyteAPI`, and an opt-in ``--trust-env`` CLI flag, to
+  allow honoring environment-based network settings (e.g. ``HTTP_PROXY`` and
+  ``HTTPS_PROXY``).
+
 0.8.2 (2026-02-10)
 ------------------
 
