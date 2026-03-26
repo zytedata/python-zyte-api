@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from types import GeneratorType
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 

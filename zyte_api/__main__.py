@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from contextlib import nullcontext
 import json
 import logging
-from pathlib import Path
 import random
 import sys
+from contextlib import nullcontext
+from pathlib import Path
 from typing import IO, Any, Literal
 from warnings import warn
 
@@ -74,7 +74,9 @@ async def run(
         trust_env=trust_env,
         **auth_kwargs,
     )
-    async with create_session(connection_pool_size=n_conn, trust_env=trust_env) as session:
+    async with create_session(
+        connection_pool_size=n_conn, trust_env=trust_env
+    ) as session:
         result_iter = client.iter(
             queries=queries,
             session=session,
@@ -247,8 +249,15 @@ def _main(program_name: str = "zyte-api") -> None:
     args = p.parse_args()
     logging.basicConfig(stream=sys.stderr, level=getattr(logging, args.loglevel))
 
-    with Path(args.INPUT).open(encoding="utf8") as input_fp:
-        queries = read_input(input_fp, args.intype)
+    if args.INPUT == "-":
+        with nullcontext(sys.stdin) as input_fp:
+            queries = read_input(input_fp, args.intype)
+    else:
+        try:
+            with Path(args.INPUT).open(encoding="utf8") as input_fp:
+                queries = read_input(input_fp, args.intype)
+        except OSError as e:
+            p.error(f"Cannot open input file {args.INPUT!r}: {e}")
     if not queries:
         print("No input queries found. Is the input file empty?", file=sys.stderr)
         sys.exit(-1)
@@ -272,13 +281,15 @@ def _main(program_name: str = "zyte-api") -> None:
         "store_errors": args.store_errors,
         "trust_env": args.trust_env,
     }
-    output_context = (
-        nullcontext(sys.stdout)
-        if args.output is None
-        else Path(args.output).open("w", encoding="utf8")
-    )
-    with output_context as out:
-        asyncio.run(run(queries, out=out, **run_kwargs))
+    if args.output is None or args.output == "-":
+        with nullcontext(sys.stdout) as out:
+            asyncio.run(run(queries, out=out, **run_kwargs))
+    else:
+        try:
+            with Path(args.output).open("w", encoding="utf8") as out:
+                asyncio.run(run(queries, out=out, **run_kwargs))
+        except OSError as e:
+            p.error(f"Cannot open output file {args.output!r}: {e}")
 
 
 if __name__ == "__main__":
