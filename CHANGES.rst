@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.9.0 (unreleased)
+0.9.0 (2026-03-30)
 ------------------
 
 * Added an opt-in ``trust_env`` parameter to :class:`~zyte_api.AsyncZyteAPI`
