@@ -8,6 +8,8 @@ import json
 import logging
 import random
 import sys
+from contextlib import nullcontext
+from pathlib import Path
 from typing import IO, Any, Literal
 from warnings import warn
 
@@ -42,6 +44,7 @@ async def run(
     retry_errors: bool = True,
     store_errors: bool | None = None,
     eth_key: str | None = None,
+    trust_env: bool = False,
 ) -> None:
     if stop_on_errors is not _UNSET:
         warn(
@@ -65,9 +68,15 @@ async def run(
     elif eth_key:
         auth_kwargs["eth_key"] = eth_key
     client = AsyncZyteAPI(
-        n_conn=n_conn, api_url=api_url, retrying=retrying, **auth_kwargs
+        n_conn=n_conn,
+        api_url=api_url,
+        retrying=retrying,
+        trust_env=trust_env,
+        **auth_kwargs,
     )
-    async with create_session(connection_pool_size=n_conn) as session:
+    async with create_session(
+        connection_pool_size=n_conn, trust_env=trust_env
+    ) as session:
         result_iter = client.iter(
             queries=queries,
             session=session,
@@ -128,7 +137,6 @@ def _get_argument_parser(program_name: str = "zyte-api") -> argparse.ArgumentPar
     )
     p.add_argument(
         "INPUT",
-        type=argparse.FileType("r", encoding="utf8"),
         help=(
             "Path to an input file (see 'Command-line client > Input file' in "
             "the docs for details)."
@@ -151,8 +159,7 @@ def _get_argument_parser(program_name: str = "zyte-api") -> argparse.ArgumentPar
     p.add_argument(
         "--output",
         "-o",
-        default=sys.stdout,
-        type=argparse.FileType("w", encoding="utf8"),
+        default=None,
         help=(
             "Path for the output file. Results are written into the output "
             "file in JSON Lines format.\n"
@@ -225,6 +232,14 @@ def _get_argument_parser(program_name: str = "zyte-api") -> argparse.ArgumentPar
         ),
         action="store_true",
     )
+    p.add_argument(
+        "--trust-env",
+        help=(
+            "Enable environment-based network settings such as HTTP_PROXY and "
+            "HTTPS_PROXY for Zyte API requests."
+        ),
+        action="store_true",
+    )
     return p
 
 
@@ -234,7 +249,15 @@ def _main(program_name: str = "zyte-api") -> None:
     args = p.parse_args()
     logging.basicConfig(stream=sys.stderr, level=getattr(logging, args.loglevel))
 
-    queries = read_input(args.INPUT, args.intype)
+    if args.INPUT == "-":
+        with nullcontext(sys.stdin) as input_fp:
+            queries = read_input(input_fp, args.intype)
+    else:
+        try:
+            with Path(args.INPUT).open(encoding="utf8") as input_fp:
+                queries = read_input(input_fp, args.intype)
+        except OSError as e:
+            p.error(f"Cannot open input file {args.INPUT!r}: {e}")
     if not queries:
         print("No input queries found. Is the input file empty?", file=sys.stderr)
         sys.exit(-1)
@@ -245,23 +268,28 @@ def _main(program_name: str = "zyte-api") -> None:
         queries = queries[: args.limit]
 
     logger.info(
-        f"Loaded {len(queries)} urls from {args.INPUT.name}; shuffled: {args.shuffle}"
+        f"Loaded {len(queries)} urls from {args.INPUT}; shuffled: {args.shuffle}"
     )
     logger.info(f"Running Zyte API (connections: {args.n_conn})")
 
-    loop = asyncio.get_event_loop()
-    coro = run(
-        queries,
-        out=args.output,
-        n_conn=args.n_conn,
-        api_url=args.api_url,
-        api_key=args.api_key,
-        eth_key=args.eth_key,
-        retry_errors=not args.dont_retry_errors,
-        store_errors=args.store_errors,
-    )
-    loop.run_until_complete(coro)
-    loop.close()
+    run_kwargs = {
+        "n_conn": args.n_conn,
+        "api_url": args.api_url,
+        "api_key": args.api_key,
+        "eth_key": args.eth_key,
+        "retry_errors": not args.dont_retry_errors,
+        "store_errors": args.store_errors,
+        "trust_env": args.trust_env,
+    }
+    if args.output is None or args.output == "-":
+        with nullcontext(sys.stdout) as out:
+            asyncio.run(run(queries, out=out, **run_kwargs))
+    else:
+        try:
+            with Path(args.output).open("w", encoding="utf8") as out:
+                asyncio.run(run(queries, out=out, **run_kwargs))
+        except OSError as e:
+            p.error(f"Cannot open output file {args.output!r}: {e}")
 
 
 if __name__ == "__main__":

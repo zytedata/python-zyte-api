@@ -104,6 +104,10 @@ class ZyteAPI:
     *user_agent* is the user agent string reported to Zyte API. Defaults to
     ``python-zyte-api/<VERSION>``.
 
+    *trust_env* controls whether :mod:`aiohttp` honors environment-based
+    network settings (e.g. ``HTTP_PROXY`` and ``HTTPS_PROXY``). Defaults to
+    ``False``.
+
     .. tip:: To change the ``User-Agent`` header sent to a target website, use
              :http:`request:customHttpRequestHeaders` instead.
     """
@@ -117,6 +121,7 @@ class ZyteAPI:
         retrying: AsyncRetrying | None = None,
         user_agent: str | None = None,
         eth_key: str | None = None,
+        trust_env: bool = False,
     ):
         self._async_client = AsyncZyteAPI(
             api_key=api_key,
@@ -125,6 +130,7 @@ class ZyteAPI:
             retrying=retrying,
             user_agent=user_agent,
             eth_key=eth_key,
+            trust_env=trust_env,
         )
 
     def get(

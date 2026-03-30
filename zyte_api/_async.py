@@ -45,6 +45,7 @@ def _post_func(
 class _AsyncSession:
     def __init__(self, client: AsyncZyteAPI, **session_kwargs: Any):
         self._client: AsyncZyteAPI = client
+        session_kwargs.setdefault("trust_env", client.trust_env)
         self._session: aiohttp.ClientSession = create_session(
             client.n_conn, **session_kwargs
         )
@@ -123,6 +124,7 @@ class AsyncZyteAPI:
         retrying: AsyncRetrying | None = None,
         user_agent: str | None = None,
         eth_key: str | None = None,
+        trust_env: bool = False,
     ):
         if retrying is not None and not isinstance(retrying, AsyncRetrying):
             raise ValueError(
@@ -134,6 +136,7 @@ class AsyncZyteAPI:
         self.agg_stats = AggStats()
         self.retrying = retrying or zyte_api_retrying
         self.user_agent = user_agent or USER_AGENT
+        self.trust_env = trust_env
         self._semaphore = asyncio.Semaphore(n_conn)
         self._auth: str | _x402Handler
         self.auth: AuthInfo
@@ -190,6 +193,10 @@ class AsyncZyteAPI:
     ) -> dict[str, Any]:
         """Asynchronous equivalent to :meth:`ZyteAPI.get`."""
         retrying = retrying or self.retrying
+        owned_session: aiohttp.ClientSession | None = None
+        if session is None:
+            owned_session = create_session(self.n_conn, trust_env=self.trust_env)
+            session = owned_session
         post = _post_func(session)
 
         url = self.api_url + endpoint
@@ -257,14 +264,18 @@ class AsyncZyteAPI:
             request = retrying.wraps(request)
 
         try:
-            # Try to make a request
-            result = await request()
-            self.agg_stats.n_success += 1
-        except Exception:
-            self.agg_stats.n_fatal_errors += 1
-            raise
+            try:
+                # Try to make a request
+                result = await request()
+                self.agg_stats.n_success += 1
+            except Exception:
+                self.agg_stats.n_fatal_errors += 1
+                raise
 
-        return result
+            return result
+        finally:
+            if owned_session is not None:
+                await owned_session.close()
 
     def iter(
         self,

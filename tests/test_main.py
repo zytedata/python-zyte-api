@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from zyte_api import RequestError
-from zyte_api.__main__ import run
+from zyte_api.__main__ import _get_argument_parser, run
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -108,6 +108,7 @@ async def test_run(queries, expected_response, store_errors, exception):
     api_url = "https://example.com"
     api_key = "fake_key"
     retry_errors = True
+    trust_env = True
 
     # Create a mock for AsyncZyteAPI
     async_client_mock = Mock()
@@ -138,7 +139,14 @@ async def test_run(queries, expected_response, store_errors, exception):
             api_key=api_key,
             retry_errors=retry_errors,
             store_errors=store_errors,
+            trust_env=trust_env,
         )
+
+    assert async_client_mock.call_args.kwargs["trust_env"] is True
+    create_session_mock.assert_called_once_with(
+        connection_pool_size=n_conn,
+        trust_env=True,
+    )
 
     assert get_json_content(temporary_file) == expected_response
     tmp_path.unlink()
@@ -216,6 +224,12 @@ def test_empty_input(mockserver):
     assert result.returncode
     assert result.stdout == b""
     assert result.stderr == b"No input queries found. Is the input file empty?\n"
+
+
+def test_trust_env_flag_parsing() -> None:
+    parser = _get_argument_parser()
+    args = parser.parse_args(["--trust-env", "--api-key", "a", "README.rst"])
+    assert args.trust_env is True
 
 
 def test_intype_txt_implicit(mockserver):

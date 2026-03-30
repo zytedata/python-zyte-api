@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from types import GeneratorType
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -17,6 +17,12 @@ def test_api_key():
     ZyteAPI(api_key="a")
     with pytest.raises(NoApiKey):
         ZyteAPI()
+
+
+def test_trust_env_is_forwarded():
+    with patch("zyte_api._sync.AsyncZyteAPI") as async_client:
+        ZyteAPI(api_key="a", trust_env=True)
+    assert async_client.call_args.kwargs["trust_env"] is True
 
 
 def test_get(mockserver):

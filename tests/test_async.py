@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import asyncio
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from zyte_api import AggressiveRetryFactory, AsyncZyteAPI, RequestError
+from zyte_api._utils import create_session
 from zyte_api.aio.client import AsyncClient
 from zyte_api.apikey import NoApiKey
 from zyte_api.errors import ParsedError
@@ -52,6 +53,23 @@ def test_api_key(client_cls):
     client_cls(api_key="a")
     with pytest.raises(NoApiKey):
         client_cls()
+
+
+@pytest.mark.asyncio
+async def test_session_inherits_client_trust_env(mockserver):
+    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"), trust_env=True)
+    async with client.session() as session:
+        assert session._session._trust_env is True
+
+
+@pytest.mark.asyncio
+async def test_get_creates_session_with_client_trust_env(mockserver):
+    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"), trust_env=True)
+    with patch(
+        "zyte_api._async.create_session", wraps=create_session
+    ) as create_session_mock:
+        await client.get({"url": "https://a.example"})
+    assert create_session_mock.call_args.kwargs["trust_env"] is True
 
 
 @pytest.mark.parametrize(
