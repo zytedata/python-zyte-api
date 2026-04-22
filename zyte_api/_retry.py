@@ -5,7 +5,7 @@ import logging
 from collections import Counter
 from datetime import timedelta
 from itertools import count
-from typing import TYPE_CHECKING, Any, Callable, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 from warnings import warn
 
 from aiohttp import client_exceptions
@@ -28,6 +28,8 @@ from tenacity.stop import stop_base, stop_never
 from ._errors import RequestError
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from tenacity.wait import wait_base
 
 logger = logging.getLogger(__name__)
@@ -80,7 +82,7 @@ class stop_on_count(stop_base):
         return retry_state.counter[self._counter_id] >= self._max_count  # type: ignore[attr-defined]
 
 
-time_unit_type = Union[int, float, timedelta]
+time_unit_type = int | float | timedelta
 
 
 def to_seconds(time_unit: time_unit_type) -> float:
