@@ -47,6 +47,16 @@ zyte-api = "zyte_api.__main__:_main"
 Homepage = "https://github.com/zytedata/python-zyte-api"
 Documentation = "https://python-zyte-api.readthedocs.io/en/stable/"
 
+[tool.hatch.build.targets.sdist]
+include = [
+  "/docs",
+  "/tests",
+  "/zyte_api",
+  "/.pre-commit-config.yaml",
+  "/CHANGES.rst",
+  "/tox.ini",
+]
+
 [tool.hatch.version]
 path = "zyte_api/__version__.py"
 
