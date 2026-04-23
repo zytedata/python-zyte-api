@@ -37,10 +37,8 @@ release = "0.9.0"
 sys.path.insert(0, str(Path(__file__).parent.absolute()))  # _ext
 extensions = [
     "_ext",
-    "sphinx.ext.autodoc",
-    "sphinx.ext.intersphinx",
+    "sphinx_scrapy",
     "sphinx.ext.ifconfig",
-    "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinxarg.ext",
 ]
@@ -188,29 +186,6 @@ epub_exclude_files = ["search.html"]
 # not turned into –api-key in descriptions.
 smartquotes = False
 
-
-# -- Extension configuration -------------------------------------------------
-
-# -- Options for intersphinx extension ---------------------------------------
-intersphinx_mapping = {
-    "python": (
-        "https://docs.python.org/3",
-        None,
-    ),
-    "aiohttp": (
-        "https://docs.aiohttp.org/en/stable/",
-        None,
-    ),
-    "tenacity": (
-        "https://tenacity.readthedocs.io/en/latest/",
-        None,
-    ),
-    "zyte": (
-        "https://docs.zyte.com",
-        None,
-    ),
-}
-
 autodoc_default_options = {
     # 'special-members': '__init__,__call__',
     # 'undoc-members': True,
@@ -218,3 +193,9 @@ autodoc_default_options = {
 }
 
 add_module_names = False
+
+scrapy_intersphinx_enable = [
+    "aiohttp",
+    "tenacity",
+    "zyte",
+]

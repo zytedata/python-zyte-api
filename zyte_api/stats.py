@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import time
 from collections import Counter
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Optional
 
 import attr
 from runstats import Statistics
@@ -11,9 +11,11 @@ from runstats import Statistics
 from zyte_api.errors import ParsedError
 
 if TYPE_CHECKING:
-    # typing.ParamSpec requires Python 3.10
+    from collections.abc import Callable
+    from typing import ParamSpec
+
     # typing.Self requires Python 3.11
-    from typing_extensions import ParamSpec, Self
+    from typing_extensions import Self
 
     _P = ParamSpec("_P")
 
