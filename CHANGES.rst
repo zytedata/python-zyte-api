@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.10.0 (unreleased)
+-------------------
+
+* Dropped support for Python 3.9. Python 3.10+ is now required.
+
+* Made the docs LLM-friendly.
+
 0.9.0 (2026-03-30)
 ------------------
 
