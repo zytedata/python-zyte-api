@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.10.0 (unreleased)
+0.10.0 (2026-04-28)
 -------------------
 
 * Dropped support for Python 3.9. Python 3.10+ is now required.
