@@ -203,9 +203,11 @@ class AsyncZyteAPI:
         query = _process_query(query)
         headers = {"User-Agent": self.user_agent, "Accept-Encoding": "br"}
 
-        auth_kwargs = {}
         if isinstance(self._auth, str):
-            auth_kwargs["auth"] = aiohttp.BasicAuth(self._auth)
+            if hasattr(aiohttp, "encode_basic_auth"):  # aiohttp 3.14+
+                headers["Authorization"] = aiohttp.encode_basic_auth(self._auth, "")
+            else:
+                headers["Authorization"] = aiohttp.BasicAuth(self._auth).encode()
         else:
             x402_headers = await self._auth.get_headers(url, query, headers, post)
             headers.update(x402_headers)
@@ -214,7 +216,6 @@ class AsyncZyteAPI:
             "url": url,
             "json": query,
             "headers": headers,
-            **auth_kwargs,
         }
 
         response_stats = []
