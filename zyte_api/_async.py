@@ -204,7 +204,7 @@ class AsyncZyteAPI:
         headers = {"User-Agent": self.user_agent, "Accept-Encoding": "br"}
 
         if isinstance(self._auth, str):
-            if hasattr(aiohttp, "encode_basic_auth"):
+            if hasattr(aiohttp, "encode_basic_auth"):  # aiohttp 3.14+
                 headers["Authorization"] = aiohttp.encode_basic_auth(self._auth, "")
             else:
                 headers["Authorization"] = aiohttp.BasicAuth(self._auth).encode()
