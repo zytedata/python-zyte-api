@@ -108,6 +108,15 @@ class ZyteAPI:
     network settings (e.g. ``HTTP_PROXY`` and ``HTTPS_PROXY``). Defaults to
     ``False``.
 
+    *dotenv_path* is the path to the ``.env`` file from which to read the
+    ``ZYTE_API_KEY`` or ``ZYTE_API_ETH_KEY`` credentials when they are not
+    passed explicitly or set in the environment. If set to ``None`` (default),
+    ``ZYTE_API_KEY`` is read from the nearest ``.env`` file in the current
+    directory or its parents, while ``ZYTE_API_ETH_KEY`` is read only from a
+    ``.env`` file in the current directory (parent directories are not searched
+    for the Ethereum private key). Environment variables take precedence over
+    the file, which is never written to. See :ref:`api-key` and :ref:`x402`.
+
     .. tip:: To change the ``User-Agent`` header sent to a target website, use
              :http:`request:customHttpRequestHeaders` instead.
     """
@@ -122,6 +131,7 @@ class ZyteAPI:
         user_agent: str | None = None,
         eth_key: str | None = None,
         trust_env: bool = False,
+        dotenv_path: str | None = None,
     ):
         self._async_client = AsyncZyteAPI(
             api_key=api_key,
@@ -131,6 +141,7 @@ class ZyteAPI:
             user_agent=user_agent,
             eth_key=eth_key,
             trust_env=trust_env,
+            dotenv_path=dotenv_path,
         )
 
     def get(

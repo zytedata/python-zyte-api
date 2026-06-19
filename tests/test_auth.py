@@ -1,6 +1,7 @@
 from base64 import b64encode
 from contextlib import asynccontextmanager
 from os import environ
+from pathlib import Path
 from subprocess import run
 from tempfile import NamedTemporaryFile
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -68,6 +69,33 @@ def test(scenario, expected, mockserver):
         assert result.returncode == 1
     else:
         assert result.returncode == 0
+
+
+def test_dotenv_cli(mockserver, tmp_path):
+    # The autouse fixture chdir'd into the empty tmp_path, so there is no key
+    # anywhere yet.
+    result = run_zyte_api([], {}, mockserver)
+    assert b"NoApiKey" in result.stderr
+    assert result.returncode == 1
+
+    # ZYTE_API_KEY read from the nearest .env (the current directory).
+    Path(".env").write_text("ZYTE_API_KEY=fromdotenv\n", encoding="utf8")
+    result = run_zyte_api([], {}, mockserver)
+    assert result.returncode == 0, result.stderr
+
+    # --dotenv-path points at a different file.
+    Path(".env").unlink()
+    custom = tmp_path / "custom.env"
+    custom.write_text("ZYTE_API_KEY=fromcustom\n", encoding="utf8")
+    result = run_zyte_api(["--dotenv-path", str(custom)], {}, mockserver)
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.skipif(not HAS_X402, reason="x402 extra not installed")
+def test_dotenv_cli_eth_key(mockserver, tmp_path):
+    Path(".env").write_text(f"ZYTE_API_ETH_KEY={ETH_KEY}\n", encoding="utf8")
+    result = run_zyte_api([], {}, mockserver)
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.parametrize(

@@ -64,3 +64,23 @@ Alternatively, you may pass your Ethereum private key to the clients directly:
         from zyte_api import AsyncZyteAPI
 
         client = AsyncZyteAPI(eth_key="YOUR_ETH_PRIVATE_KEY")
+
+You may also store your Ethereum private key in a ``.env`` file:
+
+.. code-block:: shell
+    :caption: .env
+
+    ZYTE_API_ETH_KEY=YOUR_ETH_PRIVATE_KEY
+
+Unlike :ref:`the Zyte API key <api-key>`, the Ethereum private key is read
+**only** from a ``.env`` file in the current directory; parent directories are
+not searched, to limit the risk of loading it from an unrelated ``.env`` file.
+To read it from a different location, use the ``--dotenv-path`` switch or the
+``dotenv_path`` parameter, which apply to both credentials. The environment
+variable takes precedence over the file, which is never modified.
+
+.. warning:: Your Ethereum private key controls your funds. Storing it in a
+    ``.env`` file is convenient but risky: keep the file out of version control
+    (e.g. add it to ``.gitignore``) and prefer a dedicated secrets manager for
+    anything beyond local development. A leaked private key cannot be revoked or
+    rotated like a Zyte API key.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, patch
 
@@ -53,6 +54,24 @@ def test_api_key(client_cls):
     client_cls(api_key="a")
     with pytest.raises(NoApiKey):
         client_cls()
+
+
+@pytest.mark.parametrize(
+    "client_cls",
+    (
+        AsyncZyteAPI,
+        AsyncClient,
+    ),
+)
+def test_api_key_from_dotenv(client_cls, tmp_path):
+    # The autouse fixture already chdir'd into the empty tmp_path.
+    (tmp_path / ".env").write_text("ZYTE_API_KEY=fromdotenv\n")
+
+    client = client_cls()
+    assert client.auth.key == "fromdotenv"
+    # An explicit api_key still wins, and the environment is never modified.
+    assert client_cls(api_key="explicit").auth.key == "explicit"
+    assert "ZYTE_API_KEY" not in os.environ
 
 
 @pytest.mark.asyncio
