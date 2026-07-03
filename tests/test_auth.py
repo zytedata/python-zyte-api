@@ -98,6 +98,17 @@ def test_dotenv_cli_eth_key(mockserver, tmp_path):
     assert result.returncode == 0, result.stderr
 
 
+@pytest.mark.skipif(not HAS_X402, reason="x402 extra not installed")
+def test_dotenv_eth_key(tmp_path):
+    (tmp_path / ".env").write_text(f"ZYTE_API_ETH_KEY={ETH_KEY}\n", encoding="utf8")
+
+    client = AsyncZyteAPI()
+
+    assert client.auth.type == "eth"
+    assert client.auth.key == ETH_KEY
+    assert client.api_url == "https://api-x402.zyte.com/v1/"
+
+
 @pytest.mark.parametrize(
     ("scenario", "expected"),
     (
