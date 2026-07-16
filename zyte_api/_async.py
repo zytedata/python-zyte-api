@@ -11,13 +11,14 @@ import aiohttp
 from tenacity import AsyncRetrying
 
 from zyte_api._x402 import _x402Handler
-from zyte_api.apikey import NoApiKey
+from zyte_api.apikey import NoApiKey, read_dotenv_auth
 
 from ._errors import RequestError
 from ._retry import zyte_api_retrying
 from ._utils import _AIO_API_TIMEOUT, create_session
 from .constants import API_URL
 from .constants import ENV_VARIABLE as API_KEY_ENV_VAR
+from .constants import ETH_ENV_VARIABLE as ETH_KEY_ENV_VAR
 from .stats import AggStats, ResponseStats
 from .utils import USER_AGENT, _process_query
 
@@ -125,6 +126,7 @@ class AsyncZyteAPI:
         user_agent: str | None = None,
         eth_key: str | None = None,
         trust_env: bool = False,
+        dotenv_path: str | None = None,
     ):
         if retrying is not None and not isinstance(retrying, AsyncRetrying):
             raise ValueError(
@@ -141,10 +143,14 @@ class AsyncZyteAPI:
         self._auth: str | _x402Handler
         self.auth: AuthInfo
         self.api_url: str
-        self._load_auth(api_key, eth_key, api_url)
+        self._load_auth(api_key, eth_key, api_url, dotenv_path)
 
     def _load_auth(
-        self, api_key: str | None, eth_key: str | None, api_url: str | None
+        self,
+        api_key: str | None,
+        eth_key: str | None,
+        api_url: str | None,
+        dotenv_path: str | None = None,
     ) -> None:
         if api_key:
             self._auth = api_key
@@ -152,14 +158,22 @@ class AsyncZyteAPI:
             self._auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
         elif api_key := environ.get(API_KEY_ENV_VAR):
             self._auth = api_key
-        elif eth_key := environ.get("ZYTE_API_ETH_KEY"):
+        elif eth_key := environ.get(ETH_KEY_ENV_VAR):
             self._auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
         else:
-            raise NoApiKey(
-                "You must provide either a Zyte API key or an Ethereum "
-                "private key. For the latter, you must also install "
-                "zyte-api as zyte-api[x402]."
-            )
+            # Fall back to a .env file only when the environment has no
+            # credentials, so an exported key never triggers a file lookup.
+            dotenv = read_dotenv_auth(dotenv_path)
+            if api_key := dotenv.get(API_KEY_ENV_VAR):
+                self._auth = api_key
+            elif eth_key := dotenv.get(ETH_KEY_ENV_VAR):
+                self._auth = _x402Handler(eth_key, self._semaphore, self.agg_stats)
+            else:
+                raise NoApiKey(
+                    "You must provide either a Zyte API key or an Ethereum "
+                    "private key. For the latter, you must also install "
+                    "zyte-api as zyte-api[x402]."
+                )
         self.auth = AuthInfo(_auth=self._auth)
         self.api_url = (
             api_url

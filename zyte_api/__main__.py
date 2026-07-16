@@ -45,6 +45,7 @@ async def run(
     store_errors: bool | None = None,
     eth_key: str | None = None,
     trust_env: bool = False,
+    dotenv_path: str | None = None,
 ) -> None:
     if stop_on_errors is not _UNSET:
         warn(
@@ -72,6 +73,7 @@ async def run(
         api_url=api_url,
         retrying=retrying,
         trust_env=trust_env,
+        dotenv_path=dotenv_path,
         **auth_kwargs,
     )
     async with create_session(
@@ -197,6 +199,18 @@ def _get_argument_parser(program_name: str = "zyte-api") -> argparse.ArgumentPar
         ),
     )
     p.add_argument(
+        "--dotenv-path",
+        help=(
+            "Path to a .env file to read the ZYTE_API_KEY or ZYTE_API_ETH_KEY "
+            "credentials from when they are not passed explicitly or set in "
+            "the environment.\n"
+            "\n"
+            "If omitted, ZYTE_API_KEY is read from the nearest .env file in the "
+            "current directory or its parents, while ZYTE_API_ETH_KEY is read "
+            "only from a .env file in the current directory."
+        ),
+    )
+    p.add_argument(
         "--api-url",
         help=(
             f"Zyte API endpoint (default: {API_URL}).\n"
@@ -280,6 +294,7 @@ def _main(program_name: str = "zyte-api") -> None:
         "retry_errors": not args.dont_retry_errors,
         "store_errors": args.store_errors,
         "trust_env": args.trust_env,
+        "dotenv_path": args.dotenv_path,
     }
     if args.output is None or args.output == "-":
         with nullcontext(sys.stdout) as out:

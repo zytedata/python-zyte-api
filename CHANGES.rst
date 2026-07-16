@@ -1,6 +1,22 @@
 Changes
 =======
 
+0.11.0 (unreleased)
+-------------------
+
+* The ``ZYTE_API_KEY`` and ``ZYTE_API_ETH_KEY`` credentials can now be read
+  from a ``.env`` file (via `python-dotenv
+  <https://pypi.org/project/python-dotenv/>`_) when they are not set in the
+  environment. Environment variables take precedence and the environment is
+  never modified. A custom ``.env`` location can be set with the new
+  ``--dotenv-path`` command-line switch or the new ``dotenv_path`` parameter of
+  :class:`~zyte_api.ZyteAPI` and :class:`~zyte_api.AsyncZyteAPI`.
+
+  ``ZYTE_API_KEY`` is looked up in the nearest ``.env`` file in the current
+  directory or its parents, but the ``ZYTE_API_ETH_KEY`` Ethereum private key
+  is read only from a ``.env`` file in the current directory, to limit the risk
+  of loading a fund-controlling secret from an unrelated ``.env`` file.
+
 0.10.0 (2026-04-28)
 -------------------
 
