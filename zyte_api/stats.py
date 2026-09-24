@@ -152,7 +152,7 @@ class ResponseStats:
     def record_request_error(self, error_body: bytes, agg_stats: AggStats) -> None:
         self.error = ParsedError.from_body(error_body)
 
-        if self.status == 429:  # XXX: status must be set already!
+        if self.status == 429:
             agg_stats.n_429 += 1
         else:
             agg_stats.n_errors += 1
