@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 import pytest
 from aiohttp import TCPConnector
 
@@ -6,7 +10,7 @@ from zyte_api.utils import _guess_intype, _process_query
 
 
 @pytest.mark.asyncio
-async def test_create_session_custom_connector():
+async def test_create_session_custom_connector() -> None:
     # Declare a connector with a random parameter to avoid it matching the
     # default one.
     custom_connector = TCPConnector(limit=1850)
@@ -16,14 +20,14 @@ async def test_create_session_custom_connector():
 
 
 @pytest.mark.asyncio
-async def test_create_session_trust_env_disabled_by_default():
+async def test_create_session_trust_env_disabled_by_default() -> None:
     session = create_session()
     assert session._trust_env is False
     await session.close()
 
 
 @pytest.mark.asyncio
-async def test_create_session_trust_env_can_be_enabled():
+async def test_create_session_trust_env_can_be_enabled() -> None:
     session = create_session(trust_env=True)
     assert session._trust_env is True
     await session.close()
@@ -79,7 +83,7 @@ async def test_create_session_trust_env_can_be_enabled():
         ),
     ),
 )
-def test_guess_intype(file_name, first_line, expected):
+def test_guess_intype(file_name: str, first_line: str, expected: str) -> None:
     assert _guess_intype(file_name, [first_line]) == expected
 
 
@@ -119,17 +123,17 @@ def test_guess_intype(file_name, first_line, expected):
         # the URL escaping logic exist upstream.
     ),
 )
-def test_process_query(input_, output):
+def test_process_query(input_: dict[str, Any], output: dict[str, Any]) -> None:
     assert _process_query(input_) == output
 
 
-def test_process_query_bytes():
+def test_process_query_bytes() -> None:
     with pytest.raises(ValueError, match="Expected a str URL parameter"):
         _process_query({"url": b"https://example.com"})
 
 
 @pytest.mark.asyncio  # https://github.com/aio-libs/aiohttp/pull/1468
-async def test_deprecated_create_session():
+async def test_deprecated_create_session() -> None:
     from zyte_api.aio.client import create_session as _create_session  # noqa: PLC0415
 
     with pytest.warns(

@@ -78,8 +78,9 @@ class stop_on_count(stop_base):
     def __call__(self, retry_state: RetryCallState) -> bool:
         if not hasattr(retry_state, "counter"):
             retry_state.counter = Counter()  # type: ignore[attr-defined]
-        retry_state.counter[self._counter_id] += 1  # type: ignore[attr-defined]
-        return retry_state.counter[self._counter_id] >= self._max_count  # type: ignore[attr-defined]
+        counter: Counter[Any] = retry_state.counter  # type: ignore[attr-defined]
+        counter[self._counter_id] += 1
+        return counter[self._counter_id] >= self._max_count
 
 
 time_unit_type = int | float | timedelta
@@ -145,12 +146,13 @@ class stop_on_download_error(stop_base):
         assert retry_state.outcome, "Unexpected empty outcome"
         exc = retry_state.outcome.exception()
         assert exc, "Unexpected empty exception"
+        counter: Counter[Any] = retry_state.counter  # type: ignore[attr-defined]
         if exc.status == 521:  # type: ignore[attr-defined]
-            retry_state.counter["permanent_download_error"] += 1  # type: ignore[attr-defined]
-            if retry_state.counter["permanent_download_error"] >= self._max_permanent:  # type: ignore[attr-defined]
+            counter["permanent_download_error"] += 1
+            if counter["permanent_download_error"] >= self._max_permanent:
                 return True
-        retry_state.counter["download_error"] += 1  # type: ignore[attr-defined]
-        return retry_state.counter["download_error"] >= self._max_total  # type: ignore[attr-defined]
+        counter["download_error"] += 1
+        return counter["download_error"] >= self._max_total
 
 
 def _download_error(exc: BaseException) -> bool:
@@ -169,8 +171,10 @@ def _402_error(exc: BaseException) -> bool:
     return isinstance(exc, RequestError) and exc.status == 402
 
 
-def _deprecated(message: str, callable_: Callable) -> Callable:
-    def wrapper(factory: Any, retry_state: RetryCallState) -> Callable:
+def _deprecated(
+    message: str, callable_: Callable[..., Any]
+) -> Callable[[Any, RetryCallState], Any]:
+    def wrapper(factory: Any, retry_state: RetryCallState) -> Any:
         warn(message, DeprecationWarning, stacklevel=3)
         return callable_(retry_state=retry_state)
 

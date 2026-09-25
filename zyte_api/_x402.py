@@ -97,7 +97,7 @@ def get_max_cost_hash(query: dict[str, Any]) -> bytes:
 
 class X402RetryFactory(RetryFactory):
     # Disable ban response retries.
-    download_error_stop = stop_after_attempt(1)  # type: ignore[assignment]
+    download_error_stop = stop_after_attempt(1)
 
 
 X402_RETRYING = X402RetryFactory().build()
@@ -168,7 +168,8 @@ class _x402Handler:
             self.stats.n_402_req += 1
             async with self.semaphore, post_fn(**post_kwargs) as response:
                 if response.status == 402:
-                    return await response.json()
+                    data: dict[str, Any] = await response.json()
+                    return data
                 content = await response.read()
                 response.release()
                 raise RequestError(

@@ -1,8 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from pathlib import Path
+
+    from .mockserver import MockServer
 
 
 @pytest.fixture(autouse=True)
-def isolated_apikey_env(tmp_path, monkeypatch):
+def isolated_apikey_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep API-key resolution hermetic: drop ambient key env vars and run from
     an empty directory so ``find_dotenv()`` can't pick up a stray ``.env`` from
     the developer's working tree. Tests that need a ``.env`` create it in the
@@ -13,7 +23,7 @@ def isolated_apikey_env(tmp_path, monkeypatch):
 
 
 @pytest.fixture(scope="session")
-def mockserver():
+def mockserver() -> Generator[MockServer]:
     from .mockserver import MockServer  # noqa: PLC0415
 
     with MockServer() as server:

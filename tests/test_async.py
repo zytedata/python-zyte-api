@@ -15,6 +15,8 @@ from zyte_api.errors import ParsedError
 from zyte_api.utils import USER_AGENT
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from tests.mockserver import MockServer
 
 
@@ -38,7 +40,9 @@ if TYPE_CHECKING:
         ),
     ),
 )
-def test_user_agent(client_cls, user_agent, expected):
+def test_user_agent(
+    client_cls: type[AsyncZyteAPI], user_agent: str | None, expected: str
+) -> None:
     client = client_cls(api_key="123", api_url="http:\\test", user_agent=user_agent)
     assert client.user_agent == expected
 
@@ -50,7 +54,7 @@ def test_user_agent(client_cls, user_agent, expected):
         AsyncClient,
     ),
 )
-def test_api_key(client_cls):
+def test_api_key(client_cls: type[AsyncZyteAPI]) -> None:
     client_cls(api_key="a")
     with pytest.raises(NoApiKey):
         client_cls()
@@ -63,7 +67,7 @@ def test_api_key(client_cls):
         AsyncClient,
     ),
 )
-def test_api_key_from_dotenv(client_cls, tmp_path):
+def test_api_key_from_dotenv(client_cls: type[AsyncZyteAPI], tmp_path: Path) -> None:
     # The autouse fixture already chdir'd into the empty tmp_path.
     (tmp_path / ".env").write_text("ZYTE_API_KEY=fromdotenv\n")
 
@@ -75,14 +79,16 @@ def test_api_key_from_dotenv(client_cls, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_session_inherits_client_trust_env(mockserver):
+async def test_session_inherits_client_trust_env(mockserver: MockServer) -> None:
     client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"), trust_env=True)
     async with client.session() as session:
         assert session._session._trust_env is True
 
 
 @pytest.mark.asyncio
-async def test_get_creates_session_with_client_trust_env(mockserver):
+async def test_get_creates_session_with_client_trust_env(
+    mockserver: MockServer,
+) -> None:
     client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"), trust_env=True)
     with patch(
         "zyte_api._async.create_session", wraps=create_session
@@ -99,7 +105,9 @@ async def test_get_creates_session_with_client_trust_env(mockserver):
     ),
 )
 @pytest.mark.asyncio
-async def test_get(client_cls, get_method, mockserver):
+async def test_get(
+    client_cls: type[AsyncZyteAPI], get_method: str, mockserver: MockServer
+) -> None:
     client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     expected_result = {
         "url": "https://a.example",
@@ -119,7 +127,9 @@ async def test_get(client_cls, get_method, mockserver):
     ),
 )
 @pytest.mark.asyncio
-async def test_get_request_error(client_cls, get_method, mockserver):
+async def test_get_request_error(
+    client_cls: type[AsyncZyteAPI], get_method: str, mockserver: MockServer
+) -> None:
     client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     with pytest.raises(RequestError) as request_error_info:
         await getattr(client, get_method)(
@@ -143,7 +153,9 @@ async def test_get_request_error(client_cls, get_method, mockserver):
     ),
 )
 @pytest.mark.asyncio
-async def test_get_request_error_empty_body(client_cls, get_method, mockserver):
+async def test_get_request_error_empty_body(
+    client_cls: type[AsyncZyteAPI], get_method: str, mockserver: MockServer
+) -> None:
     client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     with pytest.raises(RequestError) as request_error_info:
         await getattr(client, get_method)(
@@ -162,7 +174,9 @@ async def test_get_request_error_empty_body(client_cls, get_method, mockserver):
     ),
 )
 @pytest.mark.asyncio
-async def test_get_request_error_non_json(client_cls, get_method, mockserver):
+async def test_get_request_error_non_json(
+    client_cls: type[AsyncZyteAPI], get_method: str, mockserver: MockServer
+) -> None:
     client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     with pytest.raises(RequestError) as request_error_info:
         await getattr(client, get_method)(
@@ -181,7 +195,9 @@ async def test_get_request_error_non_json(client_cls, get_method, mockserver):
     ),
 )
 @pytest.mark.asyncio
-async def test_get_request_error_unexpected_json(client_cls, get_method, mockserver):
+async def test_get_request_error_unexpected_json(
+    client_cls: type[AsyncZyteAPI], get_method: str, mockserver: MockServer
+) -> None:
     client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     with pytest.raises(RequestError) as request_error_info:
         await getattr(client, get_method)(
@@ -200,7 +216,9 @@ async def test_get_request_error_unexpected_json(client_cls, get_method, mockser
     ),
 )
 @pytest.mark.asyncio
-async def test_iter(client_cls, iter_method, mockserver):
+async def test_iter(
+    client_cls: type[AsyncZyteAPI], iter_method: str, mockserver: MockServer
+) -> None:
     client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     queries = [
         {"url": "https://a.example", "httpResponseBody": True},
@@ -241,7 +259,12 @@ async def test_iter(client_cls, iter_method, mockserver):
     ),
 )
 @pytest.mark.asyncio
-async def test_semaphore(client_cls, get_method, iter_method, mockserver):
+async def test_semaphore(
+    client_cls: type[AsyncZyteAPI],
+    get_method: str,
+    iter_method: str,
+    mockserver: MockServer,
+) -> None:
     client = client_cls(api_key="a", api_url=mockserver.urljoin("/"))
     client._semaphore = AsyncMock(wraps=client._semaphore)
     queries = [
@@ -361,7 +384,7 @@ async def test_session_no_context_manager(mockserver: MockServer) -> None:
             assert actual_result in expected_results
 
 
-def test_retrying_class():
+def test_retrying_class() -> None:
     """A descriptive exception is raised when creating a client with an
     AsyncRetrying subclass or similar instead of an instance of it."""
     with pytest.raises(ValueError, match="must be an instance of AsyncRetrying"):

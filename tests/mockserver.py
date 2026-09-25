@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import json
 import socket
@@ -7,12 +9,19 @@ from base64 import b64encode
 from collections import defaultdict
 from importlib import import_module
 from subprocess import PIPE, Popen
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from twisted.internet.task import deferLater
 from twisted.web.resource import Resource
-from twisted.web.server import NOT_DONE_YET, Site
+from twisted.web.server import NOT_DONE_YET, Request, Site
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import TracebackType
+
+    from twisted.internet.defer import Deferred
+    from typing_extensions import Self
 
 SCREENSHOT = (
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQott"
@@ -21,7 +30,13 @@ SCREENSHOT = (
 
 
 # https://github.com/scrapy/scrapy/blob/02b97f98e74a994ad3e4d74e7ed55207e508a576/tests/mockserver.py#L27C1-L33C19
-def getarg(request, name, default=None, type_=None):
+def getarg(
+    request: Request,
+    name: bytes,
+    default: Any = None,
+    type_: Callable[[bytes], Any] | None = None,
+) -> Any:
+    assert request.args is not None
     if name in request.args:
         value = request.args[name][0]
         if type_ is not None:
@@ -30,36 +45,44 @@ def getarg(request, name, default=None, type_=None):
     return default
 
 
-def get_ephemeral_port():
+def get_ephemeral_port() -> int:
     s = socket.socket()
     s.bind(("", 0))
-    return s.getsockname()[1]
+    port: int = s.getsockname()[1]
+    return port
 
 
 class DropResource(Resource):
     isLeaf = True
 
-    def deferRequest(self, request, delay, f, *a, **kw):
+    def deferRequest(
+        self,
+        request: Request,
+        delay: float,
+        f: Callable[..., Any],
+        *a: Any,
+        **kw: Any,
+    ) -> Deferred[Any]:
         from twisted.internet import reactor
 
-        def _cancelrequest(_):
+        def _cancelrequest(_: Any) -> None:
             # silence CancelledError
             d.addErrback(lambda _: None)
             d.cancel()
 
-        d = deferLater(reactor, delay, f, *a, **kw)
+        d = deferLater(reactor, delay, f, *a, **kw)  # type: ignore[arg-type]
         request.notifyFinish().addErrback(_cancelrequest)
         return d
 
-    def render_POST(self, request):
+    def render_POST(self, request: Request) -> int:
         request.setHeader(b"Content-Length", b"1024")
         self.deferRequest(request, 0, self._delayedRender, request)
         return NOT_DONE_YET
 
-    def _delayedRender(self, request):
+    def _delayedRender(self, request: Request) -> None:
         abort = getarg(request, b"abort", 0, type_=int)
         request.write(b"this connection will be dropped\n")
-        tr = request.channel.transport
+        tr: Any = request.channel.transport
         try:
             if abort and hasattr(tr, "abortConnection"):
                 tr.abortConnection()
@@ -94,10 +117,10 @@ WORKFLOWS: defaultdict[str, dict[str, Any]] = defaultdict(dict)
 class DefaultResource(Resource):
     request_count = 0
 
-    def getChild(self, path, request):
+    def getChild(self, path: bytes, request: Request) -> Resource:
         return self
 
-    def render_POST(self, request):
+    def render_POST(self, request: Request) -> bytes:
         request.responseHeaders.setRawHeaders(
             b"Content-Type",
             [b"application/json"],
@@ -107,6 +130,7 @@ class DefaultResource(Resource):
             [b"abcd1234"],
         )
 
+        assert request.content is not None
         request_data = json.loads(request.content.read())
         response_data: dict[str, Any]
 
@@ -121,7 +145,7 @@ class DefaultResource(Resource):
             return b""
         if domain == "e500.example":
             request.setResponseCode(500)
-            return ""
+            return b""
         if domain == "e520.example":
             request.setResponseCode(520)
             response_data = {"status": 520, "type": "/download/temporary-error"}
@@ -235,15 +259,17 @@ class DefaultResource(Resource):
 
 
 class MockServer:
-    def __init__(self, resource=None, port=None):
+    def __init__(
+        self, resource: type[Resource] | None = None, port: int | None = None
+    ) -> None:
         resource = resource or DefaultResource
         self.resource = f"{resource.__module__}.{resource.__name__}"
-        self.proc = None
+        self.proc: Popen[bytes] | None = None
         self.host = socket.gethostbyname(socket.gethostname())
         self.port = port or get_ephemeral_port()
         self.root_url = f"http://{self.host}:{self.port}"
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.proc = Popen(
             [
                 sys.executable,
@@ -260,17 +286,22 @@ class MockServer:
         self.proc.stdout.readline()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         assert self.proc is not None
         self.proc.kill()
         self.proc.wait()
         time.sleep(0.2)
 
-    def urljoin(self, path):
+    def urljoin(self, path: str) -> str:
         return self.root_url + path
 
 
-def main():
+def main() -> None:
     from twisted.internet import reactor
 
     parser = argparse.ArgumentParser()
@@ -283,7 +314,7 @@ def main():
     # Typing issue: https://github.com/twisted/twisted/issues/9909
     http_port = reactor.listenTCP(args.port, Site(resource))  # type: ignore[attr-defined]
 
-    def print_listening():
+    def print_listening() -> None:
         host = http_port.getHost()
         print(f"Mock server {resource} running at http://{host.host}:{host.port}")
 

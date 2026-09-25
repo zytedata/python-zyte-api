@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from base64 import b64encode
 from contextlib import asynccontextmanager
 from os import environ
 from pathlib import Path
-from subprocess import run
+from subprocess import CompletedProcess, run
 from tempfile import NamedTemporaryFile
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -13,11 +16,18 @@ from zyte_api import AsyncZyteAPI
 from .test_x402 import HAS_X402
 from .test_x402 import KEY as ETH_KEY
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from .mockserver import MockServer
+
 ETH_KEY_2 = ETH_KEY[-1] + ETH_KEY[:-1]
 assert ETH_KEY_2 != ETH_KEY
 
 
-def run_zyte_api(args, env, mockserver):
+def run_zyte_api(
+    args: list[str], env: dict[str, str], mockserver: MockServer
+) -> CompletedProcess[bytes]:
     base_env = {
         key: value
         for key, value in environ.items()
@@ -58,7 +68,9 @@ def run_zyte_api(args, env, mockserver):
         ),
     ),
 )
-def test(scenario, expected, mockserver):
+def test(
+    scenario: dict[str, Any], expected: dict[str, str], mockserver: MockServer
+) -> None:
     result = run_zyte_api(
         scenario.get("args", []),
         scenario.get("env", {}),
@@ -71,7 +83,7 @@ def test(scenario, expected, mockserver):
         assert result.returncode == 0
 
 
-def test_dotenv_cli(mockserver, tmp_path):
+def test_dotenv_cli(mockserver: MockServer, tmp_path: Path) -> None:
     # The autouse fixture chdir'd into the empty tmp_path, so there is no key
     # anywhere yet.
     result = run_zyte_api([], {}, mockserver)
@@ -92,14 +104,14 @@ def test_dotenv_cli(mockserver, tmp_path):
 
 
 @pytest.mark.skipif(not HAS_X402, reason="x402 extra not installed")
-def test_dotenv_cli_eth_key(mockserver, tmp_path):
+def test_dotenv_cli_eth_key(mockserver: MockServer, tmp_path: Path) -> None:
     Path(".env").write_text(f"ZYTE_API_ETH_KEY={ETH_KEY}\n", encoding="utf8")
     result = run_zyte_api([], {}, mockserver)
     assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.skipif(not HAS_X402, reason="x402 extra not installed")
-def test_dotenv_eth_key(tmp_path):
+def test_dotenv_eth_key(tmp_path: Path) -> None:
     (tmp_path / ".env").write_text(f"ZYTE_API_ETH_KEY={ETH_KEY}\n", encoding="utf8")
 
     client = AsyncZyteAPI()
@@ -151,7 +163,9 @@ def test_dotenv_eth_key(tmp_path):
         ),
     ),
 )
-def test_precedence(scenario, expected, monkeypatch):
+def test_precedence(
+    scenario: dict[str, Any], expected: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
     for key, value in scenario.get("env", {}).items():
         monkeypatch.setenv(key, value)
     if expected["key_type"] == "eth" and not HAS_X402:
@@ -178,7 +192,7 @@ def test_precedence(scenario, expected, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_basic_auth_header():
+async def test_basic_auth_header() -> None:
     api_key = "testkey"
     captured_headers = {}
 
@@ -190,7 +204,7 @@ async def test_basic_auth_header():
     response_mock.json = AsyncMock(return_value={"url": "https://a.example"})
 
     @asynccontextmanager
-    async def fake_post(**kwargs):
+    async def fake_post(**kwargs: Any) -> AsyncIterator[MagicMock]:
         captured_headers.update(kwargs.get("headers", {}))
         yield response_mock
 
