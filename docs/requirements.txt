@@ -101,7 +101,7 @@ tabulate==0.10.0
     # via sphinx-markdown-builder
 tenacity==9.1.4
     # via -r requirements.in
-urllib3==2.6.3
+urllib3==2.8.0
     # via requests
 yarl==1.23.0
     # via aiohttp
