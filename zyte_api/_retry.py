@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import sys
 from collections import Counter
 from datetime import timedelta
 from itertools import count
-from typing import TYPE_CHECKING, Any, cast
-from warnings import warn
+from typing import TYPE_CHECKING
 
 from aiohttp import client_exceptions
 from tenacity import (
@@ -27,9 +27,12 @@ from tenacity.stop import stop_base, stop_never
 
 from ._errors import RequestError
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
+if sys.version_info >= (3, 13):
+    from warnings import deprecated as _deprecated
+else:
+    from typing_extensions import deprecated as _deprecated
 
+if TYPE_CHECKING:
     from tenacity.wait import wait_base
 
 logger = logging.getLogger(__name__)
@@ -169,14 +172,6 @@ def _402_error(exc: BaseException) -> bool:
     return isinstance(exc, RequestError) and exc.status == 402
 
 
-def _deprecated(message: str, callable_: Callable) -> Callable:
-    def wrapper(factory: Any, retry_state: RetryCallState) -> Callable:
-        warn(message, DeprecationWarning, stacklevel=3)
-        return callable_(retry_state=retry_state)
-
-    return wrapper
-
-
 class RetryFactory:
     """Factory class that builds the :class:`tenacity.AsyncRetrying` object
     that defines the :ref:`default retry policy <default-retry-policy>`.
@@ -235,29 +230,6 @@ class RetryFactory:
     )
     download_error_wait: wait_base = network_error_wait
 
-    temporary_download_error_stop: stop_base = cast(
-        "stop_base",
-        _deprecated(
-            (
-                "The zyte_api.RetryFactory.temporary_download_error_stop() method "
-                "is deprecated and will be removed in a future version. Use "
-                "download_error_stop() instead."
-            ),
-            download_error_stop,
-        ),
-    )
-    temporary_download_error_wait: wait_base = cast(
-        "wait_base",
-        _deprecated(
-            (
-                "The zyte_api.RetryFactory.temporary_download_error_wait() method "
-                "is deprecated and will be removed in a future version. Use "
-                "download_error_wait() instead."
-            ),
-            download_error_wait,
-        ),
-    )
-
     throttling_stop: stop_base = stop_never
 
     undocumented_error_stop: stop_base = stop_on_count(2)
@@ -265,6 +237,22 @@ class RetryFactory:
 
     x402_error_stop: stop_base = stop_on_count(2)
     x402_error_wait: wait_base = wait_none()
+
+    @_deprecated(
+        "The zyte_api.RetryFactory.temporary_download_error_stop() method is"
+        " deprecated and will be removed in a future version. Use"
+        " download_error_stop() instead."
+    )
+    def temporary_download_error_stop(self, retry_state: RetryCallState) -> bool:
+        return self.download_error_stop(retry_state=retry_state)
+
+    @_deprecated(
+        "The zyte_api.RetryFactory.temporary_download_error_wait() method is"
+        " deprecated and will be removed in a future version. Use"
+        " download_error_wait() instead."
+    )
+    def temporary_download_error_wait(self, retry_state: RetryCallState) -> float:
+        return self.download_error_wait(retry_state=retry_state)
 
     def wait(self, retry_state: RetryCallState) -> float:
         assert retry_state.outcome, "Unexpected empty outcome"

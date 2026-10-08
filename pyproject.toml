@@ -20,6 +20,7 @@ dependencies = [
     "runstats>=0.0.1",
     "tenacity>=8.2.0",
     "tqdm>=4.16.0",
+    'typing-extensions>=4.5.0; python_version < "3.13"',
     "w3lib>=2.1.1",
 ]
 classifiers = [
