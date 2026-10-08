@@ -37,7 +37,7 @@ class RequestError(ClientResponseError):
 
     def __str__(self) -> str:
         return (
-            f"RequestError: {self.status}, message={self.message}, "
-            f"headers={self.headers}, body={self.response_content!r}, "
-            f"request_id={self.request_id}"
+            f"RequestError: {self.status}, url={self.query.get('url')!r}, "
+            f"message={self.message}, headers={self.headers}, "
+            f"body={self.response_content!r}, request_id={self.request_id}"
         )
