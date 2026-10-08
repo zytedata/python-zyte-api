@@ -43,7 +43,7 @@ Or, to use x402_:
 
     pip install zyte-api[x402]
 
-.. note:: Python 3.10+ is required.
+.. note:: Python 3.11+ is required.
 
 .. install-end
 

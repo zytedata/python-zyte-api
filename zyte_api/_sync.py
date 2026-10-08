@@ -7,13 +7,11 @@ from typing import TYPE_CHECKING, Any
 from ._async import AsyncZyteAPI
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Awaitable, Generator, Iterator
+    from typing import Self
 
     from aiohttp import ClientSession
     from tenacity import AsyncRetrying
-
-    # typing.Self requires Python 3.11
-    from typing_extensions import Self
 
 
 def _get_loop() -> AbstractEventLoop:
@@ -202,14 +200,19 @@ class ZyteAPI:
 
         The remaining parameters work the same as in :meth:`get`.
         """
+
+        # asyncio.as_completed() requires a running event loop.
+        async def _iter() -> Iterator[Awaitable[dict[str, Any]]]:
+            return self._async_client.iter(
+                queries=queries,
+                endpoint=endpoint,
+                session=session,
+                handle_retries=handle_retries,
+                retrying=retrying,
+            )
+
         loop = _get_loop()
-        for future in self._async_client.iter(
-            queries=queries,
-            endpoint=endpoint,
-            session=session,
-            handle_retries=handle_retries,
-            retrying=retrying,
-        ):
+        for future in loop.run_until_complete(_iter()):
             try:
                 yield loop.run_until_complete(future)
             except Exception as exception:

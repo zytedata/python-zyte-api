@@ -25,11 +25,9 @@ from .utils import USER_AGENT, _process_query
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterator
     from contextlib import AbstractAsyncContextManager
+    from typing import Self
 
     from eth_account.signers.local import LocalAccount
-
-    # typing.Self requires Python 3.11
-    from typing_extensions import Self
 
     _ResponseFuture = Awaitable[dict[str, Any]]
 

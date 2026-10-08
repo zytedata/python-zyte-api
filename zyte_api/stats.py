@@ -12,10 +12,7 @@ from zyte_api.errors import ParsedError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import ParamSpec
-
-    # typing.Self requires Python 3.11
-    from typing_extensions import Self
+    from typing import ParamSpec, Self
 
     _P = ParamSpec("_P")
 
