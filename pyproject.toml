@@ -253,9 +253,6 @@ split-on-trailing-comma = false
 "zyte_api/aio/retry.py" = ["F401"]
 "tests/*" = ["ASYNC240", "S"]
 "docs/**" = ["B006"]
-# Skip PEP 604 suggestions for files with attr classes
-"zyte_api/errors.py" = ["UP007", "UP045"]
-"zyte_api/stats.py" = ["UP007", "UP045"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

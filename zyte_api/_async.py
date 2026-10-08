@@ -4,7 +4,7 @@ import asyncio
 import time
 from functools import partial
 from os import environ
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 from warnings import warn
 
 import aiohttp
@@ -25,7 +25,6 @@ from .utils import USER_AGENT, _process_query
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterator
     from contextlib import AbstractAsyncContextManager
-    from typing import Self
 
     from eth_account.signers.local import LocalAccount
 

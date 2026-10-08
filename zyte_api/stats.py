@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import time
 from collections import Counter
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Self
 
 import attr
 from runstats import Statistics
@@ -12,7 +12,7 @@ from zyte_api.errors import ParsedError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import ParamSpec, Self
+    from typing import ParamSpec
 
     _P = ParamSpec("_P")
 
@@ -95,29 +95,29 @@ class ResponseStats:
     _start: float = attr.ib(repr=False)
 
     # Wait time, before this request is sent. Can be large in case of retries.
-    time_delayed: Optional[float] = attr.ib(default=None)
+    time_delayed: float | None = attr.ib(default=None)
 
     # Time between sending a request and having a connection established
-    time_connect: Optional[float] = attr.ib(default=None)
+    time_connect: float | None = attr.ib(default=None)
 
     # Time to read & decode the response
-    time_read: Optional[float] = attr.ib(default=None)
+    time_read: float | None = attr.ib(default=None)
 
     # time to get an exception (usually, a network error)
-    time_exception: Optional[float] = attr.ib(default=None)
+    time_exception: float | None = attr.ib(default=None)
 
     # Total time to process the response, excluding the wait time caused
     # by retries.
-    time_total: Optional[float] = attr.ib(default=None)
+    time_total: float | None = attr.ib(default=None)
 
     # HTTP status code
-    status: Optional[int] = attr.ib(default=None)
+    status: int | None = attr.ib(default=None)
 
     # error (parsed), in case of error response
-    error: Optional[ParsedError] = attr.ib(default=None)
+    error: ParsedError | None = attr.ib(default=None)
 
     # exception raised
-    exception: Optional[Exception] = attr.ib(default=None)
+    exception: Exception | None = attr.ib(default=None)
 
     @classmethod
     def create(cls, start_global: float) -> Self:

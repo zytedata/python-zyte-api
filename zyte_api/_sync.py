@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import asyncio
 from asyncio import AbstractEventLoop
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 from ._async import AsyncZyteAPI
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Generator, Iterator
-    from typing import Self
 
     from aiohttp import ClientSession
     from tenacity import AsyncRetrying
