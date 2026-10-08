@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from collections import deque
 from copy import copy
-from unittest.mock import patch
+from typing import Any
+from unittest.mock import Mock, patch
 
 import pytest
 from aiohttp.client_exceptions import ServerConnectionError
@@ -18,7 +21,7 @@ from zyte_api import (
 from .mockserver import DropResource, MockServer
 
 
-def test_deprecated_imports():
+def test_deprecated_imports() -> None:
     from zyte_api import RetryFactory, zyte_api_retrying  # noqa: PLC0415
     from zyte_api.aio.retry import (  # noqa: PLC0415
         RetryFactory as DeprecatedRetryFactory,
@@ -47,12 +50,14 @@ class OutlierException(RuntimeError):
     ),
 )
 @pytest.mark.asyncio
-async def test_get_handle_retries(value, exception, mockserver):
-    kwargs = {}
+async def test_get_handle_retries(
+    value: object, exception: type[Exception], mockserver: MockServer
+) -> None:
+    kwargs: dict[str, Any] = {}
     if value is not UNSET:
         kwargs["handle_retries"] = value
 
-    def broken_stop(_):
+    def broken_stop(_: RetryCallState) -> bool:
         raise OutlierException
 
     retrying = AsyncRetrying(stop=broken_stop)
@@ -77,14 +82,15 @@ async def test_get_handle_retries(value, exception, mockserver):
     ),
 )
 @pytest.mark.asyncio
-async def test_retry_wait(retry_factory, status, waiter, mockserver):
-    def broken_wait(self, retry_state):
+async def test_retry_wait(
+    retry_factory: type[RetryFactory], status: int, waiter: str, mockserver: MockServer
+) -> None:
+    def broken_wait(self: RetryFactory, retry_state: RetryCallState) -> float:
         raise OutlierException
 
-    class CustomRetryFactory(retry_factory):
-        pass
-
-    setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
+    CustomRetryFactory = type(
+        "CustomRetryFactory", (retry_factory,), {f"{waiter}_wait": broken_wait}
+    )
     retrying = CustomRetryFactory().build()
     client = AsyncZyteAPI(
         api_key="a", api_url=mockserver.urljoin("/"), retrying=retrying
@@ -103,16 +109,15 @@ async def test_retry_wait(retry_factory, status, waiter, mockserver):
     ),
 )
 @pytest.mark.asyncio
-async def test_retry_wait_network_error(retry_factory):
+async def test_retry_wait_network_error(retry_factory: type[RetryFactory]) -> None:
     waiter = "network_error"
 
-    def broken_wait(self, retry_state):
+    def broken_wait(self: RetryFactory, retry_state: RetryCallState) -> float:
         raise OutlierException
 
-    class CustomRetryFactory(retry_factory):
-        pass
-
-    setattr(CustomRetryFactory, f"{waiter}_wait", broken_wait)
+    CustomRetryFactory = type(
+        "CustomRetryFactory", (retry_factory,), {f"{waiter}_wait": broken_wait}
+    )
 
     retrying = CustomRetryFactory().build()
     with MockServer(resource=DropResource) as mockserver:
@@ -403,12 +408,17 @@ class scale:
 )
 @pytest.mark.asyncio
 @patch("time.monotonic")
-async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
+async def test_retry_stop(
+    monotonic_mock: Mock,
+    retrying: AsyncRetrying,
+    outcomes: tuple[Any, ...],
+    exhausted: bool,
+) -> None:
     monotonic_mock.return_value = 0
     last_outcome = outcomes[-1]
-    outcomes = deque(outcomes)
+    queue = deque(outcomes)
 
-    def wait(retry_state):
+    def wait(retry_state: RetryCallState) -> float:
         return 0.0
 
     retrying = copy(retrying)
@@ -417,7 +427,7 @@ async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
     async def run() -> None:
         while True:
             try:
-                outcome = outcomes.popleft()
+                outcome = queue.popleft()
             except IndexError:
                 return
             else:
@@ -437,7 +447,7 @@ async def test_retry_stop(monotonic_mock, retrying, outcomes, exhausted):
 
 
 @pytest.mark.asyncio
-async def test_deprecated_temporary_download_error():
+async def test_deprecated_temporary_download_error() -> None:
     class CustomRetryFactory(RetryFactory):
         def wait(self, retry_state: RetryCallState) -> float:
             self.temporary_download_error_wait(retry_state=retry_state)
@@ -451,7 +461,7 @@ async def test_deprecated_temporary_download_error():
 
     outcomes = deque((mock_request_error(status=520), None))
 
-    async def run():
+    async def run() -> Any:
         outcome = outcomes.popleft()
         if isinstance(outcome, Exception):
             raise outcome

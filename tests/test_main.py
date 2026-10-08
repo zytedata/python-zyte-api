@@ -8,7 +8,7 @@ from io import StringIO
 from json import JSONDecodeError
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Any
+from typing import IO, TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -17,13 +17,13 @@ from zyte_api import RequestError
 from zyte_api.__main__ import _get_argument_parser, read_input, run
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Awaitable, Callable, Iterable
 
     from tests.mockserver import MockServer
 
 
 class MockRequestError(RequestError):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(
             *args,
             query={},
@@ -34,13 +34,13 @@ class MockRequestError(RequestError):
         )
 
     @property
-    def parsed(self):
+    def parsed(self) -> Mock:
         return Mock(
             response_body=Mock(decode=Mock(return_value=forbidden_domain_response()))
         )
 
 
-def get_json_content(file_object):
+def get_json_content(file_object: IO[str] | None) -> Any:
     if not file_object:
         return None
 
@@ -61,7 +61,7 @@ def forbidden_domain_response() -> dict[str, Any]:
     }
 
 
-async def fake_exception(value=True):
+async def fake_exception(value: bool = True) -> Any:
     # Simulating an error condition
     if value:
         raise MockRequestError
@@ -104,7 +104,12 @@ async def fake_exception(value=True):
     ),
 )
 @pytest.mark.asyncio
-async def test_run(queries, expected_response, store_errors, exception):
+async def test_run(
+    queries: list[dict[str, Any]],
+    expected_response: dict[str, Any] | None,
+    store_errors: bool,
+    exception: Callable[..., Awaitable[Any]],
+) -> None:
     tmp_path = Path("temporary_file.jsonl")
     temporary_file = tmp_path.open("w")  # noqa: ASYNC230
     n_conn = 5
@@ -156,7 +161,7 @@ async def test_run(queries, expected_response, store_errors, exception):
 
 
 @pytest.mark.asyncio
-async def test_run_stop_on_errors_false(mockserver):
+async def test_run_stop_on_errors_false(mockserver: MockServer) -> None:
     queries = [{"url": "https://exception.example", "httpResponseBody": True}]
     with (
         NamedTemporaryFile("w") as output_file,
@@ -175,7 +180,7 @@ async def test_run_stop_on_errors_false(mockserver):
 
 
 @pytest.mark.asyncio
-async def test_run_stop_on_errors_true(mockserver):
+async def test_run_stop_on_errors_true(mockserver: MockServer) -> None:
     query = {"url": "https://exception.example", "httpResponseBody": True}
     queries = [query]
     with (
@@ -229,7 +234,7 @@ def _run(
         )
 
 
-def test_empty_input(mockserver):
+def test_empty_input(mockserver: MockServer) -> None:
     result = _run(input_="", mockserver=mockserver)
     assert result.returncode
     assert result.stdout == b""
@@ -242,7 +247,7 @@ def test_trust_env_flag_parsing() -> None:
     assert args.trust_env is True
 
 
-def test_intype_txt_implicit(mockserver):
+def test_intype_txt_implicit(mockserver: MockServer) -> None:
     result = _run(input_="https://a.example", mockserver=mockserver)
     assert not result.returncode
     assert (
@@ -251,7 +256,7 @@ def test_intype_txt_implicit(mockserver):
     )
 
 
-def test_intype_txt_explicit(mockserver):
+def test_intype_txt_explicit(mockserver: MockServer) -> None:
     result = _run(
         input_="https://a.example",
         mockserver=mockserver,
@@ -264,7 +269,7 @@ def test_intype_txt_explicit(mockserver):
     )
 
 
-def test_intype_jsonl_implicit(mockserver):
+def test_intype_jsonl_implicit(mockserver: MockServer) -> None:
     result = _run(
         input_='{"url": "https://a.example", "browserHtml": true}',
         mockserver=mockserver,
@@ -276,7 +281,7 @@ def test_intype_jsonl_implicit(mockserver):
     )
 
 
-def test_intype_jsonl_explicit(mockserver):
+def test_intype_jsonl_explicit(mockserver: MockServer) -> None:
     result = _run(
         input_='{"url": "https://a.example", "browserHtml": true}',
         mockserver=mockserver,
@@ -289,7 +294,7 @@ def test_intype_jsonl_explicit(mockserver):
     )
 
 
-def test_stdin(mockserver):
+def test_stdin(mockserver: MockServer) -> None:
     result = _run(
         input_="https://a.example",
         mockserver=mockserver,
@@ -300,7 +305,7 @@ def test_stdin(mockserver):
     assert b'"httpResponseBody"' in result.stdout
 
 
-def test_params_txt(mockserver):
+def test_params_txt(mockserver: MockServer) -> None:
     result = _run(
         input_="https://a.example",
         mockserver=mockserver,
@@ -311,7 +316,7 @@ def test_params_txt(mockserver):
     assert b'"httpResponseBody"' in result.stdout
 
 
-def test_params_jsonl(mockserver):
+def test_params_jsonl(mockserver: MockServer) -> None:
     result = _run(
         input_='{"url": "https://a.example", "browserHtml": true}',
         mockserver=mockserver,
@@ -323,14 +328,14 @@ def test_params_jsonl(mockserver):
 
 
 @pytest.mark.parametrize("value", ("{", "[]"))
-def test_params_invalid(value, capsys):
+def test_params_invalid(value: str, capsys: pytest.CaptureFixture[str]) -> None:
     parser = _get_argument_parser()
     with pytest.raises(SystemExit):
         parser.parse_args(["--params", value, "README.rst"])
     assert "--params/-p" in capsys.readouterr().err
 
 
-def test_read_input_txt():
+def test_read_input_txt() -> None:
     assert read_input(StringIO("https://a.example\n\n"), "txt") == [
         {
             "url": "https://a.example",
@@ -340,7 +345,7 @@ def test_read_input_txt():
     ]
 
 
-def test_read_input_txt_params():
+def test_read_input_txt_params() -> None:
     parser = _get_argument_parser()
     args = parser.parse_args(["-p", '{"httpResponseBody": true}', "README.rst"])
     assert read_input(StringIO("https://a.example\n"), "txt", args.params) == [
@@ -352,7 +357,7 @@ def test_read_input_txt_params():
     ]
 
 
-def test_read_input_jl_params():
+def test_read_input_jl_params() -> None:
     input_fp = StringIO('{"url": "https://a.example", "browserHtml": true}\n\n')
     params = {"browserHtml": False, "httpResponseBody": True}
     assert read_input(input_fp, "jl", params) == [
@@ -365,12 +370,12 @@ def test_read_input_jl_params():
     ]
 
 
-def test_read_input_empty():
+def test_read_input_empty() -> None:
     assert read_input(StringIO(""), "txt") == []
 
 
 @pytest.mark.flaky(reruns=16)
-def test_limit_and_shuffle(mockserver):
+def test_limit_and_shuffle(mockserver: MockServer) -> None:
     result = _run(
         input_="https://a.example\nhttps://b.example",
         mockserver=mockserver,
@@ -383,7 +388,7 @@ def test_limit_and_shuffle(mockserver):
     )
 
 
-def test_run_non_json_response(mockserver):
+def test_run_non_json_response(mockserver: MockServer) -> None:
     result = _run(
         input_="https://nonjson.example",
         mockserver=mockserver,

@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -9,8 +12,11 @@ from zyte_api.apikey import (
     read_dotenv_auth,
 )
 
+if TYPE_CHECKING:
+    from pathlib import Path
 
-def test_get_apikey(monkeypatch):
+
+def test_get_apikey(monkeypatch: pytest.MonkeyPatch) -> None:
     assert get_apikey("a") == "a"
     with pytest.raises(NoApiKey):
         get_apikey()
@@ -22,7 +28,7 @@ def test_get_apikey(monkeypatch):
     assert get_apikey(None) == "b"
 
 
-def test_get_apikey_from_dotenv(tmp_path):
+def test_get_apikey_from_dotenv(tmp_path: Path) -> None:
     # The autouse fixture already chdir'd into the empty tmp_path.
     (tmp_path / ".env").write_text("ZYTE_API_KEY=fromdotenv\n")
 
@@ -33,7 +39,9 @@ def test_get_apikey_from_dotenv(tmp_path):
     assert "ZYTE_API_KEY" not in os.environ
 
 
-def test_get_apikey_from_dotenv_parent_dir(tmp_path, monkeypatch):
+def test_get_apikey_from_dotenv_parent_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     (tmp_path / ".env").write_text("ZYTE_API_KEY=fromparent\n")
     subdir = tmp_path / "project" / "subdir"
     subdir.mkdir(parents=True)
@@ -42,14 +50,16 @@ def test_get_apikey_from_dotenv_parent_dir(tmp_path, monkeypatch):
     assert get_apikey() == "fromparent"
 
 
-def test_get_apikey_env_takes_precedence_over_dotenv(tmp_path, monkeypatch):
+def test_get_apikey_env_takes_precedence_over_dotenv(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     (tmp_path / ".env").write_text("ZYTE_API_KEY=fromdotenv\n")
     monkeypatch.setenv("ZYTE_API_KEY", "fromenv")
 
     assert get_apikey() == "fromenv"
 
 
-def test_read_apikey_from_dotenv(tmp_path):
+def test_read_apikey_from_dotenv(tmp_path: Path) -> None:
     (tmp_path / ".env").write_text("ZYTE_API_KEY=fromdotenv\nOTHER=ignored\n")
 
     assert read_apikey_from_dotenv() == "fromdotenv"
@@ -57,19 +67,19 @@ def test_read_apikey_from_dotenv(tmp_path):
     assert "OTHER" not in os.environ
 
 
-def test_read_apikey_from_dotenv_missing(tmp_path):
+def test_read_apikey_from_dotenv_missing(tmp_path: Path) -> None:
     # Empty working directory, no .env anywhere relevant.
     assert read_apikey_from_dotenv() is None
 
 
-def test_read_apikey_from_dotenv_custom_path(tmp_path):
+def test_read_apikey_from_dotenv_custom_path(tmp_path: Path) -> None:
     env_file = tmp_path / "custom.env"
     env_file.write_text("ZYTE_API_KEY=fromcustom\n")
 
     assert read_apikey_from_dotenv(str(env_file)) == "fromcustom"
 
 
-def test_read_dotenv_auth_reads_both_credentials(tmp_path):
+def test_read_dotenv_auth_reads_both_credentials(tmp_path: Path) -> None:
     (tmp_path / ".env").write_text(
         "ZYTE_API_KEY=k\nZYTE_API_ETH_KEY=e\nOTHER=ignored\n"
     )
@@ -79,7 +89,9 @@ def test_read_dotenv_auth_reads_both_credentials(tmp_path):
     assert "ZYTE_API_ETH_KEY" not in os.environ
 
 
-def test_read_dotenv_auth_eth_key_not_read_from_parent(tmp_path, monkeypatch):
+def test_read_dotenv_auth_eth_key_not_read_from_parent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     # Both credentials live in a parent .env, but only the API key is read from
     # there; the Ethereum private key is never looked up in parent directories.
     (tmp_path / ".env").write_text(
@@ -92,7 +104,7 @@ def test_read_dotenv_auth_eth_key_not_read_from_parent(tmp_path, monkeypatch):
     assert read_dotenv_auth() == {"ZYTE_API_KEY": "fromparent"}
 
 
-def test_read_dotenv_auth_explicit_path_reads_eth(tmp_path):
+def test_read_dotenv_auth_explicit_path_reads_eth(tmp_path: Path) -> None:
     # An explicit path is honored for both credentials (no walking involved).
     env_file = tmp_path / "custom.env"
     env_file.write_text("ZYTE_API_ETH_KEY=e\n")

@@ -13,19 +13,19 @@ if TYPE_CHECKING:
     from tests.mockserver import MockServer
 
 
-def test_api_key():
+def test_api_key() -> None:
     ZyteAPI(api_key="a")
     with pytest.raises(NoApiKey):
         ZyteAPI()
 
 
-def test_trust_env_is_forwarded():
+def test_trust_env_is_forwarded() -> None:
     with patch("zyte_api._sync.AsyncZyteAPI") as async_client:
         ZyteAPI(api_key="a", trust_env=True)
     assert async_client.call_args.kwargs["trust_env"] is True
 
 
-def test_get(mockserver):
+def test_get(mockserver: MockServer) -> None:
     client = ZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
     expected_result = {
         "url": "https://a.example",
@@ -35,7 +35,7 @@ def test_get(mockserver):
     assert actual_result == expected_result
 
 
-def test_iter(mockserver):
+def test_iter(mockserver: MockServer) -> None:
     client = ZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
     queries = [
         {"url": "https://a.example", "httpResponseBody": True},
@@ -64,7 +64,7 @@ def test_iter(mockserver):
             assert actual_result in expected_results
 
 
-def test_semaphore(mockserver):
+def test_semaphore(mockserver: MockServer) -> None:
     client = ZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
     client._async_client._semaphore = AsyncMock(wraps=client._async_client._semaphore)
     queries = [

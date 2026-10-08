@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
+from typing import Any, Optional, cast
 
 import attr
 
@@ -20,7 +20,7 @@ class ParsedError:
     #: JSON-decoded response body.
     #:
     #: If ``None``, :data:`parse_error` indicates the reason.
-    data: Optional[dict]
+    data: Optional[dict[str, Any]]
 
     #: If :data:`data` is ``None``, this indicates whether the reason is that
     #: :data:`response_body` is not valid JSON (``"bad_json"``) or that it is
@@ -51,7 +51,7 @@ class ParsedError:
         ``"/download/temporary-error"``."""
         data = self.data or {}
         if "type" in data:
-            return data["type"]
+            return cast("str", data["type"])
         if "error" in data and isinstance(data["error"], str):  # HTTP 402
             try:
                 prefix, _ = data["error"].split(":", 1)

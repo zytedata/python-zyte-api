@@ -91,16 +91,13 @@ patch = [
 ]
 
 [tool.mypy]
-allow_untyped_defs = false
-implicit_reexport = false
+strict = true
+# Unannotated third-party functions.
+untyped_calls_exclude = ["twisted"]
 
 [[tool.mypy.overrides]]
 module = "runstats"
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-allow_untyped_defs = true
 
 [tool.pytest.ini_options]
 filterwarnings = [
