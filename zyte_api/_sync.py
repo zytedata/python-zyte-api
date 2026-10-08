@@ -201,7 +201,8 @@ class ZyteAPI:
         The remaining parameters work the same as in :meth:`get`.
         """
 
-        # asyncio.as_completed() requires a running event loop.
+        # asyncio.as_completed() requires a running event loop on Python
+        # 3.14.8+: https://github.com/python/cpython/issues/157856
         async def _iter() -> Iterator[Awaitable[dict[str, Any]]]:
             return self._async_client.iter(
                 queries=queries,
