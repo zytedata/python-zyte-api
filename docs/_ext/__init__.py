@@ -41,3 +41,4 @@ def http_api_reference_role(
 def setup(app):
     # https://github.com/scrapy-plugins/scrapy-zyte-api/blob/2bfb2bef2e43293a62f47781914331bc4fa08f06/docs/_ext/__init__.py#L42
     app.add_role("http", http_api_reference_role)
+    return {"parallel_read_safe": True, "parallel_write_safe": True}

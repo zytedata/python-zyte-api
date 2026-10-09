@@ -124,7 +124,7 @@ def read_input(
         intype = _guess_intype(input_fp.name, lines)
     if intype == "txt":
         urls = [u.strip() for u in lines if u.strip()]
-        base = params if params else {"browserHtml": True}
+        base = params or {"browserHtml": True}
         records = [{"url": url, **base} for url in urls]
     else:
         records = [

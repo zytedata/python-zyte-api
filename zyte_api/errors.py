@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
 
 import attr
 
@@ -20,12 +19,12 @@ class ParsedError:
     #: JSON-decoded response body.
     #:
     #: If ``None``, :data:`parse_error` indicates the reason.
-    data: Optional[dict]
+    data: dict | None
 
     #: If :data:`data` is ``None``, this indicates whether the reason is that
     #: :data:`response_body` is not valid JSON (``"bad_json"``) or that it is
     #: not a JSON object (``"bad_format"``).
-    parse_error: Optional[str]
+    parse_error: str | None
 
     @classmethod
     def from_body(cls, response_body: bytes) -> ParsedError:
@@ -46,7 +45,7 @@ class ParsedError:
         return cls(response_body=response_body, data=data, parse_error=parse_error)
 
     @property
-    def type(self) -> Optional[str]:
+    def type(self) -> str | None:
         """ID of the error type, e.g. ``"/limits/over-user-limit"`` or
         ``"/download/temporary-error"``."""
         data = self.data or {}

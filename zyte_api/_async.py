@@ -4,7 +4,7 @@ import asyncio
 import time
 from functools import partial
 from os import environ
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 from warnings import warn
 
 import aiohttp
@@ -27,9 +27,6 @@ if TYPE_CHECKING:
     from contextlib import AbstractAsyncContextManager
 
     from eth_account.signers.local import LocalAccount
-
-    # typing.Self requires Python 3.11
-    from typing_extensions import Self
 
     _ResponseFuture = Awaitable[dict[str, Any]]
 
