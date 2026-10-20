@@ -7,7 +7,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from zyte_api import AggressiveRetryFactory, AsyncZyteAPI, RequestError
+from zyte_api import (
+    AggressiveRetryFactory,
+    AsyncZyteAPI,
+    RequestError,
+    TooManyUndocumentedErrors,
+)
 from zyte_api._utils import create_session
 from zyte_api.aio.client import AsyncClient
 from zyte_api.apikey import NoApiKey
@@ -366,3 +371,53 @@ def test_retrying_class():
     AsyncRetrying subclass or similar instead of an instance of it."""
     with pytest.raises(ValueError, match="must be an instance of AsyncRetrying"):
         AsyncZyteAPI(api_key="foo", retrying=AggressiveRetryFactory)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("status_codes", "n_attempts", "raises"),
+    (
+        # Undocumented error responses must be at least 10 and at least 1% of
+        # all attempts.
+        ({500: 9}, 9, False),
+        ({500: 10}, 10, True),
+        ({500: 10}, 1001, False),  # 0.999…%
+        ({500: 10}, 1000, True),  # 1%
+        # Rate-limiting and download errors do not count.
+        ({503: 10, 520: 10, 521: 10}, 30, False),
+    ),
+)
+@pytest.mark.asyncio
+async def test_too_many_undocumented_errors(
+    status_codes, n_attempts, raises, mockserver
+):
+    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+    client.agg_stats.status_codes.update(status_codes)
+    client.agg_stats.n_attempts = n_attempts
+    query = {"url": "https://a.example", "httpResponseBody": True}
+    if raises:
+        with pytest.raises(TooManyUndocumentedErrors):
+            await client.get(query)
+    else:
+        await client.get(query)
+
+
+@pytest.mark.asyncio
+async def test_too_many_undocumented_errors_e2e(mockserver):
+    client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+    error_query = {"url": "https://e500.example", "httpResponseBody": True}
+    for _ in range(10):
+        with pytest.raises(RequestError):
+            await client.get(error_query, handle_retries=False)
+
+    # Requests are disallowed regardless of the query, and the same exception
+    # is reused for every subsequent call.
+    good_query = {"url": "https://a.example", "httpResponseBody": True}
+    with pytest.raises(TooManyUndocumentedErrors) as first:
+        await client.get(good_query)
+    with pytest.raises(TooManyUndocumentedErrors) as second:
+        await client.get(good_query)
+    assert first.value is second.value
+
+    # A separate client is unaffected.
+    other_client = AsyncZyteAPI(api_key="a", api_url=mockserver.urljoin("/"))
+    await other_client.get(good_query)

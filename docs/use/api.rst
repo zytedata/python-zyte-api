@@ -266,5 +266,22 @@ attempt to fail. Unsuccessful responses trigger a :exc:`RequestError` and
 network errors trigger :ref:`aiohttp exceptions <aiohttp-client-reference>`.
 Other exceptions could be raised; for example, from a custom retry policy.
 
+.. _zapi-undocumented-error-limit:
+
+Undocumented error limit
+========================
+
+.. versionadded:: VERSION
+
+Error responses with an HTTP status code in the 500-599 range (503, 520 and
+521 excluded) are usually a sign of an issue on the Zyte API side. Once a
+client has received 10 or more of them, and they account for 1% or more of the
+requests it has sent, that client stops sending requests: every call raises
+:exc:`~zyte_api.TooManyUndocumentedErrors` instead.
+
+The limit is per client object, so a new client can be used to resume sending
+requests. However, check https://status.zyte.com/ or contact `support
+<https://support.zyte.com/support/tickets/new>`_ first.
+
 
 .. seealso:: :ref:`api-ref`

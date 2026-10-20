@@ -40,5 +40,7 @@ Errors
 .. autoexception:: RequestError
     :members:
 
+.. autoexception:: TooManyUndocumentedErrors
+
 .. autoclass:: ParsedError
     :members:
