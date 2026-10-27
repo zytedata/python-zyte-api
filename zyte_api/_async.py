@@ -13,7 +13,7 @@ from tenacity import AsyncRetrying
 from zyte_api._x402 import _x402Handler
 from zyte_api.apikey import NoApiKey, read_dotenv_auth
 
-from ._errors import RequestError
+from ._errors import RequestError, TooManyUndocumentedErrors
 from ._retry import zyte_api_retrying
 from ._utils import _AIO_API_TIMEOUT, create_session
 from .constants import API_URL
@@ -29,6 +29,11 @@ if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
 
     _ResponseFuture = Awaitable[dict[str, Any]]
+
+# Undocumented error responses must reach both thresholds, in absolute number
+# and as a share of all requests sent, before a client stops sending requests.
+_UNDOCUMENTED_ERROR_MIN = 10
+_UNDOCUMENTED_ERROR_RATIO = 0.01
 
 
 def _post_func(
@@ -137,6 +142,7 @@ class AsyncZyteAPI:
         self.user_agent = user_agent or USER_AGENT
         self.trust_env = trust_env
         self._semaphore = asyncio.Semaphore(n_conn)
+        self._too_many_undocumented_errors: TooManyUndocumentedErrors | None = None
         self._auth: str | _x402Handler
         self.auth: AuthInfo
         self.api_url: str
@@ -193,6 +199,19 @@ class AsyncZyteAPI:
             "api_key is not available when using an Ethereum private key, use auth.key instead."
         )
 
+    def _check_undocumented_errors(self) -> None:
+        if self._too_many_undocumented_errors is not None:
+            raise self._too_many_undocumented_errors
+        errors = self.agg_stats._n_undocumented_errors
+        if (
+            errors >= _UNDOCUMENTED_ERROR_MIN
+            and errors >= _UNDOCUMENTED_ERROR_RATIO * self.agg_stats.n_attempts
+        ):
+            self._too_many_undocumented_errors = TooManyUndocumentedErrors(
+                errors, self.agg_stats.n_attempts
+            )
+            raise self._too_many_undocumented_errors
+
     async def get(
         self,
         query: dict[str, Any],
@@ -203,6 +222,8 @@ class AsyncZyteAPI:
         retrying: AsyncRetrying | None = None,
     ) -> dict[str, Any]:
         """Asynchronous equivalent to :meth:`ZyteAPI.get`."""
+        self._check_undocumented_errors()
+
         retrying = retrying or self.retrying
         owned_session: aiohttp.ClientSession | None = None
         if session is None:

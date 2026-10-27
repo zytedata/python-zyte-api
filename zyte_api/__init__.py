@@ -3,7 +3,7 @@ Python client libraries and command line utilities for Zyte API
 """
 
 from ._async import AsyncZyteAPI, AuthInfo
-from ._errors import RequestError
+from ._errors import RequestError, TooManyUndocumentedErrors
 from ._retry import (
     AggressiveRetryFactory,
     RetryFactory,
@@ -31,6 +31,7 @@ __all__ = [
     "ParsedError",
     "RequestError",
     "RetryFactory",
+    "TooManyUndocumentedErrors",
     "ZyteAPI",
     "aggressive_retrying",
     "stop_after_uninterrupted_delay",
