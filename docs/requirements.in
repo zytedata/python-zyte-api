@@ -1,6 +1,0 @@
-aiohttp
-sphinx
-sphinx-argparse
-sphinx-rtd-theme
-sphinx-scrapy==0.13.0
-tenacity
