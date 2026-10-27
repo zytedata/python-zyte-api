@@ -37,6 +37,12 @@ classifiers = [
     "Programming Language :: Python :: 3.15",
 ]
 
+[dependency-groups]
+docs = [
+    "sphinx-argparse",
+    "sphinx-rtd-theme",
+]
+
 [project.optional-dependencies]
 x402 = [
     "eth-account>=0.13.7",
